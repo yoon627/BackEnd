@@ -5,20 +5,18 @@ import com.devonoff.dto.SignUpRequest;
 import com.devonoff.entity.User;
 import com.devonoff.repository.UserRepository;
 import com.devonoff.type.LoginType;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
 
-  // 생성자 주입
-  public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-    this.userRepository = userRepository;
-    this.passwordEncoder = passwordEncoder;
-  }
+
 
   // 회원가입 메서드 구현
   @Override
