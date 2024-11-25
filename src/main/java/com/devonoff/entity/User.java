@@ -43,8 +43,7 @@ public class User {
   @Enumerated(EnumType.STRING)
   private LoginType loginType = LoginType.GENERAL; // 로그인 타입 (GENERAL, GOOGLE, NAVER 등)
 
-  @Column(nullable = true)
-  private String providerId; // 소셜용
+
 
   @Column(nullable = true, name = "profile_image_url")
   private String profileImage; // 기본 역할
