@@ -4,6 +4,7 @@ import com.devonoff.dto.SignUpRequest;
 import com.devonoff.service.UserService;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,13 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth/")
+@RequiredArgsConstructor
 public class AuthController {
 
   private final UserService userService;
 
-  public AuthController(UserService userService) {
-    this.userService = userService;
-  }
 
 
   /**
