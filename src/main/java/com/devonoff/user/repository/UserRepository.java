@@ -1,6 +1,6 @@
-package com.devonoff.repository;
+package com.devonoff.user.repository;
 
-import com.devonoff.entity.User;
+import com.devonoff.user.entity.User;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

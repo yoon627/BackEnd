@@ -1,7 +1,7 @@
-package com.devonoff.service;
+package com.devonoff.user.service;
 
 
-import com.devonoff.dto.SignUpRequest;
+import com.devonoff.user.dto.SignUpRequest;
 
 public interface UserService {
   // 회원가입
