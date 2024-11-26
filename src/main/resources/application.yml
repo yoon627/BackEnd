@@ -10,3 +10,8 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+  batch:
+    job:
+      enabled: false # 서버 재시작 시 배치 자동 실행 방지
+    jdbc:
+      initialize-schema: always # Spring Batch 기본 테이블 자동 생성
