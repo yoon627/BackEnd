@@ -8,9 +8,12 @@ import com.devonoff.studyPost.dto.StudyPostUpdateDto;
 import com.devonoff.studyPost.entity.StudyPost;
 import com.devonoff.studyPost.repository.StudyPostRepository;
 import com.devonoff.type.ErrorCode;
+import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyStatus;
+import com.devonoff.type.StudySubject;
 import com.devonoff.user.entity.User;
 import com.devonoff.user.repository.UserRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +31,13 @@ public class StudyPostService {
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
     return StudyPostDto.fromEntity(studyPost);
+  }
+
+  // 조회 (검색리스트)
+  public List<StudyPostDto> searchStudyPosts(String title, StudySubject subject,
+      StudyDifficulty difficulty, int dayType,
+      StudyStatus status) {
+    return studyPostRepository.findStudyPostsByFilters(title, subject, difficulty, dayType, status);
   }
 
   // 생성
