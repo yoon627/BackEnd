@@ -66,8 +66,7 @@ public class StudyPost extends BaseTimeEntity {
   private LocalTime endTime; // 종료시간
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false, length = 10) // 스터디 진행 유형
-  private StudyMeetingType meetingType;
+  private StudyMeetingType meetingType; // 스터디 진행 유형
 
   @Column(nullable = false)
   private LocalDate recruitmentPeriod; // 모집 기한
