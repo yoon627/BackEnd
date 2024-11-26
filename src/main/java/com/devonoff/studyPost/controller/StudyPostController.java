@@ -5,6 +5,7 @@ import com.devonoff.studyPost.dto.StudyPostDto;
 import com.devonoff.studyPost.dto.StudyPostUpdateDto;
 import com.devonoff.studyPost.service.StudyPostService;
 import com.devonoff.type.StudyDifficulty;
+import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
 import java.util.List;
@@ -39,12 +40,13 @@ public class StudyPostController {
   // 스터디 모집글 검색
   @GetMapping("/search")
   public ResponseEntity<List<StudyPostDto>> searchStudyPosts(
+      @RequestParam(required = false) StudyMeetingType meetingType,
       @RequestParam(required = false) String title,
       @RequestParam(required = false) StudySubject subject,
       @RequestParam(required = false) StudyDifficulty difficulty,
       @RequestParam(required = false, defaultValue = "0") int dayType,
       @RequestParam(required = false) StudyStatus status) {
-    List<StudyPostDto> studyPosts = studyPostService.searchStudyPosts(title, subject, difficulty,
+    List<StudyPostDto> studyPosts = studyPostService.searchStudyPosts(meetingType, title, subject, difficulty,
         dayType, status);
     return ResponseEntity.ok(studyPosts);
   }
