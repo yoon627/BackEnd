@@ -5,7 +5,7 @@ import com.devonoff.studyPost.entity.QStudyPost;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
-import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,34 +22,38 @@ public class StudyPostRepositoryCustomImpl implements StudyPostRepositoryCustom 
       StudyDifficulty difficulty, int dayType, StudyStatus status) {
     QStudyPost studyPost = QStudyPost.studyPost;
 
-    return queryFactory.select(Projections.constructor(StudyPostDto.class,
-            studyPost.id,
-            studyPost.title,
-            studyPost.studyName,
-            studyPost.subject,
-            studyPost.difficulty,
-            studyPost.dayType,
-            studyPost.startDate,
-            studyPost.endDate,
-            studyPost.startTime,
-            studyPost.endTime,
-            studyPost.meetingType,
-            studyPost.recruitmentPeriod,
-            studyPost.description,
-            studyPost.latitude,
-            studyPost.longitude,
-            studyPost.status,
-            studyPost.thumbnailImgUrl,
-            studyPost.user.Id
-        ))
-        .from(studyPost)
+    return queryFactory
+        .selectFrom(studyPost)
         .where(
-            title != null ? studyPost.title.contains(title) : null,
-            subject != null ? studyPost.subject.eq(subject) : null,
-            difficulty != null ? studyPost.difficulty.eq(difficulty) : null,
-            dayType > 0 ? studyPost.dayType.eq(dayType) : null,
-            status != null ? studyPost.status.eq(status) : null
+            containsTitle(title),
+            equalsSubject(subject),
+            equalsDifficulty(difficulty),
+            equalsStatus(status)
         )
-        .fetch();
+        .fetch()
+        .stream()
+        .filter(post -> dayType == 0 || isDayTypeIncluded(post.getDayType(), dayType))
+        .map(StudyPostDto::fromEntity)
+        .toList();
+  }
+
+  private BooleanExpression containsTitle(String title) {
+    return title != null ? QStudyPost.studyPost.title.contains(title) : null;
+  }
+
+  private BooleanExpression equalsSubject(StudySubject subject) {
+    return subject != null ? QStudyPost.studyPost.subject.eq(subject) : null;
+  }
+
+  private BooleanExpression equalsDifficulty(StudyDifficulty difficulty) {
+    return difficulty != null ? QStudyPost.studyPost.difficulty.eq(difficulty) : null;
+  }
+
+  private BooleanExpression equalsStatus(StudyStatus status) {
+    return status != null ? QStudyPost.studyPost.status.eq(status) : null;
+  }
+
+  private boolean isDayTypeIncluded(int postDayType, int filterDayType) {
+    return (postDayType & filterDayType) == filterDayType;
   }
 }

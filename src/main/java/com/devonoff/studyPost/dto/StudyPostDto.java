@@ -5,8 +5,10 @@ import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
+import com.devonoff.util.DayTypeUtils;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,7 +27,7 @@ public class StudyPostDto {
   private String studyName;
   private StudySubject subject;
   private StudyDifficulty difficulty;
-  private int dayType;
+  private List<String> dayType;
   private LocalDate startDate;
   private LocalDate endDate;
   private LocalTime startTime;
@@ -46,7 +48,7 @@ public class StudyPostDto {
         .studyName(studyPost.getStudyName())
         .subject(studyPost.getSubject())
         .difficulty(studyPost.getDifficulty())
-        .dayType(studyPost.getDayType())
+        .dayType(DayTypeUtils.decodeDays(studyPost.getDayType()))
         .startDate(studyPost.getStartDate())
         .endDate(studyPost.getEndDate())
         .startTime(studyPost.getStartTime())

@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -39,7 +40,7 @@ public class StudyPostCreateDto {
     private StudyDifficulty difficulty;
 
     @NotNull(message = "요일 정보는 필수입니다.")
-    private int dayType;
+    private List<String> dayType;
 
     @NotNull(message = "스터디 시작일은 필수입니다.")
     @FutureOrPresent(message = "스터디 시작일은 과거일 수 없습니다.")
