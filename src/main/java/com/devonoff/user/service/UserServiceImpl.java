@@ -1,10 +1,10 @@
-package com.devonoff.service;
+package com.devonoff.user.service;
 
 
-import com.devonoff.dto.SignUpRequest;
-import com.devonoff.entity.User;
-import com.devonoff.repository.UserRepository;
-import com.devonoff.type.LoginType;
+import com.devonoff.user.dto.SignUpRequest;
+import com.devonoff.user.entity.User;
+import com.devonoff.user.repository.UserRepository;
+import com.devonoff.user.type.LoginType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

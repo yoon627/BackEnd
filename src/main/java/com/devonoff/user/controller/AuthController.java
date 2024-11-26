@@ -1,7 +1,7 @@
-package com.devonoff.controller;
+package com.devonoff.user.controller;
 
-import com.devonoff.dto.SignUpRequest;
-import com.devonoff.service.UserService;
+import com.devonoff.user.dto.SignUpRequest;
+import com.devonoff.user.service.UserService;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;

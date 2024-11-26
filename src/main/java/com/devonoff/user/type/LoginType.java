@@ -1,4 +1,4 @@
-package com.devonoff.type;
+package com.devonoff.user.type;
 
 public enum LoginType {
 

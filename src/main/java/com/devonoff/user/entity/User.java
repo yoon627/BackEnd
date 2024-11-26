@@ -1,6 +1,6 @@
-package com.devonoff.entity;
+package com.devonoff.user.entity;
 
-import com.devonoff.type.LoginType;
+import com.devonoff.user.type.LoginType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
