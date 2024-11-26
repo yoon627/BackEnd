@@ -9,6 +9,7 @@ import com.devonoff.studyPost.entity.StudyPost;
 import com.devonoff.studyPost.repository.StudyPostRepository;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyDifficulty;
+import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
 import com.devonoff.user.entity.User;
@@ -35,16 +36,17 @@ public class StudyPostService {
   }
 
   // 조회 (검색리스트)
-  public List<StudyPostDto> searchStudyPosts(String title, StudySubject subject,
-      StudyDifficulty difficulty, int dayType, StudyStatus status) {
-    return studyPostRepository.findStudyPostsByFilters(title, subject, difficulty, dayType, status);
+  public List<StudyPostDto> searchStudyPosts(StudyMeetingType meetingType, String title,
+      StudySubject subject, StudyDifficulty difficulty, int dayType, StudyStatus status) {
+    return studyPostRepository.findStudyPostsByFilters(meetingType, title, subject, difficulty,
+        dayType, status);
   }
 
   // 생성
   public StudyPostCreateDto.Response createStudyPost(StudyPostCreateDto.Request request) {
     User user = userRepository.findById(request.getUserId())
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-    
+
     int dayType = encodeDaysFromRequest(request.getDayType());
 
     StudyPost studyPost = buildStudyPost(request, user);
