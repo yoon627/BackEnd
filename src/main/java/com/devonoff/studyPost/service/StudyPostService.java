@@ -13,6 +13,7 @@ import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
 import com.devonoff.user.entity.User;
 import com.devonoff.user.repository.UserRepository;
+import com.devonoff.util.DayTypeUtils;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,8 +36,7 @@ public class StudyPostService {
 
   // 조회 (검색리스트)
   public List<StudyPostDto> searchStudyPosts(String title, StudySubject subject,
-      StudyDifficulty difficulty, int dayType,
-      StudyStatus status) {
+      StudyDifficulty difficulty, int dayType, StudyStatus status) {
     return studyPostRepository.findStudyPostsByFilters(title, subject, difficulty, dayType, status);
   }
 
@@ -44,8 +44,11 @@ public class StudyPostService {
   public StudyPostCreateDto.Response createStudyPost(StudyPostCreateDto.Request request) {
     User user = userRepository.findById(request.getUserId())
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    
+    int dayType = encodeDaysFromRequest(request.getDayType());
 
     StudyPost studyPost = buildStudyPost(request, user);
+    studyPost.setDayType(dayType);
 
     studyPostRepository.save(studyPost);
 
@@ -83,15 +86,38 @@ public class StudyPostService {
 
   // ================================= 헬퍼 메서드 ================================= //
 
+  // 요일 리스트를 비트 값으로 인코딩
+  private int encodeDaysFromRequest(List<String> dayType) {
+    return DayTypeUtils.encodeDays(
+        dayType.contains("월"),
+        dayType.contains("화"),
+        dayType.contains("수"),
+        dayType.contains("목"),
+        dayType.contains("금"),
+        dayType.contains("토"),
+        dayType.contains("일")
+    );
+  }
+
   // TODO: 엔티티로 이동시킬지 고려
   // 엔티티 생성
   private static StudyPost buildStudyPost(Request request, User user) {
+    int dayType = DayTypeUtils.encodeDays(
+        request.getDayType().contains("월"),
+        request.getDayType().contains("화"),
+        request.getDayType().contains("수"),
+        request.getDayType().contains("목"),
+        request.getDayType().contains("금"),
+        request.getDayType().contains("토"),
+        request.getDayType().contains("일")
+    );
+
     return StudyPost.builder()
         .title(request.getTitle())
         .studyName(request.getStudyName())
         .subject(request.getSubject())
         .difficulty(request.getDifficulty())
-        .dayType(request.getDayType())
+        .dayType(dayType)
         .startDate(request.getStartDate())
         .endDate(request.getEndDate())
         .startTime(request.getStartTime())
@@ -121,8 +147,17 @@ public class StudyPostService {
     if (request.getDifficulty() != null) {
       studyPost.setDifficulty(request.getDifficulty());
     }
-    if (request.getDayType() != -1) {
-      studyPost.setDayType(request.getDayType());
+    if (request.getDayType() != null) {
+      int dayType = DayTypeUtils.encodeDays(
+          request.getDayType().contains("월"),
+          request.getDayType().contains("화"),
+          request.getDayType().contains("수"),
+          request.getDayType().contains("목"),
+          request.getDayType().contains("금"),
+          request.getDayType().contains("토"),
+          request.getDayType().contains("일")
+      );
+      studyPost.setDayType(dayType);
     }
     if (request.getStartDate() != null) {
       studyPost.setStartDate(request.getStartDate());

@@ -51,7 +51,7 @@ public class StudyPost extends BaseTimeEntity {
   private StudyDifficulty difficulty; // 난이드
 
   @Column(nullable = false)
-  private int dayType;  // 요일 (비트 플래그 방식)
+  private Integer dayType;  // 요일 (비트 플래그 방식)
 
   @Column(nullable = false)
   private LocalDate startDate; // 시작일
