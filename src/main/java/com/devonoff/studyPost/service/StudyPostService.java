@@ -3,6 +3,7 @@ package com.devonoff.studyPost.service;
 import com.devonoff.exception.CustomException;
 import com.devonoff.studyPost.dto.StudyPostCreateDto;
 import com.devonoff.studyPost.dto.StudyPostCreateDto.Request;
+import com.devonoff.studyPost.dto.StudyPostDto;
 import com.devonoff.studyPost.entity.StudyPost;
 import com.devonoff.studyPost.repository.StudyPostRepository;
 import com.devonoff.type.ErrorCode;
@@ -18,6 +19,13 @@ public class StudyPostService {
 
   private final StudyPostRepository studyPostRepository;
   private final UserRepository userRepository;
+
+  public StudyPostDto getStudyPostDetail(Long id) {
+    StudyPost studyPost = studyPostRepository.findById(id)
+        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
+
+    return StudyPostDto.fromEntity(studyPost);
+  }
 
   public StudyPostCreateDto.Response createStudyPost(StudyPostCreateDto.Request request) {
     User user = userRepository.findById(request.getUserId())
