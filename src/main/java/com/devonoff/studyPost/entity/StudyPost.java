@@ -1,5 +1,6 @@
 package com.devonoff.studyPost.entity;
 
+import com.devonoff.entity.BaseTimeEntity;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyStatus;
@@ -29,7 +30,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class StudyPost {
+public class StudyPost extends BaseTimeEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
