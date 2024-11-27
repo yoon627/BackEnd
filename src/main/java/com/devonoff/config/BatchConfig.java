@@ -1,6 +1,7 @@
 package com.devonoff.config;
 
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
+import com.devonoff.domain.studyPost.service.StudyPostService;
 import com.devonoff.type.StudyStatus;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 public class BatchConfig extends DefaultBatchConfiguration {
 
   private final StudyPostRepository studyPostRepository;
+  private final StudyPostService studyPostService;
 
   @Bean
   public Job deleteOldStudyPostsJob(JobRepository jobRepository,
@@ -43,9 +45,10 @@ public class BatchConfig extends DefaultBatchConfiguration {
     return (contribution, chunkContext) -> {
       LocalDateTime oneWeekAgo = LocalDateTime.now().minusDays(7);
 
+      // 모집 기한이 지난 스터디 모집글을 CANCELED 로 변경(배치작업으로 자동 취소)
+      studyPostService.cancelStudyPostIfExpired();
       // 취소 상태에서 일주일이 지난 스터디 모집글 삭제
-      studyPostRepository.deleteByStatusAndUpdatedAtBefore(StudyStatus.ㅍ,
-          oneWeekAgo);
+      studyPostRepository.deleteByStatusAndUpdatedAtBefore(StudyStatus.CANCELED, oneWeekAgo);
 
       return RepeatStatus.FINISHED;
     };
