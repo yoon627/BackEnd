@@ -149,16 +149,7 @@ public class StudyPostService {
       studyPost.setDifficulty(request.getDifficulty());
     }
     if (request.getDayType() != null) {
-      int dayType = DayTypeUtils.encodeDays(
-          request.getDayType().contains("월"),
-          request.getDayType().contains("화"),
-          request.getDayType().contains("수"),
-          request.getDayType().contains("목"),
-          request.getDayType().contains("금"),
-          request.getDayType().contains("토"),
-          request.getDayType().contains("일")
-      );
-      studyPost.setDayType(dayType);
+      studyPost.setDayType(DayTypeUtils.encodeDaysFromRequest(request.getDayType()));
     }
     if (request.getStartDate() != null) {
       studyPost.setStartDate(request.getStartDate());
