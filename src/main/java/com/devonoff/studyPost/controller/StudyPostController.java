@@ -45,9 +45,11 @@ public class StudyPostController {
       @RequestParam(required = false) StudySubject subject,
       @RequestParam(required = false) StudyDifficulty difficulty,
       @RequestParam(required = false, defaultValue = "0") int dayType,
-      @RequestParam(required = false) StudyStatus status) {
+      @RequestParam(required = false) StudyStatus status,
+      @RequestParam(required = false) Double latitude,
+      @RequestParam(required = false) Double longitude) {
     List<StudyPostDto> studyPosts = studyPostService.searchStudyPosts(meetingType, title, subject, difficulty,
-        dayType, status);
+        dayType, status, latitude, longitude);
     return ResponseEntity.ok(studyPosts);
   }
 
