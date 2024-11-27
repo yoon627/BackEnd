@@ -2,12 +2,14 @@ package com.devonoff.domain.studyPost.repository;
 
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.entity.QStudyPost;
+import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -39,19 +41,7 @@ public class StudyPostRepositoryCustomImpl implements StudyPostRepositoryCustom 
         )
         .orderBy(studyPost.createdAt.desc());
 
-    if (StudyMeetingType.HYBRID.equals(meetingType) && latitude != null && longitude != null) {
-      query = query.orderBy(
-          Expressions.numberTemplate(Double.class,
-              "6371 * acos(cos(radians({0})) * cos(radians({1})) * cos(radians({2}) - radians({3})) + sin(radians({4})) * sin(radians({5})))",
-              latitude,
-              studyPost.latitude,
-              studyPost.longitude,
-              longitude,
-              latitude,
-              studyPost.latitude
-          ).asc()
-      );
-    }
+    query = applyHybridMeetingTypeSorting(query, meetingType, latitude, longitude, studyPost);
 
     return query
         .offset(pageable.getOffset())
@@ -84,5 +74,27 @@ public class StudyPostRepositoryCustomImpl implements StudyPostRepositoryCustom 
 
   private boolean isDayTypeIncluded(int postDayType, int filterDayType) {
     return (postDayType & filterDayType) == filterDayType;
+  }
+
+  private JPAQuery<StudyPost> applyHybridMeetingTypeSorting(
+      JPAQuery<StudyPost> query,
+      StudyMeetingType meetingType,
+      Double latitude,
+      Double longitude,
+      QStudyPost studyPost) {
+
+    if (StudyMeetingType.HYBRID.equals(meetingType) && latitude != null && longitude != null) {
+      return query.orderBy(
+          Expressions.numberTemplate(Double.class,
+              "6371 * acos(cos(radians({0})) * cos(radians({1})) * cos(radians({2}) - radians({3})) + sin(radians({4})) * sin(radians({5})))",
+              latitude,
+              studyPost.latitude,
+              studyPost.longitude,
+              longitude,
+              latitude,
+              studyPost.latitude
+          ).asc());
+    }
+    return query;
   }
 }
