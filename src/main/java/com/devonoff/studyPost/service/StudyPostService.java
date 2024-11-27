@@ -17,6 +17,7 @@ import com.devonoff.user.repository.UserRepository;
 import com.devonoff.util.DayTypeUtils;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,11 +37,14 @@ public class StudyPostService {
   }
 
   // 조회 (검색리스트)
-  public List<StudyPostDto> searchStudyPosts(StudyMeetingType meetingType, String title,
-      StudySubject subject, StudyDifficulty difficulty, int dayType, StudyStatus status,
-      Double latitude, Double longitude) {
-    return studyPostRepository.findStudyPostsByFilters(meetingType, title, subject, difficulty,
-        dayType, status, latitude, longitude);
+  public List<StudyPostDto> searchStudyPosts(
+      StudyMeetingType meetingType, String title, StudySubject subject,
+      StudyDifficulty difficulty, int dayType, StudyStatus status,
+      Double latitude, Double longitude, Pageable pageable) {
+
+    return studyPostRepository.findStudyPostsByFilters(
+        meetingType, title, subject, difficulty, dayType, status,
+        latitude, longitude, pageable);
   }
 
   // 생성
