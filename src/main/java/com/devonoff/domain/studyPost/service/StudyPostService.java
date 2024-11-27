@@ -30,8 +30,8 @@ public class StudyPostService {
   private final StudyPostMapper studyPostMapper;
 
   // 상세 조회
-  public StudyPostDto getStudyPostDetail(Long id) {
-    StudyPost studyPost = studyPostRepository.findById(id)
+  public StudyPostDto getStudyPostDetail(Long studyPostId) {
+    StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
     return StudyPostDto.fromEntity(studyPost);
@@ -66,8 +66,9 @@ public class StudyPostService {
 
   // 수정
   @Transactional
-  public StudyPostUpdateDto.Response updateStudyPost(Long id, StudyPostUpdateDto.Request request) {
-    StudyPost studyPost = studyPostRepository.findById(id)
+  public StudyPostUpdateDto.Response updateStudyPost(Long studyPostId,
+      StudyPostUpdateDto.Request request) {
+    StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
     studyPostMapper.toStudyPost(request, studyPost);
@@ -77,8 +78,8 @@ public class StudyPostService {
 
   // 모집 취소 -> 사용자가 직접 취소
   @Transactional
-  public void cancelStudyPost(Long id) {
-    StudyPost studyPost = studyPostRepository.findById(id)
+  public void cancelStudyPost(Long studyPostId) {
+    StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
     if (studyPost.getStatus() == StudyStatus.IN_PROGRESS) {
