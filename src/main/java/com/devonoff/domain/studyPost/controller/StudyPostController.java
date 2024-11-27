@@ -66,7 +66,7 @@ public class StudyPostController {
   }
 
   // 스터디 모집글 수정
-  @PutMapping("/{id}")
+  @PatchMapping("/{id}")
   public ResponseEntity<StudyPostUpdateDto.Response> updateStudyPost(
       @PathVariable Long id, @RequestBody StudyPostUpdateDto.Request request) {
     StudyPostUpdateDto.Response response = studyPostService.updateStudyPost(id, request);
