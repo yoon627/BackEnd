@@ -1,6 +1,6 @@
 spring:
   application:
-    name: ecommerce
+    name: devOnOff
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: ${url}
