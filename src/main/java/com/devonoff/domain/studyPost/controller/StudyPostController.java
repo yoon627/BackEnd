@@ -9,8 +9,8 @@ import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
 import java.time.LocalDate;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,7 +41,7 @@ public class StudyPostController {
 
   // 스터디 모집글 검색
   @GetMapping("/search")
-  public ResponseEntity<List<StudyPostDto>> searchStudyPosts(
+  public ResponseEntity<Page<StudyPostDto>> searchStudyPosts(
       @RequestParam(required = false) StudyMeetingType meetingType,
       @RequestParam(required = false) String title,
       @RequestParam(required = false) StudySubject subject,
@@ -52,7 +52,7 @@ public class StudyPostController {
       @RequestParam(required = false) Double longitude,
       Pageable pageable) {
 
-    List<StudyPostDto> studyPosts = studyPostService.searchStudyPosts(
+    Page<StudyPostDto> studyPosts = studyPostService.searchStudyPosts(
         meetingType, title, subject, difficulty, dayType, status, latitude, longitude, pageable);
     return ResponseEntity.ok(studyPosts);
   }
