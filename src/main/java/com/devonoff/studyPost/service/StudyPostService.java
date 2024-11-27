@@ -15,6 +15,7 @@ import com.devonoff.type.StudySubject;
 import com.devonoff.user.entity.User;
 import com.devonoff.user.repository.UserRepository;
 import com.devonoff.util.DayTypeUtils;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -80,6 +81,24 @@ public class StudyPostService {
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
     studyPost.setStatus(StudyStatus.DELETION_SCHEDULED);
+  }
+
+  // 모집 취소된 스터디 모집 기간 연장
+  @Transactional
+  public void extendCanceledStudy(Long studyPostId, LocalDate newRecruitmentPeriod) {
+    StudyPost studyPost = studyPostRepository.findById(studyPostId)
+        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
+
+    if (!StudyStatus.CANCELED.equals(studyPost.getStatus())) {
+      throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
+    }
+
+    if (newRecruitmentPeriod.isAfter(studyPost.getRecruitmentPeriod().plusMonths(1))) {
+      throw new CustomException(ErrorCode.STUDY_EXTENSION_FAILED);
+    }
+
+    studyPost.setStatus(StudyStatus.RECRUITING);
+    studyPost.setRecruitmentPeriod(newRecruitmentPeriod);
   }
 
   // 즉시 삭제 (관리자나 특정 조건에서만 사용), 회의 후 삭제 고려

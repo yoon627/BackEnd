@@ -8,6 +8,7 @@ import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -76,7 +77,15 @@ public class StudyPostController {
   @PatchMapping("/{id}/cancel")
   public ResponseEntity<Void> cancelStudyPost(@PathVariable Long id) {
     studyPostService.cancelStudyPost(id);
-    return ResponseEntity.noContent().build(); // HTTP 204 No Content
+    return ResponseEntity.noContent().build();
+  }
+
+  // 모집 취소된 스터디 모집 기간 연장
+  @PatchMapping("/{id}/extend-canceled")
+  public ResponseEntity<Void> extendCanceledStudy(
+      @PathVariable Long id, @RequestParam LocalDate recruitmentPeriod) {
+    studyPostService.extendCanceledStudy(id, recruitmentPeriod);
+    return ResponseEntity.noContent().build();
   }
 
   // 스터디 모집글 삭제
