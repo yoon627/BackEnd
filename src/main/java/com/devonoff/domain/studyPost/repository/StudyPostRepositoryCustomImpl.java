@@ -1,7 +1,7 @@
 package com.devonoff.domain.studyPost.repository;
 
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
-import com.devonoff.studyPost.entity.QStudyPost;
+import com.devonoff.domain.studyPost.entity.QStudyPost;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyStatus;
