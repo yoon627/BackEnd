@@ -1,6 +1,6 @@
 package com.devonoff.config;
 
-import com.devonoff.studyPost.repository.StudyPostRepository;
+import com.devonoff.domain.studyPost.repository.StudyPostRepository;
 import com.devonoff.type.StudyStatus;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;

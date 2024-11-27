@@ -1,6 +1,6 @@
-package com.devonoff.studyPost.repository;
+package com.devonoff.domain.studyPost.repository;
 
-import com.devonoff.studyPost.entity.StudyPost;
+import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.type.StudyStatus;
 import java.time.LocalDateTime;
 import org.springframework.data.jpa.repository.JpaRepository;

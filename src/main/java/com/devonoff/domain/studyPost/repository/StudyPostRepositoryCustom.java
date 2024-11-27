@@ -1,6 +1,6 @@
-package com.devonoff.studyPost.repository;
+package com.devonoff.domain.studyPost.repository;
 
-import com.devonoff.studyPost.dto.StudyPostDto;
+import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyStatus;

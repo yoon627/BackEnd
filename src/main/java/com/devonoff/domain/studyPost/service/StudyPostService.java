@@ -1,12 +1,12 @@
-package com.devonoff.studyPost.service;
+package com.devonoff.domain.studyPost.service;
 
 import com.devonoff.exception.CustomException;
-import com.devonoff.studyPost.dto.StudyPostCreateDto;
-import com.devonoff.studyPost.dto.StudyPostCreateDto.Request;
-import com.devonoff.studyPost.dto.StudyPostDto;
-import com.devonoff.studyPost.dto.StudyPostUpdateDto;
-import com.devonoff.studyPost.entity.StudyPost;
-import com.devonoff.studyPost.repository.StudyPostRepository;
+import com.devonoff.domain.studyPost.dto.StudyPostCreateDto;
+import com.devonoff.domain.studyPost.dto.StudyPostCreateDto.Request;
+import com.devonoff.domain.studyPost.dto.StudyPostDto;
+import com.devonoff.domain.studyPost.dto.StudyPostUpdateDto;
+import com.devonoff.domain.studyPost.entity.StudyPost;
+import com.devonoff.domain.studyPost.repository.StudyPostRepository;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
