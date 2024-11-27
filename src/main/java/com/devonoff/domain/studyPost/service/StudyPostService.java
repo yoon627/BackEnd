@@ -118,13 +118,4 @@ public class StudyPostService {
     studyPost.setStatus(StudyStatus.RECRUITING);
     studyPost.setRecruitmentPeriod(newRecruitmentPeriod);
   }
-
-  // 즉시 삭제 (관리자나 특정 조건에서만 사용), 회의 후 삭제 고려
-  @Transactional
-  public void deleteStudyPost(Long id) {
-    StudyPost studyPost = studyPostRepository.findById(id)
-        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
-
-    studyPostRepository.delete(studyPost);
-  }
 }
