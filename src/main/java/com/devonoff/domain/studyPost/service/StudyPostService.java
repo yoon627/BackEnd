@@ -1,7 +1,6 @@
 package com.devonoff.domain.studyPost.service;
 
 import com.devonoff.domain.studyPost.dto.StudyPostCreateDto;
-import com.devonoff.domain.studyPost.dto.StudyPostCreateDto.Request;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateDto;
 import com.devonoff.domain.studyPost.entity.StudyPost;
@@ -53,9 +52,12 @@ public class StudyPostService {
     User user = userRepository.findById(request.getUserId())
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-    int dayType = DayTypeUtils.encodeDaysFromRequest(request.getDayType());
+    if (request.getMeetingType() == StudyMeetingType.HYBRID &&
+        (request.getLatitude() == null || request.getLongitude() == null)) {
+      throw new CustomException(ErrorCode.LOCATION_REQUIRED_FOR_OFFLINE);
+    }
 
-    StudyPost studyPost = buildStudyPost(request, user, dayType);
+    StudyPost studyPost = StudyPost.createFromRequest(request, user);
     studyPostRepository.save(studyPost);
 
     return new StudyPostCreateDto.Response("스터디 모집 글이 생성되었습니다.");
@@ -109,30 +111,6 @@ public class StudyPostService {
   }
 
   // ================================= 헬퍼 메서드 ================================= //
-
-  // TODO: 엔티티로 이동시킬지 고려
-  // 엔티티 생성
-  private static StudyPost buildStudyPost(Request request, User user, int dayType) {
-    return StudyPost.builder()
-        .title(request.getTitle())
-        .studyName(request.getStudyName())
-        .subject(request.getSubject())
-        .difficulty(request.getDifficulty())
-        .dayType(dayType)
-        .startDate(request.getStartDate())
-        .endDate(request.getEndDate())
-        .startTime(request.getStartTime())
-        .endTime(request.getEndTime())
-        .meetingType(request.getMeetingType())
-        .recruitmentPeriod(request.getRecruitmentPeriod())
-        .description(request.getDescription())
-        .latitude(request.getLatitude())
-        .longitude(request.getLongitude())
-        .status(StudyStatus.RECRUITING) // 기본값: 모집 중
-        .thumbnailImgUrl(request.getThumbnailImgUrl())
-        .user(user)
-        .build();
-  }
 
   // 상품 필드 업데이트
   private void updateStudyPostFields(StudyPost studyPost, StudyPostUpdateDto.Request request) {

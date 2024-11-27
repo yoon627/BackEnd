@@ -32,6 +32,7 @@ public enum ErrorCode {
   STUDY_EXTENSION_FAILED(HttpStatus.BAD_REQUEST.value(), "스터디 모집 기한 연장은 최대 1개월입니다."), // 400
   INVALID_STUDY_STATUS(HttpStatus.BAD_REQUEST.value(), "잘못된 스터디 상태값입니다."), // 400
   MAP_API_REQUEST_FAILED(HttpStatus.INTERNAL_SERVER_ERROR.value(), "지도 API 요청에 실패했습니다."), // 500
+  LOCATION_REQUIRED_FOR_OFFLINE(HttpStatus.BAD_REQUEST.value(), "온/오프라인 병행 스터디의 경우 위치 정보가 필수입니다."), // 400
   // QnA 게시글
   POST_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "게시글을 찾을 수 없습니다."), // 404
   UNAUTHORIZED_POST_ACCESS(HttpStatus.FORBIDDEN.value(), "게시글에 접근할 권한이 없습니다."), // 403
