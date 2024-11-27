@@ -87,11 +87,4 @@ public class StudyPostController {
     studyPostService.extendCanceledStudy(id, recruitmentPeriod);
     return ResponseEntity.noContent().build();
   }
-
-  // 스터디 모집글 삭제
-  @DeleteMapping("/{id}")
-  public ResponseEntity<Void> deleteStudyPost(@PathVariable Long id) {
-    studyPostService.deleteStudyPost(id);
-    return ResponseEntity.noContent().build();
-  }
 }
