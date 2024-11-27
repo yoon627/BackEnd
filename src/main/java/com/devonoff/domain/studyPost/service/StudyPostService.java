@@ -13,7 +13,6 @@ import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
 import com.devonoff.user.entity.User;
 import com.devonoff.user.repository.UserRepository;
-import com.devonoff.util.DayTypeUtils;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,6 +26,7 @@ public class StudyPostService {
 
   private final StudyPostRepository studyPostRepository;
   private final UserRepository userRepository;
+  private final StudyPostMapper studyPostMapper;
 
   // 상세 조회
   public StudyPostDto getStudyPostDetail(Long id) {
@@ -69,7 +69,7 @@ public class StudyPostService {
     StudyPost studyPost = studyPostRepository.findById(id)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
-    updateStudyPostFields(studyPost, request);
+    studyPostMapper.toStudyPost(request, studyPost);
 
     return new StudyPostUpdateDto.Response("스터디 모집 글이 업데이트되었습니다.");
   }
@@ -108,59 +108,5 @@ public class StudyPostService {
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
     studyPostRepository.delete(studyPost);
-  }
-
-  // ================================= 헬퍼 메서드 ================================= //
-
-  // 상품 필드 업데이트
-  private void updateStudyPostFields(StudyPost studyPost, StudyPostUpdateDto.Request request) {
-    if (request.getTitle() != null) {
-      studyPost.setTitle(request.getTitle());
-    }
-    if (request.getStudyName() != null) {
-      studyPost.setStudyName(request.getStudyName());
-    }
-    if (request.getSubject() != null) {
-      studyPost.setSubject(request.getSubject());
-    }
-    if (request.getDifficulty() != null) {
-      studyPost.setDifficulty(request.getDifficulty());
-    }
-    if (request.getDayType() != null) {
-      studyPost.setDayType(DayTypeUtils.encodeDaysFromRequest(request.getDayType()));
-    }
-    if (request.getStartDate() != null) {
-      studyPost.setStartDate(request.getStartDate());
-    }
-    if (request.getEndDate() != null) {
-      studyPost.setEndDate(request.getEndDate());
-    }
-    if (request.getStartTime() != null) {
-      studyPost.setStartTime(request.getStartTime());
-    }
-    if (request.getEndTime() != null) {
-      studyPost.setEndTime(request.getEndTime());
-    }
-    if (request.getMeetingType() != null) {
-      studyPost.setMeetingType(request.getMeetingType());
-    }
-    if (request.getRecruitmentPeriod() != null) {
-      studyPost.setRecruitmentPeriod(request.getRecruitmentPeriod());
-    }
-    if (request.getDescription() != null) {
-      studyPost.setDescription(request.getDescription());
-    }
-    if (request.getLatitude() != null) {
-      studyPost.setLatitude(request.getLatitude());
-    }
-    if (request.getLongitude() != null) {
-      studyPost.setLongitude(request.getLongitude());
-    }
-    if (request.getStatus() != null) {
-      studyPost.setStatus(request.getStatus());
-    }
-    if (request.getThumbnailImgUrl() != null) {
-      studyPost.setThumbnailImgUrl(request.getThumbnailImgUrl());
-    }
   }
 }
