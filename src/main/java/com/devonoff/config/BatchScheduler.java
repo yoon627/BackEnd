@@ -1,6 +1,7 @@
 package com.devonoff.config;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class BatchScheduler {
 
   private final JobLauncher jobLauncher;
@@ -25,11 +27,10 @@ public class BatchScheduler {
       JobParameters jobParameters = new JobParametersBuilder()
           .addLong("timestamp", System.currentTimeMillis()) // 고유한 파라미터 추가
           .toJobParameters();
-
       jobLauncher.run(deleteOldStudyPostsJob, jobParameters);
     } catch (JobExecutionAlreadyRunningException | JobRestartException
              | JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
-      e.printStackTrace(); // 로깅으로 변경 예정
+      log.error("Batch job failed at {} due to: {}", System.currentTimeMillis(), e.getMessage(), e);
     }
   }
 }

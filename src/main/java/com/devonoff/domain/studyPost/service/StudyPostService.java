@@ -14,6 +14,7 @@ import com.devonoff.type.StudySubject;
 import com.devonoff.user.entity.User;
 import com.devonoff.user.repository.UserRepository;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -74,7 +75,7 @@ public class StudyPostService {
     return new StudyPostUpdateDto.Response("스터디 모집 글이 업데이트되었습니다.");
   }
 
-  // 모집 취소로 변경 -> 일주일뒤 자동 삭제됨
+  // 모집 취소 -> 사용자가 직접 취소
   @Transactional
   public void cancelStudyPost(Long id) {
     StudyPost studyPost = studyPostRepository.findById(id)
@@ -85,6 +86,19 @@ public class StudyPostService {
     }
 
     studyPost.setStatus(StudyStatus.CANCELED);
+  }
+
+  // 모집 취소 -> 배치 작업으로 자동 취소
+  @Transactional
+  public void cancelStudyPostIfExpired() {
+    LocalDate currentDate = LocalDate.now();
+
+    List<StudyPost> studyPosts = studyPostRepository.findAllByRecruitmentPeriodBeforeAndStatus(
+        currentDate, StudyStatus.RECRUITING);
+
+    for (StudyPost studyPost : studyPosts) {
+      studyPost.setStatus(StudyStatus.CANCELED);
+    }
   }
 
   // 모집 취소된 스터디 모집 기간 연장
