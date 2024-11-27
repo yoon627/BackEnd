@@ -50,7 +50,7 @@ public class StudyPost extends BaseTimeEntity {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  private StudyDifficulty difficulty; // 난이드
+  private StudyDifficulty difficulty; // 난이도
 
   @Column(nullable = false)
   private Integer dayType;  // 요일 (비트 플래그 방식)
@@ -68,6 +68,7 @@ public class StudyPost extends BaseTimeEntity {
   private LocalTime endTime; // 종료시간
 
   @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
   private StudyMeetingType meetingType; // 스터디 진행 유형
 
   @Column(nullable = false)
@@ -86,7 +87,7 @@ public class StudyPost extends BaseTimeEntity {
   @Column(nullable = false)
   private StudyStatus status; // 모집글 상태
 
-  @Column(length = 255)
+  @Column
   private String thumbnailImgUrl; // 썸네일 이미지 URL
 
   @ManyToOne(fetch = FetchType.LAZY)
