@@ -43,11 +43,10 @@ public class BatchConfig extends DefaultBatchConfiguration {
     return (contribution, chunkContext) -> {
       LocalDateTime oneWeekAgo = LocalDateTime.now().minusDays(7);
 
-      // updatedAt 기준으로 삭제
-      studyPostRepository.deleteByStatusAndUpdatedAtBefore(StudyStatus.DELETION_SCHEDULED,
+      // 취소 상태에서 일주일이 지난 스터디 모집글 삭제
+      studyPostRepository.deleteByStatusAndUpdatedAtBefore(StudyStatus.ㅍ,
           oneWeekAgo);
 
-      System.out.println("스터디 모집글 삭제 완료");
       return RepeatStatus.FINISHED;
     };
   }

@@ -80,7 +80,11 @@ public class StudyPostService {
     StudyPost studyPost = studyPostRepository.findById(id)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
-    studyPost.setStatus(StudyStatus.DELETION_SCHEDULED);
+    if (studyPost.getStatus() == StudyStatus.IN_PROGRESS) {
+      throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
+    }
+
+    studyPost.setStatus(StudyStatus.CANCELED);
   }
 
   // 모집 취소된 스터디 모집 기간 연장
