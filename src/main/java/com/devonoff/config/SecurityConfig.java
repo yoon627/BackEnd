@@ -22,7 +22,7 @@ public class SecurityConfig {
     http
         .csrf(csrf -> csrf.disable()) // CSRF 비활성화
             .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/auth/**", "/").permitAll()); // 인증 없이 접근 가능
+            .requestMatchers("/api/auth/**", "/**").permitAll()); // 인증 없이 접근 가능
 
     return http.build();
   }
