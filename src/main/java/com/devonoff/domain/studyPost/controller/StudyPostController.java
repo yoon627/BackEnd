@@ -14,12 +14,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -33,9 +31,9 @@ public class StudyPostController {
   private final StudyPostService studyPostService;
 
   // 스터디 모집글 상세 조회
-  @GetMapping("/{id}")
-  public ResponseEntity<StudyPostDto> getStudyPostDetail(@PathVariable Long id) {
-    StudyPostDto studyPostDto = studyPostService.getStudyPostDetail(id);
+  @GetMapping("/{studyPostId}")
+  public ResponseEntity<StudyPostDto> getStudyPostDetail(@PathVariable Long studyPostId) {
+    StudyPostDto studyPostDto = studyPostService.getStudyPostDetail(studyPostId);
     return ResponseEntity.ok(studyPostDto);
   }
 
@@ -66,25 +64,25 @@ public class StudyPostController {
   }
 
   // 스터디 모집글 수정
-  @PatchMapping("/{id}")
+  @PatchMapping("/{studyPostId}")
   public ResponseEntity<StudyPostUpdateDto.Response> updateStudyPost(
-      @PathVariable Long id, @RequestBody StudyPostUpdateDto.Request request) {
-    StudyPostUpdateDto.Response response = studyPostService.updateStudyPost(id, request);
+      @PathVariable Long studyPostId, @RequestBody StudyPostUpdateDto.Request request) {
+    StudyPostUpdateDto.Response response = studyPostService.updateStudyPost(studyPostId, request);
     return ResponseEntity.ok(response);
   }
 
   // 스터디 모집글 모집 취소 (삭제 스케줄링)
-  @PatchMapping("/{id}/cancel")
-  public ResponseEntity<Void> cancelStudyPost(@PathVariable Long id) {
-    studyPostService.cancelStudyPost(id);
+  @PatchMapping("/{studyPostId}/cancel")
+  public ResponseEntity<Void> cancelStudyPost(@PathVariable Long studyPostId) {
+    studyPostService.cancelStudyPost(studyPostId);
     return ResponseEntity.noContent().build();
   }
 
   // 모집 취소된 스터디 모집 기간 연장
-  @PatchMapping("/{id}/extend-canceled")
+  @PatchMapping("/{studyPostId}/extend-canceled")
   public ResponseEntity<Void> extendCanceledStudy(
-      @PathVariable Long id, @RequestParam LocalDate recruitmentPeriod) {
-    studyPostService.extendCanceledStudy(id, recruitmentPeriod);
+      @PathVariable Long studyPostId, @RequestParam LocalDate recruitmentPeriod) {
+    studyPostService.extendCanceledStudy(studyPostId, recruitmentPeriod);
     return ResponseEntity.noContent().build();
   }
 }
