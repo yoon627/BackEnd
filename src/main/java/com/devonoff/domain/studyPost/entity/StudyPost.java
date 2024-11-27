@@ -1,4 +1,4 @@
-package com.devonoff.studyPost.entity;
+package com.devonoff.domain.studyPost.entity;
 
 import com.devonoff.entity.BaseTimeEntity;
 import com.devonoff.type.StudyDifficulty;

@@ -1,9 +1,9 @@
-package com.devonoff.studyPost.controller;
+package com.devonoff.domain.studyPost.controller;
 
-import com.devonoff.studyPost.dto.StudyPostCreateDto;
-import com.devonoff.studyPost.dto.StudyPostDto;
-import com.devonoff.studyPost.dto.StudyPostUpdateDto;
-import com.devonoff.studyPost.service.StudyPostService;
+import com.devonoff.domain.studyPost.dto.StudyPostCreateDto;
+import com.devonoff.domain.studyPost.dto.StudyPostDto;
+import com.devonoff.domain.studyPost.dto.StudyPostUpdateDto;
+import com.devonoff.domain.studyPost.service.StudyPostService;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyStatus;

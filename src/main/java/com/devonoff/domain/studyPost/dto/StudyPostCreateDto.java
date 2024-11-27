@@ -1,4 +1,4 @@
-package com.devonoff.studyPost.dto;
+package com.devonoff.domain.studyPost.dto;
 
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
