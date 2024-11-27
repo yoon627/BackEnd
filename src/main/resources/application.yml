@@ -3,9 +3,9 @@ spring:
     name: ecommerce
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/devOnOff
-    username: root
-    password: rootpassword
+    url: ${url}
+    username: ${username}
+    password: ${password}
   jpa:
     hibernate:
       ddl-auto: update
