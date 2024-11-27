@@ -1,12 +1,12 @@
 package com.devonoff.domain.studyPost.service;
 
-import com.devonoff.exception.CustomException;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateDto;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateDto.Request;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateDto;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
+import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
@@ -16,9 +16,7 @@ import com.devonoff.user.entity.User;
 import com.devonoff.user.repository.UserRepository;
 import com.devonoff.util.DayTypeUtils;
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -55,11 +53,9 @@ public class StudyPostService {
     User user = userRepository.findById(request.getUserId())
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-    int dayType = encodeDaysFromRequest(request.getDayType());
+    int dayType = DayTypeUtils.encodeDaysFromRequest(request.getDayType());
 
-    StudyPost studyPost = buildStudyPost(request, user);
-    studyPost.setDayType(dayType);
-
+    StudyPost studyPost = buildStudyPost(request, user, dayType);
     studyPostRepository.save(studyPost);
 
     return new StudyPostCreateDto.Response("스터디 모집 글이 생성되었습니다.");
@@ -114,34 +110,9 @@ public class StudyPostService {
 
   // ================================= 헬퍼 메서드 ================================= //
 
-  // 요일 리스트를 비트 값으로 인코딩
-  private int encodeDaysFromRequest(List<String> dayType) {
-    final List<String> week = List.of("월", "화", "수", "목", "금", "토", "일");
-    Set<String> dayTypeSet = new HashSet<>(dayType);
-    int dayTypeBit = 0;
-
-    for (int i = 0; i < week.size(); i++) {
-      if (dayTypeSet.contains(week.get(i))) {
-        dayTypeBit |= (1 << i);
-      }
-    }
-
-    return dayTypeBit;
-  }
-
   // TODO: 엔티티로 이동시킬지 고려
   // 엔티티 생성
-  private static StudyPost buildStudyPost(Request request, User user) {
-    int dayType = DayTypeUtils.encodeDays(
-        request.getDayType().contains("월"),
-        request.getDayType().contains("화"),
-        request.getDayType().contains("수"),
-        request.getDayType().contains("목"),
-        request.getDayType().contains("금"),
-        request.getDayType().contains("토"),
-        request.getDayType().contains("일")
-    );
-
+  private static StudyPost buildStudyPost(Request request, User user, int dayType) {
     return StudyPost.builder()
         .title(request.getTitle())
         .studyName(request.getStudyName())

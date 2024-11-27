@@ -1,7 +1,9 @@
 package com.devonoff.util;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class DayTypeUtils {
 
@@ -13,6 +15,8 @@ public class DayTypeUtils {
   public static final int SATURDAY = 32; // 2^5
   public static final int SUNDAY = 64;   // 2^6
 
+  private static final List<String> WEEK = List.of("월", "화", "수", "목", "금", "토", "일");
+
   public static int encodeDays(boolean... days) {
     int encoded = 0;
     for (int i = 0; i < days.length; i++) {
@@ -21,6 +25,18 @@ public class DayTypeUtils {
       }
     }
     return encoded;
+  }
+
+  public static int encodeDaysFromRequest(List<String> dayType) {
+    Set<String> dayTypeSet = new HashSet<>(dayType);
+    int dayTypeBit = 0;
+
+    for (int i = 0; i < WEEK.size(); i++) {
+      if (dayTypeSet.contains(WEEK.get(i))) {
+        dayTypeBit |= (1 << i);
+      }
+    }
+    return dayTypeBit;
   }
 
   public static boolean isDayIncluded(int dayType, int day) {
