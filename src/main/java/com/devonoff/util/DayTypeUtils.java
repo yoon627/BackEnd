@@ -17,6 +17,7 @@ public class DayTypeUtils {
 
   private static final List<String> WEEK = List.of("월", "화", "수", "목", "금", "토", "일");
 
+  // 기획 확인 후 사용 예정
   public static int encodeDays(boolean... days) {
     int encoded = 0;
     for (int i = 0; i < days.length; i++) {
@@ -37,10 +38,6 @@ public class DayTypeUtils {
       }
     }
     return dayTypeBit;
-  }
-
-  public static boolean isDayIncluded(int dayType, int day) {
-    return (dayType & day) != 0;
   }
 
   public static List<String> decodeDays(int dayType) {
