@@ -16,7 +16,9 @@ import com.devonoff.user.entity.User;
 import com.devonoff.user.repository.UserRepository;
 import com.devonoff.util.DayTypeUtils;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -114,15 +116,17 @@ public class StudyPostService {
 
   // 요일 리스트를 비트 값으로 인코딩
   private int encodeDaysFromRequest(List<String> dayType) {
-    return DayTypeUtils.encodeDays(
-        dayType.contains("월"),
-        dayType.contains("화"),
-        dayType.contains("수"),
-        dayType.contains("목"),
-        dayType.contains("금"),
-        dayType.contains("토"),
-        dayType.contains("일")
-    );
+    final List<String> week = List.of("월", "화", "수", "목", "금", "토", "일");
+    Set<String> dayTypeSet = new HashSet<>(dayType);
+    int dayTypeBit = 0;
+
+    for (int i = 0; i < week.size(); i++) {
+      if (dayTypeSet.contains(week.get(i))) {
+        dayTypeBit |= (1 << i);
+      }
+    }
+
+    return dayTypeBit;
   }
 
   // TODO: 엔티티로 이동시킬지 고려
