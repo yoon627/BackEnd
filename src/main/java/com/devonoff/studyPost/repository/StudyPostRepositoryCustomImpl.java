@@ -7,6 +7,7 @@ import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -20,10 +21,12 @@ public class StudyPostRepositoryCustomImpl implements StudyPostRepositoryCustom 
 
   @Override
   public List<StudyPostDto> findStudyPostsByFilters(StudyMeetingType meetingType, String title,
-      StudySubject subject, StudyDifficulty difficulty, int dayType, StudyStatus status) {
+      StudySubject subject, StudyDifficulty difficulty, int dayType, StudyStatus status,
+      Double latitude, Double longitude) {
+
     QStudyPost studyPost = QStudyPost.studyPost;
 
-    return queryFactory
+    var query = queryFactory
         .selectFrom(studyPost)
         .where(
             equalsMeetingType(meetingType),
@@ -31,9 +34,23 @@ public class StudyPostRepositoryCustomImpl implements StudyPostRepositoryCustom 
             equalsSubject(subject),
             equalsDifficulty(difficulty),
             equalsStatus(status)
-        )
-        .fetch()
-        .stream()
+        );
+
+    if (StudyMeetingType.HYBRID.equals(meetingType) && latitude != null && longitude != null) {
+      query = query.orderBy(
+          Expressions.numberTemplate(Double.class,
+              "6371 * acos(cos(radians({0})) * cos(radians({1})) * cos(radians({2}) - radians({3})) + sin(radians({4})) * sin(radians({5})))",
+              latitude,
+              studyPost.latitude,
+              studyPost.longitude,
+              longitude,
+              latitude,
+              studyPost.latitude
+          ).asc()
+      );
+    }
+
+    return query.fetch().stream()
         .filter(post -> dayType == 0 || isDayTypeIncluded(post.getDayType(), dayType))
         .map(StudyPostDto::fromEntity)
         .toList();

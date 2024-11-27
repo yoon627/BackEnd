@@ -37,9 +37,10 @@ public class StudyPostService {
 
   // 조회 (검색리스트)
   public List<StudyPostDto> searchStudyPosts(StudyMeetingType meetingType, String title,
-      StudySubject subject, StudyDifficulty difficulty, int dayType, StudyStatus status) {
+      StudySubject subject, StudyDifficulty difficulty, int dayType, StudyStatus status,
+      Double latitude, Double longitude) {
     return studyPostRepository.findStudyPostsByFilters(meetingType, title, subject, difficulty,
-        dayType, status);
+        dayType, status, latitude, longitude);
   }
 
   // 생성

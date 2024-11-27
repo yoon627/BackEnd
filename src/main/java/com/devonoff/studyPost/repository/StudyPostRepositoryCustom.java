@@ -10,5 +10,6 @@ import java.util.List;
 public interface StudyPostRepositoryCustom {
 
   List<StudyPostDto> findStudyPostsByFilters(StudyMeetingType meetingType, String title,
-      StudySubject subject, StudyDifficulty difficulty, int dayType, StudyStatus status);
+      StudySubject subject, StudyDifficulty difficulty, int dayType, StudyStatus status,
+      Double latitude, Double longitude);
 }
