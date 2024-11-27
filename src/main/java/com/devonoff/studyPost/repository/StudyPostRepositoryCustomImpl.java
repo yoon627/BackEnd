@@ -11,6 +11,7 @@ import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -20,9 +21,10 @@ public class StudyPostRepositoryCustomImpl implements StudyPostRepositoryCustom 
   private final JPAQueryFactory queryFactory;
 
   @Override
-  public List<StudyPostDto> findStudyPostsByFilters(StudyMeetingType meetingType, String title,
-      StudySubject subject, StudyDifficulty difficulty, int dayType, StudyStatus status,
-      Double latitude, Double longitude) {
+  public List<StudyPostDto> findStudyPostsByFilters(
+      StudyMeetingType meetingType, String title, StudySubject subject,
+      StudyDifficulty difficulty, int dayType, StudyStatus status,
+      Double latitude, Double longitude, Pageable pageable) {
 
     QStudyPost studyPost = QStudyPost.studyPost;
 
@@ -34,7 +36,8 @@ public class StudyPostRepositoryCustomImpl implements StudyPostRepositoryCustom 
             equalsSubject(subject),
             equalsDifficulty(difficulty),
             equalsStatus(status)
-        );
+        )
+        .orderBy(studyPost.createdAt.desc());
 
     if (StudyMeetingType.HYBRID.equals(meetingType) && latitude != null && longitude != null) {
       query = query.orderBy(
@@ -50,7 +53,10 @@ public class StudyPostRepositoryCustomImpl implements StudyPostRepositoryCustom 
       );
     }
 
-    return query.fetch().stream()
+    return query
+        .offset(pageable.getOffset())
+        .limit(pageable.getPageSize())
+        .fetch().stream()
         .filter(post -> dayType == 0 || isDayTypeIncluded(post.getDayType(), dayType))
         .map(StudyPostDto::fromEntity)
         .toList();

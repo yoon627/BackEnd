@@ -10,6 +10,7 @@ import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -47,9 +48,11 @@ public class StudyPostController {
       @RequestParam(required = false, defaultValue = "0") int dayType,
       @RequestParam(required = false) StudyStatus status,
       @RequestParam(required = false) Double latitude,
-      @RequestParam(required = false) Double longitude) {
-    List<StudyPostDto> studyPosts = studyPostService.searchStudyPosts(meetingType, title, subject, difficulty,
-        dayType, status, latitude, longitude);
+      @RequestParam(required = false) Double longitude,
+      Pageable pageable) {
+
+    List<StudyPostDto> studyPosts = studyPostService.searchStudyPosts(
+        meetingType, title, subject, difficulty, dayType, status, latitude, longitude, pageable);
     return ResponseEntity.ok(studyPosts);
   }
 
