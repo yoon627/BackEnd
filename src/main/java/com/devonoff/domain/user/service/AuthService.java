@@ -118,7 +118,7 @@ public class AuthService {
 
     boolean isCheckVerified = redisService.checkVerified(email + ":verified");
     if (!isCheckVerified) {
-      throw new CustomException(ErrorCode.EMAIL_VERIFICATION_NOT_COMPLETED);
+      throw new CustomException(ErrorCode.EMAIL_VERIFICATION_UNCOMPLETED);
     }
 
     String encodedPassword = passwordEncoder.encode(signUpRequest.getPassword());
