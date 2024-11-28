@@ -71,6 +71,13 @@ public class StudyPostController {
     return ResponseEntity.ok(response);
   }
 
+  // 스터디 모집글 마감
+  @PatchMapping("/{studyPostId}/close")
+  public ResponseEntity<Void> closeStudyPost(@PathVariable Long studyPostId) {
+    studyPostService.closeStudyPost(studyPostId);
+    return ResponseEntity.noContent().build();
+  }
+
   // 스터디 모집글 모집 취소 (삭제 스케줄링)
   @PatchMapping("/{studyPostId}/cancel")
   public ResponseEntity<Void> cancelStudyPost(@PathVariable Long studyPostId) {
