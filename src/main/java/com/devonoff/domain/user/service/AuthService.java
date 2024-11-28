@@ -46,10 +46,7 @@ public class AuthService {
    */
   public ResponseDto nickNameCheck(NickNameCheckRequest nickNameCheckRequest) {
     checkExistsNickName(nickNameCheckRequest.getNickName());
-
-    return ResponseDto.builder()
-        .message("사용 가능한 닉네임 입니다.")
-        .build();
+    return ResponseDto.getResponseBody("사용 가능한 닉네임 입니다.");
   }
 
   /**
@@ -60,10 +57,7 @@ public class AuthService {
    */
   public ResponseDto emailCheck(EmailRequest emailRequest) {
     checkExistsEmail(emailRequest.getEmail());
-
-    return ResponseDto.builder()
-        .message("사용 가능한 이메일 입니다.")
-        .build();
+    return ResponseDto.getResponseBody("사용 가능한 이메일 입니다.");
   }
 
   /**
@@ -87,10 +81,7 @@ public class AuthService {
 
     // Redis 에 email 을 키값으로 CertificationNumber 를 저장. (유효시간 3분으로 설정)
     redisService.saveDataWithTTL(email, certificationNumber, 3, TimeUnit.MINUTES);
-
-    return ResponseDto.builder()
-        .message("이메일 전송에 성공했습니다.")
-        .build();
+    return ResponseDto.getResponseBody("이메일 전송에 성공했습니다.");
   }
 
   /**
@@ -103,13 +94,12 @@ public class AuthService {
     boolean isVerified = redisService.verifyCertificationNumber(
         certificationRequest.getEmail(), certificationRequest.getCertificationNumber()
     );
+
     if (!isVerified) {
       throw new CustomException(ErrorCode.EMAIL_VERIFICATION_FAILED);
     }
 
-    return ResponseDto.builder()
-        .message("이메일 인증에 성공했습니다.")
-        .build();
+    return ResponseDto.getResponseBody("이메일 인증에 성공했습니다.");
   }
 
   /**
@@ -143,9 +133,7 @@ public class AuthService {
             .build()
     );
 
-    return ResponseDto.builder()
-        .message("회원가입이 완료되었습니다.")
-        .build();
+    return ResponseDto.getResponseBody("회원가입이 완료되었습니다.");
   }
 
   /**
@@ -191,9 +179,7 @@ public class AuthService {
 
     redisService.deleteToken(user.getEmail() + "-refreshToken");
 
-    return ResponseDto.builder()
-        .message("로그아웃 되었습니다.")
-        .build();
+    return ResponseDto.getResponseBody("로그아웃 되었습니다.");
   }
 
   /**
@@ -229,9 +215,7 @@ public class AuthService {
 
     user.setIsActive(false);
 
-    return ResponseDto.builder()
-        .message("회원 탈퇴 처리 되었습니다.")
-        .build();
+    return ResponseDto.getResponseBody("회원 탈퇴 처리 되었습니다.");
   }
 
   /**
