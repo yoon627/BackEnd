@@ -15,14 +15,14 @@ import lombok.Setter;
 public class UserDto {
 
   private Long id;
-  private String username;
+  private String nickName;
   private String email;
   private String profileImageUrl;
 
   public static UserDto fromEntity(User user) {
     return UserDto.builder()
         .id(user.getId())
-        .username(user.getNickName())
+        .nickName(user.getNickName())
         .email(user.getEmail())
         .profileImageUrl(user.getProfileImage())
         .build();
