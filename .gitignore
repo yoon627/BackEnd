@@ -261,7 +261,7 @@ gradle-app.setting
 .project
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
-
+OAuth.env
 ### Gradle Patch ###
 # Java heap dump
 *.hprof
