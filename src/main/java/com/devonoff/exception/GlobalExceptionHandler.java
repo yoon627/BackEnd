@@ -2,7 +2,7 @@ package com.devonoff.exception;
 
 import static com.devonoff.type.ErrorCode.INTERNAL_SERVER_ERROR;
 
-import com.devonoff.dto.ErrorResponse;
+import com.devonoff.common.dto.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;

@@ -1,11 +1,11 @@
 package com.devonoff.domain.studyPost.entity;
 
-import com.devonoff.entity.BaseTimeEntity;
+import com.devonoff.common.entity.BaseTimeEntity;
+import com.devonoff.domain.user.entity.User;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
-import com.devonoff.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

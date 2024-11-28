@@ -15,6 +15,8 @@ public enum ErrorCode {
   ACCOUNT_PENDING_DELETION(HttpStatus.FORBIDDEN.value(), "해당 계정은 탈퇴 예정 상태입니다."), // 403 -> 필요한가?
   EMAIL_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST.value(),
       "이메일 인증에 실패했습니다."), // 400 -> 이거쓸지 아래 두개 쓸지 고려
+  EMAIL_VERIFICATION_NOT_COMPLETED(HttpStatus.BAD_REQUEST.value(),
+      "이메일 인증이 완료되지 않았습니다."),
   INVALID_EMAIL_CODE(HttpStatus.BAD_REQUEST.value(), "이메일 인증 코드가 유효하지 않습니다."), // 400
   EXPIRED_EMAIL_CODE(HttpStatus.BAD_REQUEST.value(), "이메일 인증 코드가 만료되었습니다."), // 400
   EMAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR.value(), "인증 코드 메일 발송에 실패했습니다."), // 500
