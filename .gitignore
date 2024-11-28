@@ -36,8 +36,6 @@ out/
 ### VS Code ###
 .vscode/
 
-/src/main/resources/application.yml
-
 # Created by https://www.toptal.com/developers/gitignore/api/macos,windows,java,gradle,intellij
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,windows,java,gradle,intellij
 
@@ -265,6 +263,5 @@ gradle-app.setting
 ### Gradle Patch ###
 # Java heap dump
 *.hprof
-application.yaml
-/src/main/resources/application.yml
+#/src/main/resources/application.yml
 # End of https://www.toptal.com/developers/gitignore/api/macos,windows,java,gradle,intellij
