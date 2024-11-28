@@ -55,7 +55,7 @@ public class StudyPostService {
 
     if (request.getMeetingType() == StudyMeetingType.HYBRID &&
         (request.getLatitude() == null || request.getLongitude() == null)) {
-      throw new CustomException(ErrorCode.LOCATION_REQUIRED_FOR_OFFLINE);
+      throw new CustomException(ErrorCode.LOCATION_REQUIRED_FOR_HYBRID);
     }
 
     StudyPost studyPost = StudyPost.createFromRequest(request, user);

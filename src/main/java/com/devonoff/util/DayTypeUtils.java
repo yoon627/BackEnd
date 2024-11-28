@@ -29,6 +29,9 @@ public class DayTypeUtils {
   }
 
   public static int encodeDaysFromRequest(List<String> dayType) {
+    if (dayType == null || dayType.isEmpty()) {
+      return 0;
+    }
     Set<String> dayTypeSet = new HashSet<>(dayType);
     int dayTypeBit = 0;
 
