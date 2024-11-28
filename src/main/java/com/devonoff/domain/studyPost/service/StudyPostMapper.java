@@ -2,12 +2,15 @@ package com.devonoff.domain.studyPost.service;
 
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateDto.Request;
 import com.devonoff.domain.studyPost.entity.StudyPost;
+import com.devonoff.util.DayTypeUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring",
+    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
+    imports = {DayTypeUtils.class})
 public interface StudyPostMapper {
 
   @Mapping(target = "title", source = "request.title")
