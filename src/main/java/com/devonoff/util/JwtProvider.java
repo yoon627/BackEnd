@@ -65,7 +65,7 @@ public class JwtProvider {
    * @return Authentication
    */
   public Authentication getAuthentication(String jwt) {
-    User user = userRepository.findById(getMemberId(jwt))
+    User user = userRepository.findById(getUserId(jwt))
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     return new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
   }
@@ -76,7 +76,7 @@ public class JwtProvider {
    * @param token
    * @return String
    */
-  public Long getMemberId(String token) {
+  public Long getUserId(String token) {
     return Long.valueOf(parseClaims(token).getSubject());
   }
 
