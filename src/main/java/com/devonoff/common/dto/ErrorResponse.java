@@ -1,4 +1,4 @@
-package com.devonoff.dto;
+package com.devonoff.common.dto;
 
 import com.devonoff.type.ErrorCode;
 import lombok.AllArgsConstructor;
