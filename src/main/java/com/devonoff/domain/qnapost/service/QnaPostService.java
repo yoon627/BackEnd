@@ -1,6 +1,9 @@
 package com.devonoff.domain.qnapost.service;
 
 import com.devonoff.domain.photo.service.PhotoService;
+import com.devonoff.domain.qnapost.dto.QnaPostDto;
+import com.devonoff.domain.qnapost.dto.QnaPostRequest;
+import com.devonoff.domain.qnapost.dto.QnaPostUpdateDto;
 import com.devonoff.domain.qnapost.entity.QnaPost;
 import com.devonoff.domain.qnapost.repository.QnaPostRepository;
 import com.devonoff.domain.user.entity.User;
@@ -37,7 +40,7 @@ public class QnaPostService {
    */
   @Transactional
   public Map<String, String> createQnaPost(
-      com.devonoff.domain.qnapost.dto.QnaPostRequest qnaPostRequest) {
+      QnaPostRequest qnaPostRequest) {
 
     User user = userRepository.findByEmail(qnaPostRequest.getAuthor())
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -66,8 +69,8 @@ public class QnaPostService {
    * @param search
    * @return Page<QnaPostDto>
    */
-  public Page<com.devonoff.domain.qnapost.dto.QnaPostDto> getQnaPostList(Integer page, String search) {
-    // TO DO 토큰에서 유저 확인 후 생성 작업
+  public Page<QnaPostDto> getQnaPostList(Integer page, String search) {
+
     Sort sort = Sort.by(Direction.DESC, "createdAt");
 
     Pageable pageable = PageRequest.of(page - 1, QNA_PAGE_SIZE, sort);
@@ -84,7 +87,7 @@ public class QnaPostService {
    * @param search
    * @return Page<QnaPostDto>
    */
-  public Page<com.devonoff.domain.qnapost.dto.QnaPostDto> getQnaPostByUserIdList(Long userId, Integer page, String search) {
+  public Page<QnaPostDto> getQnaPostByUserIdList(Long userId, Integer page, String search) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
@@ -93,7 +96,7 @@ public class QnaPostService {
     Pageable pageable = PageRequest.of(page - 1, QNA_PAGE_SIZE, sort);
 
     return qnaPostRepository.findByUserAndTitleContaining(user, search, pageable)
-        .map(com.devonoff.domain.qnapost.dto.QnaPostDto::fromEntity);
+        .map(QnaPostDto::fromEntity);
   }
 
   /**
@@ -103,7 +106,7 @@ public class QnaPostService {
    * @return QnaPostDto
    */
   public com.devonoff.domain.qnapost.dto.QnaPostDto getQnaPost(Long qnaPostId) {
-    return com.devonoff.domain.qnapost.dto.QnaPostDto.fromEntity(
+    return QnaPostDto.fromEntity(
         qnaPostRepository.findById(qnaPostId).orElseThrow(() -> new CustomException(
             ErrorCode.POST_NOT_FOUND)));
   }
@@ -116,7 +119,7 @@ public class QnaPostService {
    * @return QnaPostDto
    */
   @Transactional
-  public com.devonoff.domain.qnapost.dto.QnaPostDto updateQnaPost(Long qnaPostId, com.devonoff.domain.qnapost.dto.QnaPostUpdateDto qnaPostUpdateDto) {
+  public com.devonoff.domain.qnapost.dto.QnaPostDto updateQnaPost(Long qnaPostId, QnaPostUpdateDto qnaPostUpdateDto) {
     // TO DO 토큰에서 유저 확인 후 수정 작업
     QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
@@ -128,7 +131,7 @@ public class QnaPostService {
     qnaPost.setTitle(qnaPostUpdateDto.getTitle());
     qnaPost.setContent(qnaPostUpdateDto.getContent());
 
-    return com.devonoff.domain.qnapost.dto.QnaPostDto.fromEntity(qnaPost);
+    return QnaPostDto.fromEntity(qnaPost);
   }
 
   /**
