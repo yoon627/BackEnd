@@ -76,6 +76,18 @@ public class StudyPostService {
     return new StudyPostUpdateDto.Response("스터디 모집 글이 업데이트되었습니다.");
   }
 
+  @Transactional
+  public void closeStudyPost(Long studyPostId) {
+    StudyPost studyPost = studyPostRepository.findById(studyPostId)
+        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
+
+    if (studyPost.getStatus() != StudyStatus.RECRUITING) {
+      throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
+    }
+
+    studyPost.setStatus(StudyStatus.IN_PROGRESS);
+  }
+
   // 모집 취소 -> 사용자가 직접 취소
   @Transactional
   public void cancelStudyPost(Long studyPostId) {
