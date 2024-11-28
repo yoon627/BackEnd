@@ -15,3 +15,15 @@ spring:
       enabled: false # 서버 재시작 시 배치 자동 실행 방지
     jdbc:
       initialize-schema: always # Spring Batch 기본 테이블 자동 생성
+
+cloud:
+  aws:
+    s3:
+      bucket: ${AWS_BUCKET_NAME}
+    region:
+      static: ${AWS_REGION}
+    credentials:
+      accessKey: ${AWS_ACCESS_KEY}
+      secretKey: ${AWS_SECRET_KEY}
+    stack:
+      auto: false
