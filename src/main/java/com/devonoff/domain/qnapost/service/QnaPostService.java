@@ -139,7 +139,7 @@ public class QnaPostService {
    */
   @Transactional
   public Map<String, String> deleteQnaPost(Long qnaPostId) {
-    // TO DO 토큰에서 유저 확인 후 삭제 작업
+
     QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
