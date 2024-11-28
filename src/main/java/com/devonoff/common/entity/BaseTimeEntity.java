@@ -1,4 +1,4 @@
-package com.devonoff.entity;
+package com.devonoff.common.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
