@@ -6,7 +6,7 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/${MYSQL_DATABASE}?serverTimezone=UTC&characterEncoding=UTF-8
+    url: ${MYSQL_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
@@ -15,17 +15,15 @@ spring:
     database: mysql
     hibernate:
       ddl-auto: update
-      naming:
-        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
 
   jwt:
-    secret: ${JWT_SECRET}
-
+    secret: ${SECRET_KEY}
+#
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${GMAIL_USERNAME}
-    password: ${GMAIL_APP_PASSWORD}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -41,8 +39,8 @@ spring:
           max-active: 8
           max-idle: 8
           min-idle: 2
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
+      host: localhost
+      port: 6379
 
   security:
     oauth2:
