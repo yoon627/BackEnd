@@ -85,4 +85,16 @@ public class StudySignupService {
         .map(StudySignupDto::fromEntity)
         .collect(Collectors.toList());
   }
+
+  // 신청 취소
+  public void cancelSignup(Long signupId, Long userId) {
+    StudySignup signup = studySignupRepository.findById(signupId)
+        .orElseThrow(() -> new CustomException(ErrorCode.SIGNUP_NOT_FOUND));
+
+    if (!signup.getUser().getId().equals(userId)) {
+      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+    }
+
+    studySignupRepository.delete(signup);
+  }
 }

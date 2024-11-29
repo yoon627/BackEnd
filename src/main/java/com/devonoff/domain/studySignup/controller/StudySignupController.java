@@ -10,6 +10,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,5 +50,14 @@ public class StudySignupController {
       @RequestParam(required = false) StudySignupStatus status) {
     List<StudySignupDto> signupList = studySignupService.getSignupList(studyPostId, status);
     return ResponseEntity.ok(signupList);
+  }
+
+  // 신청 취소
+  @DeleteMapping("/{signupId}")
+  public ResponseEntity<Void> cancelSignup(
+      @PathVariable Long signupId,
+      @RequestParam Long userId) {
+    studySignupService.cancelSignup(signupId, userId);
+    return ResponseEntity.noContent().build();
   }
 }
