@@ -30,7 +30,8 @@ public enum ErrorCode {
   STUDY_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디를 찾을 수 없습니다."), // 404
   PARTICIPANT_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 참여자를 찾을 수 없습니다."), // 404
   DUPLICATE_APPLICATION(HttpStatus.BAD_REQUEST.value(), "이미 해당 스터디에 신청했습니다."), // 400
-  APPLICATION_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 신청 내역을 찾을 수 없습니다."), // 404
+  SIGNUP_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 신청 내역을 찾을 수 없습니다."), // 404
+  SIGNUP_STATUS_ALREADY_FINALIZED(HttpStatus.BAD_REQUEST.value(), "이미 확정된 신청 상태입니다."), // 400
   APPLICATION_PERIOD_CLOSED(HttpStatus.BAD_REQUEST.value(), "스터디 신청 기간이 종료되었습니다."), // 400
   STUDY_EXTENSION_FAILED(HttpStatus.BAD_REQUEST.value(), "스터디 모집 기한 연장은 최대 1개월입니다."), // 400
   INVALID_STUDY_STATUS(HttpStatus.BAD_REQUEST.value(), "잘못된 스터디 상태값입니다."), // 400

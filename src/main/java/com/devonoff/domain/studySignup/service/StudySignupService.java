@@ -51,4 +51,17 @@ public class StudySignupService {
 
     return new StudySignupCreateDto.Response("스터디 신청이 완료되었습니다.");
   }
+
+  // 신청 상태 관리(승인/거절)
+  public void updateSignupStatus(Long signupId, StudySignupStatus newStatus) {
+    StudySignup signup = studySignupRepository.findById(signupId)
+        .orElseThrow(() -> new CustomException(ErrorCode.SIGNUP_NOT_FOUND));
+
+    if (signup.getStatus() != StudySignupStatus.PENDING) {
+      throw new CustomException(ErrorCode.SIGNUP_STATUS_ALREADY_FINALIZED);
+    }
+
+    signup.setStatus(newStatus);
+    studySignupRepository.save(signup);
+  }
 }
