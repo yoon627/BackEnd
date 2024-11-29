@@ -9,6 +9,8 @@ import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,12 +45,10 @@ public class StudyService {
     studyRepository.save(study);
   }
 
-  // 스터디 상세 조회
+  // 스터디 목록 조회
   @Transactional(readOnly = true)
-  public StudyDto getStudyDetail(Long studyId) {
-    Study study = studyRepository.findById(studyId)
-        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_NOT_FOUND));
-
-    return StudyDto.fromEntity(study);
+  public Page<StudyDto> getStudyList(Pageable pageable) {
+    return studyRepository.findAllByOrderByCreatedAtDesc(pageable)
+        .map(StudyDto::fromEntity);
   }
 }
