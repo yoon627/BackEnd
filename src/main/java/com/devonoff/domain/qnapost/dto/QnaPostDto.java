@@ -4,6 +4,7 @@ package com.devonoff.domain.qnapost.dto;
 
 import com.devonoff.domain.qnapost.entity.QnaPost;
 import com.devonoff.domain.user.entity.User;
+import com.devonoff.type.PostType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,6 +23,7 @@ public class QnaPostDto {
   private String content;
   private String thumbnailUrl;
   private User user;
+  private PostType postType;
 
 
   public static QnaPostDto fromEntity(QnaPost qnaPost) {
@@ -31,6 +33,7 @@ public class QnaPostDto {
         .content(qnaPost.getContent())
         .thumbnailUrl(qnaPost.getThumbnailUrl())
         .user(qnaPost.getUser())
+        .postType(qnaPost.getPostType())
         .build();
   }
 }

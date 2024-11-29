@@ -10,9 +10,11 @@ import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
+import com.devonoff.type.PostType;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,7 +22,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class QnaPostService {
@@ -40,10 +42,11 @@ public class QnaPostService {
    */
   @Transactional
   public Map<String, String> createQnaPost(
-      QnaPostRequest qnaPostRequest) {
+      QnaPostRequest qnaPostRequest, User userId) {
 
-    User user = userRepository.findByEmail(qnaPostRequest.getAuthor())
+    User user = userRepository.findByEmail(userId.getEmail())
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    log.debug("Authenticated user's email: {}", userId.getEmail());
 
     String uploadedThumbnailUrl = photoService.save(qnaPostRequest.getThumbnail());
 
@@ -52,6 +55,7 @@ public class QnaPostService {
             .title(qnaPostRequest.getTitle())
             .content(qnaPostRequest.getContent())
             .thumbnailUrl(uploadedThumbnailUrl)
+            .postType(PostType.QNA_POST) //타입설정
             .user(user)
             .build()
     );

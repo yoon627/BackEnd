@@ -2,7 +2,11 @@ package com.devonoff.domain.qnapost.entity;
 
 import com.devonoff.common.entity.BaseTimeEntity;
 import com.devonoff.domain.user.entity.User;
+import com.devonoff.type.PostType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -35,9 +39,15 @@ public class QnaPost extends BaseTimeEntity {
   @NotBlank
   private String content;
 
+  @Column(name = "thumbnail_img_url")
   private String thumbnailUrl;
 
   @ManyToOne
   @JoinColumn(name = "user_id", nullable = false)
   private User user;
+
+  @Column(name = "post_type", nullable = false)
+  @Enumerated(EnumType.STRING)
+  private PostType postType;
+
 }
