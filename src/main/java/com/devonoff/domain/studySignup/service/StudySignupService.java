@@ -3,6 +3,7 @@ package com.devonoff.domain.studySignup.service;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
 import com.devonoff.domain.studySignup.dto.StudySignupCreateDto;
+import com.devonoff.domain.studySignup.dto.StudySignupDto;
 import com.devonoff.domain.studySignup.entity.StudySignup;
 import com.devonoff.domain.studySignup.repository.StudySignupRepository;
 import com.devonoff.domain.user.entity.User;
@@ -11,6 +12,8 @@ import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudySignupStatus;
 import com.devonoff.type.StudyStatus;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,5 +66,23 @@ public class StudySignupService {
 
     signup.setStatus(newStatus);
     studySignupRepository.save(signup);
+  }
+
+  // 신청 목록 조회
+  public List<StudySignupDto> getSignupList(Long studyPostId, StudySignupStatus status) {
+    StudyPost studyPost = studyPostRepository.findById(studyPostId)
+        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
+
+    // 상태별 신청 목록 조회
+    List<StudySignup> signups;
+    if (status != null) {
+      signups = studySignupRepository.findByStudyPostAndStatus(studyPost, status);
+    } else {
+      signups = studySignupRepository.findByStudyPost(studyPost);
+    }
+
+    return signups.stream()
+        .map(StudySignupDto::fromEntity)
+        .collect(Collectors.toList());
   }
 }
