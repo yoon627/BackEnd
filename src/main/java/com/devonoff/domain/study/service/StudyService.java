@@ -1,0 +1,54 @@
+package com.devonoff.domain.study.service;
+
+import com.devonoff.domain.study.dto.StudyDto;
+import com.devonoff.domain.study.entity.Study;
+import com.devonoff.domain.study.repository.StudyRepository;
+import com.devonoff.domain.studyPost.entity.StudyPost;
+import com.devonoff.domain.studyPost.repository.StudyPostRepository;
+import com.devonoff.exception.CustomException;
+import com.devonoff.type.ErrorCode;
+import com.devonoff.type.StudyStatus;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class StudyService {
+
+  private final StudyRepository studyRepository;
+  private final StudyPostRepository studyPostRepository;
+
+  // 모집글 마감 시 자동으로 스터디 생성
+  @Transactional
+  public void createStudyFromClosedPost(Long studyPostId) {
+    StudyPost studyPost = studyPostRepository.findById(studyPostId)
+        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
+
+    Study study = Study.builder()
+        .studyName(studyPost.getStudyName())
+        .subject(studyPost.getSubject())
+        .difficulty(studyPost.getDifficulty())
+        .dayType(studyPost.getDayType())
+        .startDate(studyPost.getStartDate())
+        .endDate(studyPost.getEndDate())
+        .startTime(studyPost.getStartTime())
+        .endTime(studyPost.getEndTime())
+        .meetingType(studyPost.getMeetingType())
+        .status(StudyStatus.IN_PROGRESS) // 기본값: 진행중
+        .studyPost(studyPost)
+        .studyLeader(studyPost.getUser()) // 모집글 작성자를 스터디 리더로 설정
+        .build();
+
+    studyRepository.save(study);
+  }
+
+  // 스터디 목록 조회
+  @Transactional(readOnly = true)
+  public Page<StudyDto> getStudyList(Pageable pageable) {
+    return studyRepository.findAllByOrderByCreatedAtDesc(pageable)
+        .map(StudyDto::fromEntity);
+  }
+}
