@@ -1,19 +1,19 @@
 package com.devonoff.domain.studyPost.service;
 
+import com.devonoff.domain.study.service.StudyService;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateDto;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateDto;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
 import com.devonoff.domain.user.entity.User;
+import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
-import com.devonoff.domain.user.repository.UserRepository;
-import com.devonoff.util.DayTypeUtils;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +29,7 @@ public class StudyPostService {
   private final StudyPostRepository studyPostRepository;
   private final UserRepository userRepository;
   private final StudyPostMapper studyPostMapper;
+  private final StudyService studyService;
 
   // 상세 조회
   public StudyPostDto getStudyPostDetail(Long studyPostId) {
@@ -77,7 +78,7 @@ public class StudyPostService {
     return new StudyPostUpdateDto.Response("스터디 모집 글이 업데이트되었습니다.");
   }
 
-  // 모집 취소로 변경 -> 일주일뒤 자동 삭제됨
+  // 모집 마감 -> 스터디 진행 시작
   @Transactional
   public void closeStudyPost(Long studyPostId) {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
@@ -88,6 +89,8 @@ public class StudyPostService {
     }
 
     studyPost.setStatus(StudyStatus.IN_PROGRESS);
+
+    studyService.createStudyFromClosedPost(studyPostId);
   }
 
   // 모집 취소 -> 사용자가 직접 취소
