@@ -5,11 +5,13 @@ import com.devonoff.domain.qnapost.dto.QnaPostDto;
 import com.devonoff.domain.qnapost.dto.QnaPostRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostUpdateDto;
 import com.devonoff.domain.qnapost.service.QnaPostService;
+import com.devonoff.domain.user.entity.User;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -34,11 +36,11 @@ public class QnaPostController {
    */
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<Map<String, String>> createQnaPost(
-      @ModelAttribute QnaPostRequest qnaPostRequest
-  ) {
-    return ResponseEntity.ok(qnaPostService.createQnaPost(qnaPostRequest));
+      @ModelAttribute QnaPostRequest qnaPostRequest,
+      @AuthenticationPrincipal User user)
+  {
+    return ResponseEntity.ok(qnaPostService.createQnaPost(qnaPostRequest, user));
   }
-
   /**
    * 질의 응답 게시물 전체 목록 조회 (최신순)
    *

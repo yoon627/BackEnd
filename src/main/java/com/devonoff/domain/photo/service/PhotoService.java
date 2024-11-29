@@ -30,7 +30,7 @@ public class PhotoService {
 
   public String save(MultipartFile file) {
     //TODO userId 로그인 유저 확인 후 변경
-    Long userId = 1L;
+    Long userId =1L;
     try {
       String fileName = file.getOriginalFilename();
       ObjectMetadata metadata = new ObjectMetadata();

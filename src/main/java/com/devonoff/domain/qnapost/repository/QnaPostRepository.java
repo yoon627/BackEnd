@@ -13,4 +13,6 @@ public interface QnaPostRepository extends JpaRepository<QnaPost, Long> {
   Page<QnaPost> findByTitleContaining(String search, Pageable pageable);
 
   Page<QnaPost> findByUserAndTitleContaining(User user, String title, Pageable pageable);
+
+
 }
