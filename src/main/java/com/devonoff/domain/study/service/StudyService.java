@@ -1,5 +1,6 @@
-package com.devonoff.domain.study;
+package com.devonoff.domain.study.service;
 
+import com.devonoff.domain.study.dto.StudyDto;
 import com.devonoff.domain.study.entity.Study;
 import com.devonoff.domain.study.repository.StudyRepository;
 import com.devonoff.domain.studyPost.entity.StudyPost;
@@ -40,5 +41,14 @@ public class StudyService {
         .build();
 
     studyRepository.save(study);
+  }
+
+  // 스터디 상세 조회
+  @Transactional(readOnly = true)
+  public StudyDto getStudyDetail(Long studyId) {
+    Study study = studyRepository.findById(studyId)
+        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_NOT_FOUND));
+
+    return StudyDto.fromEntity(study);
   }
 }

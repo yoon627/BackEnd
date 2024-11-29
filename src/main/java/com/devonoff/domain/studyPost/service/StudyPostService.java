@@ -1,6 +1,6 @@
 package com.devonoff.domain.studyPost.service;
 
-import com.devonoff.domain.study.StudyService;
+import com.devonoff.domain.study.service.StudyService;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateDto;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateDto;
