@@ -22,6 +22,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -46,7 +47,6 @@ public class QnaPostService {
 
     User user = userRepository.findByEmail(userId.getEmail())
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-    log.debug("Authenticated user's email: {}", userId.getEmail());
 
     String uploadedThumbnailUrl = photoService.save(qnaPostRequest.getThumbnail());
 
@@ -119,15 +119,22 @@ public class QnaPostService {
    * 특정 질의 응답 게시글 수정
    *
    * @param qnaPostId
+   * @param user
    * @param qnaPostUpdateDto
    * @return QnaPostDto
    */
   @Transactional
-  public com.devonoff.domain.qnapost.dto.QnaPostDto updateQnaPost(Long qnaPostId, QnaPostUpdateDto qnaPostUpdateDto) {
+  public QnaPostDto updateQnaPost(Long qnaPostId,
+      QnaPostUpdateDto qnaPostUpdateDto, User user) {
+
     // TO DO 토큰에서 유저 확인 후 수정 작업
     QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
+    // 작성자 확인
+    if (!qnaPost.getUser().getId().equals(user.getId())) {
+      throw new CustomException(ErrorCode.USER_NOT_FOUND);
+    }
     photoService.delete(qnaPost.getThumbnailUrl());
     String uploadedThumbnailUrl = photoService.save(qnaPostUpdateDto.getThumbnail());
 
@@ -142,21 +149,39 @@ public class QnaPostService {
    * 특정 질의 응답 게시글 삭제
    *
    * @param qnaPostId
+   * @param user
    * @return QnaPostDto
    */
   @Transactional
-  public Map<String, String> deleteQnaPost(Long qnaPostId) {
+  public Map<String, String> deleteQnaPost(Long qnaPostId, User user) {
+    try {
+      QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
+          .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
-    QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
-        .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+      // 게시글 작성자 확인
+      if (!qnaPost.getUser().getId().equals(user.getId())) {
+        throw new CustomException(ErrorCode.USER_NOT_FOUND);
+      }
+      if (qnaPost.getThumbnailUrl() != null) {
+        photoService.delete(qnaPost.getThumbnailUrl());
 
-    photoService.delete(qnaPost.getThumbnailUrl());
-    qnaPostRepository.delete(qnaPost);
+      }
+      qnaPostRepository.delete(qnaPost);
 
-    Map<String, String> responseMap = new HashMap<>();
-    responseMap.put("message", "정상적으로 삭제 되었습니다.");
+      Map<String, String> responseMap = new HashMap<>();
+      responseMap.put("message", "정상적으로 삭제 되었습니다.");
 
-    return responseMap;
+      return responseMap;
+    } catch (CustomException e) {
+      // 사용자 정의 예외는 그대로 전파
+      throw e;
+    } catch (Exception e) {
+      throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
+    }
   }
-
 }
+
+
+
+
+

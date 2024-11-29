@@ -37,10 +37,10 @@ public class QnaPostController {
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<Map<String, String>> createQnaPost(
       @ModelAttribute QnaPostRequest qnaPostRequest,
-      @AuthenticationPrincipal User user)
-  {
+      @AuthenticationPrincipal User user) {
     return ResponseEntity.ok(qnaPostService.createQnaPost(qnaPostRequest, user));
   }
+
   /**
    * 질의 응답 게시물 전체 목록 조회 (최신순)
    *
@@ -89,25 +89,32 @@ public class QnaPostController {
    * 특정 질의 응답 게시글 수정
    *
    * @param qnaPostId
+   *  @param user
    * @param QnaPostUpdateDto
    * @return QnaPostDto
    */
   @PostMapping(value = "/{qnaPostId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public QnaPostDto updateQnaPost(
-      @PathVariable Long qnaPostId,
-      @ModelAttribute QnaPostUpdateDto QnaPostUpdateDto
+      @PathVariable("qnaPostId") Long qnaPostId,
+      @ModelAttribute QnaPostUpdateDto QnaPostUpdateDto,
+      @AuthenticationPrincipal User user
+
   ) {
-    return qnaPostService.updateQnaPost(qnaPostId, QnaPostUpdateDto);
+    return qnaPostService.updateQnaPost(qnaPostId, QnaPostUpdateDto, user);
   }
 
   /**
    * 특정 질의 응답 게시글 삭제
    *
    * @param qnaPostId
+   * @param user
    * @return QnaPostDto
    */
   @DeleteMapping("/{qnaPostId}")
-  public ResponseEntity<Map<String, String>> deleteQnaPost(@PathVariable Long qnaPostId) {
-    return ResponseEntity.ok(qnaPostService.deleteQnaPost(qnaPostId));
+  public ResponseEntity<Map<String, String>> deleteQnaPost(
+      @PathVariable("qnaPostId") Long qnaPostId,
+      @AuthenticationPrincipal User user
+  ) {
+    return ResponseEntity.ok(qnaPostService.deleteQnaPost(qnaPostId, user));
   }
 }

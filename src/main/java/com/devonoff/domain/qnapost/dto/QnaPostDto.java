@@ -3,7 +3,7 @@ package com.devonoff.domain.qnapost.dto;
 
 
 import com.devonoff.domain.qnapost.entity.QnaPost;
-import com.devonoff.domain.user.entity.User;
+import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.type.PostType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,7 +22,7 @@ public class QnaPostDto {
   private String title;
   private String content;
   private String thumbnailUrl;
-  private User user;
+  private UserDto userDto;
   private PostType postType;
 
 
@@ -32,7 +32,7 @@ public class QnaPostDto {
         .title(qnaPost.getTitle())
         .content(qnaPost.getContent())
         .thumbnailUrl(qnaPost.getThumbnailUrl())
-        .user(qnaPost.getUser())
+        .userDto(UserDto.fromEntity(qnaPost.getUser()))
         .postType(qnaPost.getPostType())
         .build();
   }

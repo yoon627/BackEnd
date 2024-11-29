@@ -15,7 +15,6 @@ import org.springframework.web.multipart.MultipartFile;
 public class QnaPostRequest {
 
   private MultipartFile thumbnail;
- // private String author;
   private String title;
   private String content;
 }
