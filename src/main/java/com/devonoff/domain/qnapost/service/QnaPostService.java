@@ -22,6 +22,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -42,11 +43,10 @@ public class QnaPostService {
    */
   @Transactional
   public Map<String, String> createQnaPost(
-      QnaPostRequest qnaPostRequest, User userId) {
+      QnaPostRequest qnaPostRequest, User user) {
 
-    User user = userRepository.findByEmail(userId.getEmail())
+    user  = userRepository.findByEmail(user.getEmail())
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-    log.debug("Authenticated user's email: {}", userId.getEmail());
 
     String uploadedThumbnailUrl = photoService.save(qnaPostRequest.getThumbnail());
 
@@ -79,6 +79,11 @@ public class QnaPostService {
 
     Pageable pageable = PageRequest.of(page - 1, QNA_PAGE_SIZE, sort);
 
+    // search가 비어있는 경우 전체 게시물 조회
+    if (search == null || search.isBlank()) {
+      return qnaPostRepository.findAll(pageable)
+          .map(QnaPostDto::fromEntity);
+    }
     return qnaPostRepository.findByTitleContaining(search, pageable)
         .map(com.devonoff.domain.qnapost.dto.QnaPostDto::fromEntity);
   }
@@ -119,15 +124,22 @@ public class QnaPostService {
    * 특정 질의 응답 게시글 수정
    *
    * @param qnaPostId
+   * @param user
    * @param qnaPostUpdateDto
    * @return QnaPostDto
    */
   @Transactional
-  public com.devonoff.domain.qnapost.dto.QnaPostDto updateQnaPost(Long qnaPostId, QnaPostUpdateDto qnaPostUpdateDto) {
+  public QnaPostDto updateQnaPost(Long qnaPostId,
+      QnaPostUpdateDto qnaPostUpdateDto, User user) {
+
     // TO DO 토큰에서 유저 확인 후 수정 작업
     QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
+    // 작성자 확인
+    if (!qnaPost.getUser().getId().equals(user.getId())) {
+      throw new CustomException(ErrorCode.USER_NOT_FOUND);
+    }
     photoService.delete(qnaPost.getThumbnailUrl());
     String uploadedThumbnailUrl = photoService.save(qnaPostUpdateDto.getThumbnail());
 
@@ -142,21 +154,31 @@ public class QnaPostService {
    * 특정 질의 응답 게시글 삭제
    *
    * @param qnaPostId
+   * @param user
    * @return QnaPostDto
    */
   @Transactional
-  public Map<String, String> deleteQnaPost(Long qnaPostId) {
+  public Map<String, String> deleteQnaPost(Long qnaPostId, User user) {
 
-    QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
-        .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+      QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
+          .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
-    photoService.delete(qnaPost.getThumbnailUrl());
-    qnaPostRepository.delete(qnaPost);
+      // 게시글 작성자 확인
+      if (!qnaPost.getUser().getId().equals(user.getId())) {
+        throw new CustomException(ErrorCode.USER_NOT_FOUND);
+      }
+      if (qnaPost.getThumbnailUrl() != null) {
+        photoService.delete(qnaPost.getThumbnailUrl());
 
-    Map<String, String> responseMap = new HashMap<>();
-    responseMap.put("message", "정상적으로 삭제 되었습니다.");
+      }
+      qnaPostRepository.delete(qnaPost);
 
-    return responseMap;
-  }
+      Map<String, String> responseMap = new HashMap<>();
+      responseMap.put("message", "정상적으로 삭제 되었습니다.");
 
-}
+      return responseMap;
+
+    }}
+
+
+
