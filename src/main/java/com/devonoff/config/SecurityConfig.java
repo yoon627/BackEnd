@@ -59,6 +59,8 @@ public class SecurityConfig {
                 "/api/auth/sign-up",
                 "/api/auth/sign-in",
                 "/api/auth/token-reissue",
+
+                "/api/qna-posts/**",
                 "/oauth2/**"
             )
             .permitAll()
