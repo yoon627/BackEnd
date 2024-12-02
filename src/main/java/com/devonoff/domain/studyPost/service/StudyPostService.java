@@ -7,7 +7,8 @@ import com.devonoff.domain.study.service.StudyService;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateResponse;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
-import com.devonoff.domain.studyPost.dto.StudyPostUpdateDto;
+import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
+import com.devonoff.domain.studyPost.dto.StudyPostUpdateResponse;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
 import com.devonoff.domain.studySignup.entity.StudySignup;
@@ -77,14 +78,14 @@ public class StudyPostService {
 
   // 수정
   @Transactional
-  public StudyPostUpdateDto.Response updateStudyPost(Long studyPostId,
-      StudyPostUpdateDto.Request request) {
+  public StudyPostUpdateResponse updateStudyPost(Long studyPostId,
+      StudyPostUpdateRequest request) {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
     studyPostMapper.toStudyPost(request, studyPost);
 
-    return new StudyPostUpdateDto.Response("스터디 모집 글이 업데이트되었습니다.");
+    return new StudyPostUpdateResponse("스터디 모집 글이 업데이트되었습니다.");
   }
 
   // 모집 마감 -> 스터디 진행 시작
