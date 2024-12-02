@@ -22,7 +22,6 @@ public class StudyService {
   private final StudyPostRepository studyPostRepository;
 
   // 모집글 마감 시 자동으로 스터디 생성
-  @Transactional
   public Study createStudyFromClosedPost(Long studyPostId) {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
