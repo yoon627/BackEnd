@@ -22,7 +22,7 @@ public class UserDto {
   public static UserDto fromEntity(User user) {
     return UserDto.builder()
         .id(user.getId())
-        .nickName(user.getNickName())
+        .nickName(user.getNickname())
         .email(user.getEmail())
         .profileImageUrl(user.getProfileImage())
         .build();

@@ -1,5 +1,6 @@
 package com.devonoff.domain.studyPost.service;
 
+import com.devonoff.domain.study.service.StudyService;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateDto;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateDto;
@@ -28,6 +29,7 @@ public class StudyPostService {
   private final StudyPostRepository studyPostRepository;
   private final UserRepository userRepository;
   private final StudyPostMapper studyPostMapper;
+  private final StudyService studyService;
 
   // 상세 조회
   public StudyPostDto getStudyPostDetail(Long studyPostId) {
@@ -76,7 +78,7 @@ public class StudyPostService {
     return new StudyPostUpdateDto.Response("스터디 모집 글이 업데이트되었습니다.");
   }
 
-  // 모집 취소로 변경 -> 일주일뒤 자동 삭제됨
+  // 모집 마감 -> 스터디 진행 시작
   @Transactional
   public void closeStudyPost(Long studyPostId) {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
@@ -87,6 +89,8 @@ public class StudyPostService {
     }
 
     studyPost.setStatus(StudyStatus.IN_PROGRESS);
+
+    studyService.createStudyFromClosedPost(studyPostId);
   }
 
   // 모집 취소 -> 사용자가 직접 취소
