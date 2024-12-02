@@ -28,6 +28,8 @@ public class StudyService {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
+    int totalParticipants = studyPost.getCurrentParticipants() + 1;
+
     Study study = Study.builder()
         .studyName(studyPost.getStudyName())
         .subject(studyPost.getSubject())
@@ -40,6 +42,7 @@ public class StudyService {
         .meetingType(studyPost.getMeetingType())
         .studyPost(studyPost)
         .studyLeader(studyPost.getUser()) // 모집글 작성자를 스터디 리더로 설정
+        .totalParticipants(totalParticipants)
         .build();
 
     Study savedStudy = studyRepository.save(study);
