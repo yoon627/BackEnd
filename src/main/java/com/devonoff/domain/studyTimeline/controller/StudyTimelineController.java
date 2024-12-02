@@ -1,7 +1,7 @@
-package com.devonoff.domain.studytime.controller;
+package com.devonoff.domain.studyTimeline.controller;
 
-import com.devonoff.domain.studytime.dto.StudyTimeDto;
-import com.devonoff.domain.studytime.service.StudyTimeService;
+import com.devonoff.domain.studyTimeline.dto.StudyTimelineDto;
+import com.devonoff.domain.studyTimeline.service.StudyTimelineService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,12 +13,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/study-time")
-public class StudyTimeController {
+public class StudyTimelineController {
 
-  private final StudyTimeService studyTimeService;
+  private final StudyTimelineService studyTimeService;
 
   @GetMapping("/{studyId}")
-  public ResponseEntity<List<StudyTimeDto>> getStudyTimes(@PathVariable Long studyId) {
+  public ResponseEntity<List<StudyTimelineDto>> getStudyTimes(@PathVariable Long studyId) {
     return ResponseEntity.ok(this.studyTimeService.findAllStudyTimes(studyId));
   }
 }

@@ -1,4 +1,4 @@
-package com.devonoff.domain.studytime.entity;
+package com.devonoff.domain.studyTimeline.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -21,7 +21,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @AllArgsConstructor
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-public class StudyTime {
+public class StudyTimeline {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
