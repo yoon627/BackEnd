@@ -6,6 +6,9 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -25,12 +28,14 @@ public class PhotoService {
 
   @PostConstruct
   public void init() {
-    urlPrefix = "https://" + bucket + "." + region + ".amazonaws.com";
+    urlPrefix = "https://" + bucket + ".s3." + region + ".amazonaws.com";
   }
 
   public String save(MultipartFile file) {
-    //TODO userId 로그인 유저 확인 후 변경
-    Long userId = 1L;
+    //TODO UserService에서 로그인된 유저 ID를 주도록 추가 고려
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+    Long userId = Long.parseLong(userDetails.getUsername());
     try {
       String fileName = file.getOriginalFilename();
       ObjectMetadata metadata = new ObjectMetadata();
