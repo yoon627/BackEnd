@@ -4,7 +4,8 @@ import com.devonoff.domain.student.entity.Student;
 import com.devonoff.domain.student.repository.StudentRepository;
 import com.devonoff.domain.study.entity.Study;
 import com.devonoff.domain.study.service.StudyService;
-import com.devonoff.domain.studyPost.dto.StudyPostCreateDto;
+import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
+import com.devonoff.domain.studyPost.dto.StudyPostCreateResponse;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateDto;
 import com.devonoff.domain.studyPost.entity.StudyPost;
@@ -59,7 +60,7 @@ public class StudyPostService {
   }
 
   // 생성
-  public StudyPostCreateDto.Response createStudyPost(StudyPostCreateDto.Request request) {
+  public StudyPostCreateResponse createStudyPost(StudyPostCreateRequest request) {
     User user = userRepository.findById(request.getUserId())
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
@@ -71,7 +72,7 @@ public class StudyPostService {
     StudyPost studyPost = StudyPost.createFromRequest(request, user);
     studyPostRepository.save(studyPost);
 
-    return new StudyPostCreateDto.Response("스터디 모집 글이 생성되었습니다.");
+    return new StudyPostCreateResponse("스터디 모집 글이 생성되었습니다.");
   }
 
   // 수정
