@@ -1,7 +1,7 @@
 package com.devonoff.domain.studyPost.entity;
 
 import com.devonoff.common.entity.BaseTimeEntity;
-import com.devonoff.domain.studyPost.dto.StudyPostCreateDto;
+import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
@@ -94,7 +94,7 @@ public class StudyPost extends BaseTimeEntity {
   @JoinColumn(name = "user_id", nullable = false)
   private User user; // 작성자
 
-  public static StudyPost createFromRequest(StudyPostCreateDto.Request request, User user) {
+  public static StudyPost createFromRequest(StudyPostCreateRequest request, User user) {
     int dayType = DayTypeUtils.encodeDaysFromRequest(request.getDayType());
 
     return StudyPost.builder()
