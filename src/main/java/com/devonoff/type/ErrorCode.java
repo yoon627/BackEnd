@@ -27,6 +27,7 @@ public enum ErrorCode {
       "프로필 이미지를 업로드하는 데 실패했습니다."), // 500
   // 스터디 관련
   STUDY_POST_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 모집글을 찾을 수 없습니다."), // 404
+  STUDY_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디를 찾을 수 없습니다."), // 404
   PARTICIPANT_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 참여자를 찾을 수 없습니다."), // 404
   DUPLICATE_APPLICATION(HttpStatus.BAD_REQUEST.value(), "이미 해당 스터디에 신청했습니다."), // 400
   APPLICATION_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 신청 내역을 찾을 수 없습니다."), // 404
