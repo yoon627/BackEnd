@@ -21,6 +21,9 @@ import com.devonoff.util.JwtProvider;
 import jakarta.transaction.Transactional;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -169,11 +172,10 @@ public class AuthService {
   /**
    * 로그아웃
    *
-   * @param userDetails
+   * @param userId
    * @return ResponseDto
    */
-  public ResponseDto signOut(UserDetails userDetails) {
-    Long userId = Long.parseLong(userDetails.getUsername());
+  public ResponseDto signOut(Long userId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
@@ -205,12 +207,11 @@ public class AuthService {
   /**
    * 회원 탈퇴
    *
-   * @param userDetails
+   * @param userId
    * @return ResponseDto
    */
   @Transactional
-  public ResponseDto withdrawalUser(UserDetails userDetails) {
-    Long userId = Long.parseLong(userDetails.getUsername());
+  public ResponseDto withdrawalUser(Long userId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
@@ -224,7 +225,7 @@ public class AuthService {
    *
    * @param nickName
    */
-  private void checkExistsNickName(String nickName) {
+  public void checkExistsNickName(String nickName) {
     boolean existsByNickName = userRepository.existsByNickname(nickName);
     if (existsByNickName) {
       throw new CustomException(ErrorCode.NICKNAME_ALREADY_REGISTERED);
@@ -236,11 +237,17 @@ public class AuthService {
    *
    * @param email
    */
-  private void checkExistsEmail(String email) {
+  public void checkExistsEmail(String email) {
     boolean existsByEmail = userRepository.existsByEmail(email);
     if (existsByEmail) {
       throw new CustomException(ErrorCode.EMAIL_ALREADY_REGISTERED);
     }
+  }
+
+  public Long getLoginUserId() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+    return Long.parseLong(userDetails.getUsername());
   }
 
 }
