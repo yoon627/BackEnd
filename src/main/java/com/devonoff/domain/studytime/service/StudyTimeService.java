@@ -2,7 +2,6 @@ package com.devonoff.domain.studytime.service;
 
 import static com.devonoff.type.ErrorCode.STUDY_NOT_FOUND;
 
-import com.devonoff.domain.study.entity.Study;
 import com.devonoff.domain.study.repository.StudyRepository;
 import com.devonoff.domain.studytime.dto.StudyTimeDto;
 import com.devonoff.domain.studytime.entity.StudyTime;
@@ -27,12 +26,11 @@ public class StudyTimeService {
   private final StudyRepository studyRepository;
 
   public List<StudyTimeDto> findAllStudyTimes(Long studyId) {
+    String studyName = studyRepository.findById(studyId)
+        .orElseThrow(() -> new CustomException(STUDY_NOT_FOUND)).getStudyName();
     return this.studyTimeRepository.findAllByStudyIdAndEndedAtIsNotNull(studyId).stream()
         .map(studyTime -> {
-          Study study = this.studyRepository.findById(studyId)
-              .orElseThrow(() -> new CustomException(
-                  STUDY_NOT_FOUND));
-          return StudyTimeDto.fromEntityWithStudyName(studyTime, study.getStudyName());
+          return StudyTimeDto.fromEntityWithStudyName(studyTime, studyName);
         })
         .collect(
             Collectors.toList());
