@@ -22,6 +22,9 @@ import jakarta.transaction.Transactional;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -240,6 +243,12 @@ public class AuthService {
     if (existsByEmail) {
       throw new CustomException(ErrorCode.EMAIL_ALREADY_REGISTERED);
     }
+  }
+
+  public Long getLoginUserId() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+    return Long.parseLong(userDetails.getUsername());
   }
 
 }
