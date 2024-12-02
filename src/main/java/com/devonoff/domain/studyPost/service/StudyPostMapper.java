@@ -11,6 +11,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 @Mapper(componentModel = "spring",
     nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
     imports = {DayTypeUtils.class})
+
 public interface StudyPostMapper {
 
   @Mapping(target = "title", source = "request.title")
@@ -29,5 +30,6 @@ public interface StudyPostMapper {
   @Mapping(target = "longitude", source = "request.longitude")
   @Mapping(target = "status", source = "request.status")
   @Mapping(target = "thumbnailImgUrl", source = "request.thumbnailImgUrl")
+
   void toStudyPost(Request request, @MappingTarget StudyPost studyPost);
 }
