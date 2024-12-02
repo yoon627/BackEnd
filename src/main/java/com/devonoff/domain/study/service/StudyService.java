@@ -9,7 +9,6 @@ import com.devonoff.domain.totalstudytime.entity.TotalStudyTime;
 import com.devonoff.domain.totalstudytime.repository.TotalStudyTimeRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
-import com.devonoff.type.StudyStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,7 +38,6 @@ public class StudyService {
         .startTime(studyPost.getStartTime())
         .endTime(studyPost.getEndTime())
         .meetingType(studyPost.getMeetingType())
-        .status(StudyStatus.IN_PROGRESS) // 기본값: 진행중
         .studyPost(studyPost)
         .studyLeader(studyPost.getUser()) // 모집글 작성자를 스터디 리더로 설정
         .build();
@@ -47,7 +45,7 @@ public class StudyService {
     Study savedStudy = studyRepository.save(study);
     totalStudyTimeRepository.save(
         TotalStudyTime.builder().studyId(savedStudy.getId()).totalStudyTime(0L).build());
-    
+
     return savedStudy;
   }
 

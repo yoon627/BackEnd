@@ -61,12 +61,32 @@ public class StudySignupService {
     StudySignup studySignup = studySignupRepository.findById(studySignupId)
         .orElseThrow(() -> new CustomException(ErrorCode.SIGNUP_NOT_FOUND));
 
-    if (studySignup.getStatus() != StudySignupStatus.PENDING) {
+    StudyPost studyPost = studySignup.getStudyPost();
+
+    if (studyPost.getStatus() != StudyStatus.RECRUITING) {
+      throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
+    }
+
+    if (studySignup.getStatus() == StudySignupStatus.PENDING
+        && newStatus == StudySignupStatus.APPROVED) {
+      if (studyPost.isFull()) {
+        throw new CustomException(ErrorCode.STUDY_POST_FULL);
+      }
+      studyPost.incrementParticipants();
+    } else if (studySignup.getStatus() == StudySignupStatus.APPROVED
+        && newStatus == StudySignupStatus.REJECTED) {
+      studyPost.decrementParticipants();
+    } else if (studySignup.getStatus() == StudySignupStatus.PENDING
+        && newStatus == StudySignupStatus.REJECTED) {
+      studySignup.setStatus(StudySignupStatus.REJECTED);
+    } else {
       throw new CustomException(ErrorCode.SIGNUP_STATUS_ALREADY_FINALIZED);
     }
 
     studySignup.setStatus(newStatus);
+    studyPostRepository.save(studyPost);
     studySignupRepository.save(studySignup);
+    // TODO: 리펙토링 예정 (메서드 분리)
   }
 
   // 신청 목록 조회
@@ -94,6 +114,12 @@ public class StudySignupService {
 
     if (!studySignup.getUser().getId().equals(userId)) {
       throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+    }
+
+    if (studySignup.getStatus() == StudySignupStatus.APPROVED) {
+      StudyPost studyPost = studySignup.getStudyPost();
+      studyPost.decrementParticipants();
+      studyPostRepository.save(studyPost);
     }
 
     studySignupRepository.delete(studySignup);

@@ -48,7 +48,6 @@ public class StudyDto {
         .startTime(study.getStartTime())
         .endTime(study.getEndTime())
         .meetingType(study.getMeetingType())
-        .status(study.getStatus())
         .studyPostId(study.getStudyPost().getId())
         .studyLeaderId(study.getStudyLeader().getId())
         .build();
