@@ -13,7 +13,6 @@ import org.springframework.security.config.annotation.web.configurers.HttpBasicC
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -60,6 +59,8 @@ public class SecurityConfig {
                 "/api/auth/sign-up",
                 "/api/auth/sign-in",
                 "/api/auth/token-reissue",
+                "/api/qna-posts/**",
+                "/api/comments/**",
                 "/oauth2/**"
             )
             .permitAll()
