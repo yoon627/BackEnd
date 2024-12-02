@@ -57,16 +57,16 @@ public class StudySignupService {
   }
 
   // 신청 상태 관리(승인/거절)
-  public void updateSignupStatus(Long signupId, StudySignupStatus newStatus) {
-    StudySignup signup = studySignupRepository.findById(signupId)
+  public void updateSignupStatus(Long studySignupId, StudySignupStatus newStatus) {
+    StudySignup studySignup = studySignupRepository.findById(studySignupId)
         .orElseThrow(() -> new CustomException(ErrorCode.SIGNUP_NOT_FOUND));
 
-    if (signup.getStatus() != StudySignupStatus.PENDING) {
+    if (studySignup.getStatus() != StudySignupStatus.PENDING) {
       throw new CustomException(ErrorCode.SIGNUP_STATUS_ALREADY_FINALIZED);
     }
 
-    signup.setStatus(newStatus);
-    studySignupRepository.save(signup);
+    studySignup.setStatus(newStatus);
+    studySignupRepository.save(studySignup);
   }
 
   // 신청 목록 조회
@@ -75,27 +75,27 @@ public class StudySignupService {
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
     // 상태별 신청 목록 조회
-    List<StudySignup> signups;
+    List<StudySignup> studySignups;
     if (status != null) {
-      signups = studySignupRepository.findByStudyPostAndStatus(studyPost, status);
+      studySignups = studySignupRepository.findByStudyPostAndStatus(studyPost, status);
     } else {
-      signups = studySignupRepository.findByStudyPost(studyPost);
+      studySignups = studySignupRepository.findByStudyPost(studyPost);
     }
 
-    return signups.stream()
+    return studySignups.stream()
         .map(StudySignupDto::fromEntity)
         .collect(Collectors.toList());
   }
 
   // 신청 취소
-  public void cancelSignup(Long signupId, Long userId) {
-    StudySignup signup = studySignupRepository.findById(signupId)
+  public void cancelSignup(Long studySignupId, Long userId) {
+    StudySignup studySignup = studySignupRepository.findById(studySignupId)
         .orElseThrow(() -> new CustomException(ErrorCode.SIGNUP_NOT_FOUND));
 
-    if (!signup.getUser().getId().equals(userId)) {
+    if (!studySignup.getUser().getId().equals(userId)) {
       throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
     }
 
-    studySignupRepository.delete(signup);
+    studySignupRepository.delete(studySignup);
   }
 }
