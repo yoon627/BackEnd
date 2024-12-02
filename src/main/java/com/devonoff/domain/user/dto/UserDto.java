@@ -28,4 +28,12 @@ public class UserDto {
         .build();
   }
 
+  public static User toEntity(UserDto userDto) {
+    return User.builder()
+        .id(userDto.getId())
+        .nickName(userDto.getNickName())
+        .email(userDto.getEmail())
+        .profileImage(userDto.getProfileImageUrl())
+        .build();
+  }
 }

@@ -17,18 +17,17 @@ import lombok.Setter;
 public class InfoSharePostDto {
 
   private Long id;
-  private Long userId;
+  private UserDto userDto;
   private String thumbnailImgUrl;
   private String title;
   private String description;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
-  private UserDto user;
 
   public static InfoSharePostDto fromEntity(InfoSharePost post) {
     return InfoSharePostDto.builder()
         .id(post.getId())
-        .userId(post.getUserId())
+        .userDto(UserDto.fromEntity(post.getUser()))
         .thumbnailImgUrl(post.getThumbnailImgUrl())
         .title(post.getTitle())
         .description(post.getDescription())
@@ -39,17 +38,11 @@ public class InfoSharePostDto {
 
   public static InfoSharePost toEntity(InfoSharePostDto infoSharePostDto) {
     return InfoSharePost.builder()
-        .userId(infoSharePostDto.getUserId())
+        .user(UserDto.toEntity(infoSharePostDto.getUserDto()))
         .thumbnailImgUrl(infoSharePostDto.getThumbnailImgUrl())
         .title(infoSharePostDto.getTitle())
         .description(infoSharePostDto.getDescription())
         .build();
   }
 
-  public static InfoSharePostDto fromEntityWithUserInfo(InfoSharePost infoSharePost,
-      UserDto userDto) {
-    InfoSharePostDto infoSharePostDto = InfoSharePostDto.fromEntity(infoSharePost);
-    infoSharePostDto.setUser(userDto);
-    return infoSharePostDto;
-  }
 }
