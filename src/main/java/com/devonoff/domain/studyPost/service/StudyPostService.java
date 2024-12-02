@@ -1,17 +1,23 @@
 package com.devonoff.domain.studyPost.service;
 
+import com.devonoff.domain.student.entity.Student;
+import com.devonoff.domain.student.repository.StudentRepository;
+import com.devonoff.domain.study.entity.Study;
 import com.devonoff.domain.study.service.StudyService;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateDto;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateDto;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
+import com.devonoff.domain.studySignup.entity.StudySignup;
+import com.devonoff.domain.studySignup.repository.StudySignupRepository;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
+import com.devonoff.type.StudySignupStatus;
 import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
 import java.time.LocalDate;
@@ -28,6 +34,8 @@ public class StudyPostService {
 
   private final StudyPostRepository studyPostRepository;
   private final UserRepository userRepository;
+  private final StudySignupRepository studySignupRepository;
+  private final StudentRepository studentRepository;
   private final StudyPostMapper studyPostMapper;
   private final StudyService studyService;
 
@@ -90,7 +98,30 @@ public class StudyPostService {
 
     studyPost.setStatus(StudyStatus.IN_PROGRESS);
 
-    studyService.createStudyFromClosedPost(studyPostId);
+    List<StudySignup> approvedSignups = studySignupRepository.findByStudyPostAndStatus(
+        studyPost, StudySignupStatus.APPROVED);
+
+    if (approvedSignups.isEmpty()) {
+      throw new CustomException(ErrorCode.NO_APPROVED_SIGNUPS);
+    }
+
+    Study study = studyService.createStudyFromClosedPost(studyPostId);
+
+    Student leader = Student.builder()
+        .study(study)
+        .user(studyPost.getUser())
+        .isLeader(true)
+        .build();
+    studentRepository.save(leader);
+
+    List<Student> students = approvedSignups.stream()
+        .map(signup -> Student.builder()
+            .study(study)
+            .user(signup.getUser())
+            .isLeader(false)
+            .build())
+        .toList();
+    studentRepository.saveAll(students);
   }
 
   // 모집 취소 -> 사용자가 직접 취소

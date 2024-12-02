@@ -23,7 +23,7 @@ public class StudyService {
 
   // 모집글 마감 시 자동으로 스터디 생성
   @Transactional
-  public void createStudyFromClosedPost(Long studyPostId) {
+  public Study createStudyFromClosedPost(Long studyPostId) {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
@@ -42,7 +42,7 @@ public class StudyService {
         .studyLeader(studyPost.getUser()) // 모집글 작성자를 스터디 리더로 설정
         .build();
 
-    studyRepository.save(study);
+    return studyRepository.save(study);
   }
 
   // 스터디 목록 조회

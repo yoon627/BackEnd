@@ -24,7 +24,7 @@ public class StudySignupDto {
     return StudySignupDto.builder()
         .signupId(signup.getId())
         .userId(signup.getUser().getId())
-        .nickName(signup.getUser().getNickName())
+        .nickName(signup.getUser().getNickname())
         .status(signup.getStatus())
         .build();
   }
