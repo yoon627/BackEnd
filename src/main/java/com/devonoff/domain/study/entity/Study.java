@@ -5,7 +5,6 @@ import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
-import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -67,9 +66,6 @@ public class Study extends BaseTimeEntity {
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private StudyMeetingType meetingType; // 스터디 진행 유형
-
-  @Column(nullable = false)
-  private StudyStatus status; // 스터디 상태
 
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "study_post_id", nullable = false)
