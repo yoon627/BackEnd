@@ -32,6 +32,7 @@ public class PhotoService {
   }
 
   public String save(MultipartFile file) {
+
     //TODO UserService에서 로그인된 유저 ID를 주도록 추가 고려
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     UserDetails userDetails = (UserDetails) authentication.getPrincipal();

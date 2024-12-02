@@ -1,8 +1,8 @@
 package com.devonoff.domain.studyPost.entity;
 
 import com.devonoff.common.entity.BaseTimeEntity;
-import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateDto;
+import com.devonoff.domain.user.entity.User;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyStatus;
