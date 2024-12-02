@@ -56,7 +56,7 @@ class StudyTimelineControllerTest {
             .endedAt(LocalDateTime.of(2023, 12, 2, 11, 0))
             .build()
     );
-    given(studyTimelineService.findAllStudyTimes(studyId)).willReturn(mockStudyTimes);
+    given(studyTimelineService.findAllStudyTimelines(studyId)).willReturn(mockStudyTimes);
 
     // When
     mockMvc.perform(get("/api/study-time/{studyId}", studyId)

@@ -15,10 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/study-time")
 public class StudyTimelineController {
 
-  private final StudyTimelineService studyTimeService;
+  private final StudyTimelineService studyTimelineService;
 
   @GetMapping("/{studyId}")
   public ResponseEntity<List<StudyTimelineDto>> getStudyTimes(@PathVariable Long studyId) {
-    return ResponseEntity.ok(this.studyTimeService.findAllStudyTimes(studyId));
+    return ResponseEntity.ok(this.studyTimelineService.findAllStudyTimelines(studyId));
   }
 }
