@@ -36,10 +36,10 @@ public class StudySignupController {
   }
 
   // 신청 상태 관리(승인/거절)
-  @PatchMapping("/{signupId}")
+  @PatchMapping("/{studySignupId}")
   public ResponseEntity<Void> updateSignupStatus(
-      @PathVariable Long signupId, @RequestParam StudySignupStatus newStatus) {
-    studySignupService.updateSignupStatus(signupId, newStatus);
+      @PathVariable Long studySignupId, @RequestParam StudySignupStatus newStatus) {
+    studySignupService.updateSignupStatus(studySignupId, newStatus);
     return ResponseEntity.noContent().build();
   }
 
@@ -48,16 +48,16 @@ public class StudySignupController {
   public ResponseEntity<List<StudySignupDto>> getSignupList(
       @RequestParam Long studyPostId,
       @RequestParam(required = false) StudySignupStatus status) {
-    List<StudySignupDto> signupList = studySignupService.getSignupList(studyPostId, status);
-    return ResponseEntity.ok(signupList);
+    List<StudySignupDto> studySignupList = studySignupService.getSignupList(studyPostId, status);
+    return ResponseEntity.ok(studySignupList);
   }
 
   // 신청 취소
-  @DeleteMapping("/{signupId}")
+  @DeleteMapping("/{studySignupId}")
   public ResponseEntity<Void> cancelSignup(
-      @PathVariable Long signupId,
+      @PathVariable Long studySignupId,
       @RequestParam Long userId) {
-    studySignupService.cancelSignup(signupId, userId);
+    studySignupService.cancelSignup(studySignupId, userId);
     return ResponseEntity.noContent().build();
   }
 }
