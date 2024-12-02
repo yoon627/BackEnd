@@ -22,6 +22,7 @@ import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudySignupStatus;
 import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
+import com.devonoff.util.DayTypeUtils;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +39,6 @@ public class StudyPostService {
   private final UserRepository userRepository;
   private final StudySignupRepository studySignupRepository;
   private final StudentRepository studentRepository;
-  private final StudyPostMapper studyPostMapper;
   private final StudyService studyService;
 
   // 상세 조회
@@ -50,14 +50,12 @@ public class StudyPostService {
   }
 
   // 조회 (검색리스트)
-  public Page<StudyPostDto> searchStudyPosts(
-      StudyMeetingType meetingType, String title, StudySubject subject,
-      StudyDifficulty difficulty, int dayType, StudyStatus status,
+  public Page<StudyPostDto> searchStudyPosts(StudyMeetingType meetingType, String title,
+      StudySubject subject, StudyDifficulty difficulty, int dayType, StudyStatus status,
       Double latitude, Double longitude, Pageable pageable) {
 
-    return studyPostRepository.findStudyPostsByFilters(
-        meetingType, title, subject, difficulty, dayType, status,
-        latitude, longitude, pageable);
+    return studyPostRepository.findStudyPostsByFilters(meetingType, title, subject, difficulty,
+        dayType, status, latitude, longitude, pageable);
   }
 
   // 생성
@@ -65,8 +63,8 @@ public class StudyPostService {
     User user = userRepository.findById(request.getUserId())
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-    if (request.getMeetingType() == StudyMeetingType.HYBRID &&
-        (request.getLatitude() == null || request.getLongitude() == null)) {
+    if (request.getMeetingType() == StudyMeetingType.HYBRID && (request.getLatitude() == null
+        || request.getLongitude() == null)) {
       throw new CustomException(ErrorCode.LOCATION_REQUIRED_FOR_HYBRID);
     }
 
@@ -78,12 +76,26 @@ public class StudyPostService {
 
   // 수정
   @Transactional
-  public StudyPostUpdateResponse updateStudyPost(Long studyPostId,
-      StudyPostUpdateRequest request) {
+  public StudyPostUpdateResponse updateStudyPost(Long studyPostId, StudyPostUpdateRequest request) {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
-    studyPostMapper.toStudyPost(request, studyPost);
+    studyPost.setTitle(request.getTitle());
+    studyPost.setStudyName(request.getStudyName());
+    studyPost.setSubject(request.getSubject());
+    studyPost.setDifficulty(request.getDifficulty());
+    studyPost.setDayType(DayTypeUtils.encodeDaysFromRequest(request.getDayType()));
+    studyPost.setStartDate(request.getStartDate());
+    studyPost.setEndDate(request.getEndDate());
+    studyPost.setStartTime(request.getStartTime());
+    studyPost.setEndTime(request.getEndTime());
+    studyPost.setMeetingType(request.getMeetingType());
+    studyPost.setRecruitmentPeriod(request.getRecruitmentPeriod());
+    studyPost.setDescription(request.getDescription());
+    studyPost.setLatitude(request.getLatitude());
+    studyPost.setLongitude(request.getLongitude());
+    studyPost.setStatus(request.getStatus());
+    studyPost.setThumbnailImgUrl(request.getThumbnailImgUrl());
 
     return new StudyPostUpdateResponse("스터디 모집 글이 업데이트되었습니다.");
   }
@@ -100,8 +112,8 @@ public class StudyPostService {
 
     studyPost.setStatus(StudyStatus.IN_PROGRESS);
 
-    List<StudySignup> approvedSignups = studySignupRepository.findByStudyPostAndStatus(
-        studyPost, StudySignupStatus.APPROVED);
+    List<StudySignup> approvedSignups = studySignupRepository.findByStudyPostAndStatus(studyPost,
+        StudySignupStatus.APPROVED);
 
     if (approvedSignups.isEmpty()) {
       throw new CustomException(ErrorCode.NO_APPROVED_SIGNUPS);
@@ -109,19 +121,12 @@ public class StudyPostService {
 
     Study study = studyService.createStudyFromClosedPost(studyPostId);
 
-    Student leader = Student.builder()
-        .study(study)
-        .user(studyPost.getUser())
-        .isLeader(true)
+    Student leader = Student.builder().study(study).user(studyPost.getUser()).isLeader(true)
         .build();
     studentRepository.save(leader);
 
-    List<Student> students = approvedSignups.stream()
-        .map(signup -> Student.builder()
-            .study(study)
-            .user(signup.getUser())
-            .isLeader(false)
-            .build())
+    List<Student> students = approvedSignups.stream().map(
+            signup -> Student.builder().study(study).user(signup.getUser()).isLeader(false).build())
         .toList();
     studentRepository.saveAll(students);
   }
