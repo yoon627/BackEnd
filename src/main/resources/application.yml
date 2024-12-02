@@ -14,7 +14,7 @@ spring:
     show-sql: true
     database: mysql
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
 
   jwt:
     secret: ${JWT_SECRET_KEY}
