@@ -11,10 +11,10 @@ import static org.mockito.Mockito.when;
 
 import com.devonoff.domain.study.entity.Study;
 import com.devonoff.domain.study.repository.StudyRepository;
-import com.devonoff.domain.studytime.dto.StudyTimeDto;
-import com.devonoff.domain.studytime.entity.StudyTime;
-import com.devonoff.domain.studytime.repository.StudyTimeRepository;
-import com.devonoff.domain.studytime.service.StudyTimeService;
+import com.devonoff.domain.studyTimeline.dto.StudyTimelineDto;
+import com.devonoff.domain.studyTimeline.entity.StudyTimeline;
+import com.devonoff.domain.studyTimeline.repository.StudyTimelineRepository;
+import com.devonoff.domain.studyTimeline.service.StudyTimelineService;
 import com.devonoff.domain.totalstudytime.entity.TotalStudyTime;
 import com.devonoff.domain.totalstudytime.repository.TotalStudyTimeRepository;
 import com.devonoff.exception.CustomException;
@@ -33,10 +33,10 @@ import org.mockito.MockitoAnnotations;
 class StudyTimeServiceTest {
 
   @InjectMocks
-  private StudyTimeService studyTimeService;
+  private StudyTimelineService studyTimelineService;
 
   @Mock
-  private StudyTimeRepository studyTimeRepository;
+  private StudyTimelineRepository studyTimelineRepository;
 
   @Mock
   private TotalStudyTimeRepository totalStudyTimeRepository;
@@ -57,28 +57,28 @@ class StudyTimeServiceTest {
     Study study = new Study();
     study.setStudyName(studyName);
 
-    StudyTime studyTime1 = StudyTime.builder()
+    StudyTimeline studyTime1 = StudyTimeline.builder()
         .studyId(studyId)
         .startedAt(LocalDateTime.now().minusHours(1))
         .endedAt(LocalDateTime.now())
         .build();
 
-    StudyTime studyTime2 = StudyTime.builder()
+    StudyTimeline studyTime2 = StudyTimeline.builder()
         .studyId(studyId)
         .startedAt(LocalDateTime.now().minusHours(2))
         .endedAt(LocalDateTime.now().minusHours(1))
         .build();
 
     when(studyRepository.findById(studyId)).thenReturn(Optional.of(study));
-    when(studyTimeRepository.findAllByStudyIdAndEndedAtIsNotNull(studyId))
+    when(studyTimelineRepository.findAllByStudyIdAndEndedAtIsNotNull(studyId))
         .thenReturn(Arrays.asList(studyTime1, studyTime2));
 
-    List<StudyTimeDto> result = studyTimeService.findAllStudyTimes(studyId);
+    List<StudyTimelineDto> result = studyTimelineService.findAllStudyTimes(studyId);
 
     assertEquals(2, result.size());
     assertEquals(studyName, result.get(0).getStudyName());
     verify(studyRepository, times(1)).findById(studyId);
-    verify(studyTimeRepository, times(1)).findAllByStudyIdAndEndedAtIsNotNull(studyId);
+    verify(studyTimelineRepository, times(1)).findAllByStudyIdAndEndedAtIsNotNull(studyId);
   }
 
   @Test
@@ -88,12 +88,12 @@ class StudyTimeServiceTest {
     when(studyRepository.findById(studyId)).thenReturn(Optional.empty());
 
     CustomException exception = assertThrows(CustomException.class, () -> {
-      studyTimeService.findAllStudyTimes(studyId);
+      studyTimelineService.findAllStudyTimes(studyId);
     });
 
     assertEquals(ErrorCode.STUDY_NOT_FOUND, exception.getErrorCode());
     verify(studyRepository, times(1)).findById(studyId);
-    verifyNoInteractions(studyTimeRepository);
+    verifyNoInteractions(studyTimelineRepository);
   }
 
   @Test
@@ -107,20 +107,21 @@ class StudyTimeServiceTest {
     totalStudyTime.setTotalStudyTime(3600L); // Existing 1 hour
 
     when(totalStudyTimeRepository.findById(studyId)).thenReturn(Optional.of(totalStudyTime));
-    when(studyTimeRepository.save(any(StudyTime.class))).thenAnswer(
+    when(studyTimelineRepository.save(any(StudyTimeline.class))).thenAnswer(
         invocation -> invocation.getArgument(0));
 
-    StudyTime savedStudyTime = studyTimeService.saveStudyTime(studyId, startedAt, endedAt);
+    StudyTimeline savedStudyTimeline = studyTimelineService.saveStudyTime(studyId, startedAt,
+        endedAt);
 
-    assertNotNull(savedStudyTime);
-    assertEquals(studyId, savedStudyTime.getStudyId());
-    assertEquals(startedAt, savedStudyTime.getStartedAt());
-    assertEquals(endedAt, savedStudyTime.getEndedAt());
+    assertNotNull(savedStudyTimeline);
+    assertEquals(studyId, savedStudyTimeline.getStudyId());
+    assertEquals(startedAt, savedStudyTimeline.getStartedAt());
+    assertEquals(endedAt, savedStudyTimeline.getEndedAt());
     assertEquals(7200L, totalStudyTime.getTotalStudyTime()); // Updated to 2 hours
 
     verify(totalStudyTimeRepository, times(1)).findById(studyId);
     verify(totalStudyTimeRepository, times(1)).save(totalStudyTime);
-    verify(studyTimeRepository, times(1)).save(any(StudyTime.class));
+    verify(studyTimelineRepository, times(1)).save(any(StudyTimeline.class));
   }
 
   @Test
@@ -133,11 +134,11 @@ class StudyTimeServiceTest {
     when(totalStudyTimeRepository.findById(studyId)).thenReturn(Optional.empty());
 
     CustomException exception = assertThrows(CustomException.class, () -> {
-      studyTimeService.saveStudyTime(studyId, startedAt, endedAt);
+      studyTimelineService.saveStudyTime(studyId, startedAt, endedAt);
     });
 
     assertEquals(ErrorCode.STUDY_NOT_FOUND, exception.getErrorCode());
     verify(totalStudyTimeRepository, times(1)).findById(studyId);
-    verifyNoInteractions(studyTimeRepository);
+    verifyNoInteractions(studyTimelineRepository);
   }
 }

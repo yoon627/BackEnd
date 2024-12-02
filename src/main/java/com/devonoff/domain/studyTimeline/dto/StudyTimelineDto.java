@@ -1,6 +1,6 @@
-package com.devonoff.domain.studytime.dto;
+package com.devonoff.domain.studyTimeline.dto;
 
-import com.devonoff.domain.studytime.entity.StudyTime;
+import com.devonoff.domain.studyTimeline.entity.StudyTimeline;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +13,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class StudyTimeDto {
+public class StudyTimelineDto {
 
   // TODO 프론트엔드로 보낼때 필요한 것들 추가해야함
   private Long studyId;
@@ -21,16 +21,17 @@ public class StudyTimeDto {
   private LocalDateTime startedAt;
   private LocalDateTime endedAt;
 
-  public static StudyTimeDto fromEntity(StudyTime studyTime) {
-    return StudyTimeDto.builder()
+  public static StudyTimelineDto fromEntity(StudyTimeline studyTime) {
+    return StudyTimelineDto.builder()
         .studyId(studyTime.getStudyId())
         .startedAt(studyTime.getStartedAt())
         .endedAt(studyTime.getEndedAt())
         .build();
   }
 
-  public static StudyTimeDto fromEntityWithStudyName(StudyTime studyTime, String studyName) {
-    return StudyTimeDto.builder()
+  public static StudyTimelineDto fromEntityWithStudyName(StudyTimeline studyTime,
+      String studyName) {
+    return StudyTimelineDto.builder()
         .studyId(studyTime.getStudyId())
         .studyName(studyName)
         .startedAt(studyTime.getStartedAt())

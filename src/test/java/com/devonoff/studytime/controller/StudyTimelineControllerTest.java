@@ -6,9 +6,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.devonoff.config.SecurityConfig;
-import com.devonoff.domain.studytime.controller.StudyTimeController;
-import com.devonoff.domain.studytime.dto.StudyTimeDto;
-import com.devonoff.domain.studytime.service.StudyTimeService;
+import com.devonoff.domain.studyTimeline.controller.StudyTimelineController;
+import com.devonoff.domain.studyTimeline.dto.StudyTimelineDto;
+import com.devonoff.domain.studyTimeline.service.StudyTimelineService;
 import com.devonoff.util.JwtProvider;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -23,16 +23,16 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(StudyTimeController.class)
+@WebMvcTest(StudyTimelineController.class)
 @Import(SecurityConfig.class) // SecurityConfig를 명시적으로 포함 (Optional)
 @AutoConfigureMockMvc(addFilters = false)
-class StudyTimeControllerTest {
+class StudyTimelineControllerTest {
 
   @Autowired
   private MockMvc mockMvc;
 
   @MockBean
-  private StudyTimeService studyTimeService;
+  private StudyTimelineService studyTimelineService;
 
   @MockBean
   private JwtProvider jwtProvider;
@@ -42,21 +42,21 @@ class StudyTimeControllerTest {
   void shouldReturnStudyTimesForGivenStudyId() throws Exception {
     // Given
     Long studyId = 1L;
-    List<StudyTimeDto> mockStudyTimes = Arrays.asList(
-        StudyTimeDto.builder()
+    List<StudyTimelineDto> mockStudyTimes = Arrays.asList(
+        StudyTimelineDto.builder()
             .studyId(1L)
             .studyName("Java Study Group")
             .startedAt(LocalDateTime.of(2023, 12, 1, 10, 0))
             .endedAt(LocalDateTime.of(2023, 12, 1, 12, 0))
             .build(),
-        StudyTimeDto.builder()
+        StudyTimelineDto.builder()
             .studyId(2L)
             .studyName("Java Study Group")
             .startedAt(LocalDateTime.of(2023, 12, 2, 9, 0))
             .endedAt(LocalDateTime.of(2023, 12, 2, 11, 0))
             .build()
     );
-    given(studyTimeService.findAllStudyTimes(studyId)).willReturn(mockStudyTimes);
+    given(studyTimelineService.findAllStudyTimes(studyId)).willReturn(mockStudyTimes);
 
     // When
     mockMvc.perform(get("/api/study-time/{studyId}", studyId)

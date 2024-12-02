@@ -27,7 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(TotalStudyTimeController.class)
 @Import(SecurityConfig.class) // SecurityConfig를 명시적으로 포함 (Optional)
 @AutoConfigureMockMvc(addFilters = false)
-class TotalStudyTimeControllerTest {
+class TotalStudyTimelineControllerTest {
 
   @Autowired
   private MockMvc mockMvc;
