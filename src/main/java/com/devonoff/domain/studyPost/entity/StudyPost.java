@@ -103,7 +103,7 @@ public class StudyPost extends BaseTimeEntity {
   private User user; // 작성자
 
   public boolean isFull() {
-    return currentParticipants >= maxParticipants;
+    return currentParticipants >= (maxParticipants - 1); // 스터디장 제외
   }
 
   public void incrementParticipants() {

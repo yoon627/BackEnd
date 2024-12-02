@@ -35,6 +35,7 @@ public class StudyDto {
   private StudyStatus status;
   private Long studyPostId;
   private Long studyLeaderId;
+  private Integer totalParticipants;
 
   public static StudyDto fromEntity(Study study) {
     return StudyDto.builder()
@@ -50,6 +51,7 @@ public class StudyDto {
         .meetingType(study.getMeetingType())
         .studyPostId(study.getStudyPost().getId())
         .studyLeaderId(study.getStudyLeader().getId())
+        .totalParticipants(study.getTotalParticipants())
         .build();
   }
 }
