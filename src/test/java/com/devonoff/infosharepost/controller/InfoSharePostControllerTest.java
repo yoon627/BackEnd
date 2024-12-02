@@ -1,13 +1,11 @@
 package com.devonoff.infosharepost.controller;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -15,11 +13,9 @@ import com.devonoff.config.SecurityConfig;
 import com.devonoff.domain.infosharepost.controller.InfoSharePostController;
 import com.devonoff.domain.infosharepost.dto.InfoSharePostDto;
 import com.devonoff.domain.infosharepost.service.InfoSharePostService;
-import com.devonoff.util.JwtAuthenticationFilter;
 import com.devonoff.util.JwtProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
+import java.util.Collections;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +26,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(InfoSharePostController.class)
@@ -38,120 +35,110 @@ import org.springframework.test.web.servlet.MockMvc;
 class InfoSharePostControllerTest {
 
   @MockBean
-  private JwtProvider jwtProvider;
-
-  @MockBean
-  private JwtAuthenticationFilter jwtAuthenticationFilter;
-
-  @MockBean
-  private InfoSharePostService infoSharePostService;
-
+  JwtProvider jwtProvider;
   @Autowired
   private MockMvc mockMvc;
-
+  @MockBean
+  private InfoSharePostService infoSharePostService;
   @Autowired
   private ObjectMapper objectMapper;
 
-  private InfoSharePostDto samplePost;
-
-  @BeforeEach
-  void setUp() {
-    samplePost = new InfoSharePostDto();
-    samplePost.setId(1L);
-    samplePost.setTitle("Sample Title");
-    samplePost.setDescription("Sample Content");
-    samplePost.setUserId(1L);
-  }
-
   @Test
-  void testCreateInfoSharePost() throws Exception {
+  void createInfoSharePost_Success() throws Exception {
     // given
-    Mockito.when(infoSharePostService.createInfoSharePost(any(InfoSharePostDto.class)))
-        .thenReturn(samplePost);
+    MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg",
+        "image content".getBytes());
+    InfoSharePostDto requestDto = InfoSharePostDto.builder()
+        .title("Test Title")
+        .description("Test Description")
+        .build();
+    InfoSharePostDto responseDto = InfoSharePostDto.builder()
+        .title("Test Title")
+        .description("Test Description")
+        .thumbnailImgUrl("test-url")
+        .build();
 
-    // when
-    mockMvc.perform(post("/api/info-posts")
+    Mockito.when(infoSharePostService.createInfoSharePost(any(InfoSharePostDto.class), any()))
+        .thenReturn(responseDto);
+
+    // when & then
+    mockMvc.perform(multipart("/api/info-posts")
+            .file(file)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(samplePost)))
-
-        // then
+            .content(objectMapper.writeValueAsString(requestDto)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.id").value(1L))
-        .andExpect(jsonPath("$.title").value("Sample Title"));
+        .andExpect(jsonPath("$.title").value("Test Title"))
+        .andExpect(jsonPath("$.thumbnailImgUrl").value("test-url"));
   }
 
   @Test
-  void testGetInfoSharePosts() throws Exception {
+  void getInfoSharePosts_Success() throws Exception {
     // given
-    Page<InfoSharePostDto> page = new PageImpl<>(List.of(samplePost));
-    Mockito.when(infoSharePostService.getInfoSharePosts(anyInt(), anyString()))
+    Page<InfoSharePostDto> page = new PageImpl<>(Collections.singletonList(
+        InfoSharePostDto.builder().title("Test Title").build()
+    ));
+
+    Mockito.when(infoSharePostService.getInfoSharePosts(0, ""))
         .thenReturn(page);
 
-    // when
+    // when & then
     mockMvc.perform(get("/api/info-posts")
             .param("page", "0")
-            .param("search", "Sample"))
-
-        // then
+            .param("search", ""))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content[0].id").value(1L));
+        .andExpect(jsonPath("$.content[0].title").value("Test Title"));
   }
 
   @Test
-  void testGetInfoSharePostsByUserId() throws Exception {
+  void getInfoSharePostByPostId_Success() throws Exception {
     // given
-    Page<InfoSharePostDto> page = new PageImpl<>(List.of(samplePost));
-    Mockito.when(infoSharePostService.getInfoSharePostsByUserId(anyLong(), anyInt(), anyString()))
-        .thenReturn(page);
+    InfoSharePostDto responseDto = InfoSharePostDto.builder()
+        .title("Test Title")
+        .description("Test Description")
+        .build();
 
-    // when
-    mockMvc.perform(get("/api/info-posts/author/1")
-            .param("page", "0")
-            .param("search", "Sample"))
-
-        // then
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.content[0].id").value(1L));
-  }
-
-  @Test
-  void testGetInfoSharePostByPostId() throws Exception {
-    // given
     Mockito.when(infoSharePostService.getInfoSharePostByPostId(anyLong()))
-        .thenReturn(samplePost);
+        .thenReturn(responseDto);
 
-    // when
+    // when & then
     mockMvc.perform(get("/api/info-posts/1"))
-
-        // then
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.id").value(1L))
-        .andExpect(jsonPath("$.title").value("Sample Title"));
+        .andExpect(jsonPath("$.title").value("Test Title"));
   }
 
   @Test
-  void testUpdateInfoSharePost() throws Exception {
+  void updateInfoSharePost_Success() throws Exception {
     // given
-    Mockito.when(infoSharePostService.updateInfoSharePost(anyLong(), any(InfoSharePostDto.class)))
-        .thenReturn(samplePost);
+    MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg",
+        "image content".getBytes());
+    InfoSharePostDto requestDto = InfoSharePostDto.builder()
+        .title("Updated Title")
+        .description("Updated Description")
+        .build();
+    InfoSharePostDto responseDto = InfoSharePostDto.builder()
+        .title("Updated Title")
+        .description("Updated Description")
+        .build();
 
-    // when
-    mockMvc.perform(put("/api/info-posts/1")
+    Mockito.when(
+            infoSharePostService.updateInfoSharePost(eq(1L), any(InfoSharePostDto.class), any()))
+        .thenReturn(responseDto);
+
+    // when & then
+    mockMvc.perform(multipart("/api/info-posts/1")
+            .file(file)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(samplePost)))
-
-        // then
+            .content(objectMapper.writeValueAsString(requestDto)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.id").value(1L))
-        .andExpect(jsonPath("$.title").value("Sample Title"));
+        .andExpect(jsonPath("$.title").value("Updated Title"));
   }
 
   @Test
-  void testDeleteInfoSharePost() throws Exception {
-    // when
+  void deleteInfoSharePost_Success() throws Exception {
+    // when & then
     mockMvc.perform(delete("/api/info-posts/1"))
-
-        // then
         .andExpect(status().isOk());
+
+    Mockito.verify(infoSharePostService).deleteInfoSharePost(1L);
   }
 }

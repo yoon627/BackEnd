@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/info-posts")
@@ -24,14 +24,16 @@ public class InfoSharePostController {
 
   @PostMapping
   public ResponseEntity<InfoSharePostDto> createInfoSharePost(
+      @RequestParam("file") MultipartFile file,
       @RequestBody InfoSharePostDto infoSharePost) {
-    var result = this.infoSharePostService.createInfoSharePost(infoSharePost);
+    var result = this.infoSharePostService.createInfoSharePost(infoSharePost, file);
     return ResponseEntity.ok(result);
   }
 
   @GetMapping
-  public ResponseEntity<Page<InfoSharePostDto>> getInfoSharePosts(@RequestParam Integer page,
-      @RequestParam String search) {
+  public ResponseEntity<Page<InfoSharePostDto>> getInfoSharePosts(
+      @RequestParam(required = false, defaultValue = "0") Integer page,
+      @RequestParam(required = false, defaultValue = "") String search) {
     var result = this.infoSharePostService.getInfoSharePosts(page, search);
     return ResponseEntity.ok(result);
   }
@@ -51,10 +53,11 @@ public class InfoSharePostController {
     return ResponseEntity.ok(result);
   }
 
-  @PutMapping("/{infoPostId}")
+  @PostMapping("/{infoPostId}")
   public ResponseEntity<InfoSharePostDto> updateInfoSharePost(@PathVariable Long infoPostId,
+      @RequestParam("file") MultipartFile file,
       @RequestBody InfoSharePostDto infoSharePostDto) {
-    var result = this.infoSharePostService.updateInfoSharePost(infoPostId, infoSharePostDto);
+    var result = this.infoSharePostService.updateInfoSharePost(infoPostId, infoSharePostDto, file);
     return ResponseEntity.ok(result);
   }
 
