@@ -1,6 +1,7 @@
 package com.devonoff.domain.qnapost.controller;
 
 
+import com.devonoff.domain.qnapost.dto.PublicQnaPostDto;
 import com.devonoff.domain.qnapost.dto.QnaPostDto;
 import com.devonoff.domain.qnapost.dto.QnaPostRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostUpdateDto;
@@ -51,7 +52,7 @@ public class QnaPostController {
    * @return Page<QnaPostDto>
    */
   @GetMapping
-  public Page<QnaPostDto> getQnaPostList(
+  public Page<PublicQnaPostDto> getQnaPostList(
       @RequestParam(name = "page",required = false, defaultValue = "1") Integer page,
       @RequestParam(name = "search",required = false, defaultValue = "") String search
   ) {
@@ -67,7 +68,7 @@ public class QnaPostController {
    * @return Page<QnaPostDto>
    */
   @GetMapping("/author/{userId}")
-  public Page<QnaPostDto> getQnaPostByUserIdList(
+  public Page<PublicQnaPostDto> getQnaPostByUserIdList(
       @PathVariable(name = "userId") Long userId,
       @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
       @RequestParam(name = "search",required = false, defaultValue = "") String search
