@@ -125,7 +125,7 @@ public class AuthService {
 
     userRepository.save(
         User.builder()
-            .nickName(nickName)
+            .nickname(nickName)
             .email(email)
             .password(encodedPassword)
             .isActive(true)
@@ -224,7 +224,7 @@ public class AuthService {
    * @param nickName
    */
   public void checkExistsNickName(String nickName) {
-    boolean existsByNickName = userRepository.existsByNickName(nickName);
+    boolean existsByNickName = userRepository.existsByNickname(nickName);
     if (existsByNickName) {
       throw new CustomException(ErrorCode.NICKNAME_ALREADY_REGISTERED);
     }
