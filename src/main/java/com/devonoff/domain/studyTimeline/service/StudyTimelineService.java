@@ -15,6 +15,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -25,7 +28,11 @@ public class StudyTimelineService {
   private final TotalStudyTimeRepository totalStudyTimeRepository;
   private final StudyRepository studyRepository;
 
-  public List<StudyTimelineDto> findAllStudyTimes(Long studyId) {
+  public List<StudyTimelineDto> findAllStudyTimelines(Long studyId) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+    Long userId = Long.parseLong(userDetails.getUsername());
+    //TODO userId와 student 연동해서 로그인된 유저가 해당 스터디에 속하는지 확인해야함
     String studyName = studyRepository.findById(studyId)
         .orElseThrow(() -> new CustomException(STUDY_NOT_FOUND)).getStudyName();
     return this.studyTimelineRepository.findAllByStudyIdAndEndedAtIsNotNull(studyId).stream()
@@ -38,7 +45,8 @@ public class StudyTimelineService {
 
   //TODO 화상채팅과 연동시 작동하도록 확인
   @Transactional
-  public StudyTimeline saveStudyTime(Long studyId, LocalDateTime startedAt, LocalDateTime endedAt) {
+  public StudyTimeline saveStudyTimeline(Long studyId, LocalDateTime startedAt,
+      LocalDateTime endedAt) {
     TotalStudyTime totalStudyTime = this.totalStudyTimeRepository.findById(studyId)
         .orElseThrow(() -> new CustomException(STUDY_NOT_FOUND));
     Long totalSeconds = totalStudyTime.getTotalStudyTime();

@@ -73,7 +73,7 @@ class StudyTimeServiceTest {
     when(studyTimelineRepository.findAllByStudyIdAndEndedAtIsNotNull(studyId))
         .thenReturn(Arrays.asList(studyTime1, studyTime2));
 
-    List<StudyTimelineDto> result = studyTimelineService.findAllStudyTimes(studyId);
+    List<StudyTimelineDto> result = studyTimelineService.findAllStudyTimelines(studyId);
 
     assertEquals(2, result.size());
     assertEquals(studyName, result.get(0).getStudyName());
@@ -88,7 +88,7 @@ class StudyTimeServiceTest {
     when(studyRepository.findById(studyId)).thenReturn(Optional.empty());
 
     CustomException exception = assertThrows(CustomException.class, () -> {
-      studyTimelineService.findAllStudyTimes(studyId);
+      studyTimelineService.findAllStudyTimelines(studyId);
     });
 
     assertEquals(ErrorCode.STUDY_NOT_FOUND, exception.getErrorCode());
@@ -110,7 +110,7 @@ class StudyTimeServiceTest {
     when(studyTimelineRepository.save(any(StudyTimeline.class))).thenAnswer(
         invocation -> invocation.getArgument(0));
 
-    StudyTimeline savedStudyTimeline = studyTimelineService.saveStudyTime(studyId, startedAt,
+    StudyTimeline savedStudyTimeline = studyTimelineService.saveStudyTimeline(studyId, startedAt,
         endedAt);
 
     assertNotNull(savedStudyTimeline);
@@ -134,7 +134,7 @@ class StudyTimeServiceTest {
     when(totalStudyTimeRepository.findById(studyId)).thenReturn(Optional.empty());
 
     CustomException exception = assertThrows(CustomException.class, () -> {
-      studyTimelineService.saveStudyTime(studyId, startedAt, endedAt);
+      studyTimelineService.saveStudyTimeline(studyId, startedAt, endedAt);
     });
 
     assertEquals(ErrorCode.STUDY_NOT_FOUND, exception.getErrorCode());
