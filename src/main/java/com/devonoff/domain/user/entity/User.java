@@ -60,4 +60,5 @@ public class User extends BaseTimeEntity implements UserDetails {
     return String.valueOf(this.id);
   }
 
+
 }
