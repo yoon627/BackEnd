@@ -36,7 +36,6 @@ out/
 ### VS Code ###
 .vscode/
 
-
 # Created by https://www.toptal.com/developers/gitignore/api/macos,windows,java,gradle,intellij
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,windows,java,gradle,intellij
 
@@ -260,9 +259,9 @@ gradle-app.setting
 .project
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
-
+OAuth.env
 ### Gradle Patch ###
 # Java heap dump
 *.hprof
-
+#/src/main/resources/application.yml
 # End of https://www.toptal.com/developers/gitignore/api/macos,windows,java,gradle,intellij
