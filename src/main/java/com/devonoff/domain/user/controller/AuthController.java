@@ -117,8 +117,7 @@ public class AuthController {
   public ResponseEntity<ResponseDto> signOut(
       @AuthenticationPrincipal UserDetails userDetails
   ) {
-    Long id = Long.valueOf(userDetails.getUsername());
-    return ResponseEntity.ok(authService.signOut(id));
+    return ResponseEntity.ok(authService.signOut(userDetails));
   }
 
   /**
@@ -139,12 +138,11 @@ public class AuthController {
    * @param userDetails
    * @return ResponseEntity<ResponseDto>
    */
-  @PatchMapping("/withdrawal")
+  @PostMapping("/withdrawal")
   public ResponseEntity<ResponseDto> withdrawalUser(
       @AuthenticationPrincipal UserDetails userDetails
   ) {
-    Long id = Long.valueOf(userDetails.getUsername());
-    return ResponseEntity.ok(authService.withdrawalUser(id));
+    return ResponseEntity.ok(authService.withdrawalUser(userDetails));
   }
 
 }

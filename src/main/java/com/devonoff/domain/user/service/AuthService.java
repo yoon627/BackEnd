@@ -21,11 +21,10 @@ import com.devonoff.util.JwtProvider;
 import jakarta.transaction.Transactional;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -170,10 +169,11 @@ public class AuthService {
   /**
    * 로그아웃
    *
-   * @param userId
+   * @param userDetails
    * @return ResponseDto
    */
-  public ResponseDto signOut(Long userId) {
+  public ResponseDto signOut(UserDetails userDetails) {
+    Long userId = Long.parseLong(userDetails.getUsername());
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
@@ -205,11 +205,12 @@ public class AuthService {
   /**
    * 회원 탈퇴
    *
-   * @param userId
+   * @param userDetails
    * @return ResponseDto
    */
   @Transactional
-  public ResponseDto withdrawalUser(Long userId) {
+  public ResponseDto withdrawalUser(UserDetails userDetails) {
+    Long userId = Long.parseLong(userDetails.getUsername());
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
@@ -223,7 +224,7 @@ public class AuthService {
    *
    * @param nickName
    */
-  public void checkExistsNickName(String nickName) {
+  private void checkExistsNickName(String nickName) {
     boolean existsByNickName = userRepository.existsByNickname(nickName);
     if (existsByNickName) {
       throw new CustomException(ErrorCode.NICKNAME_ALREADY_REGISTERED);
@@ -235,7 +236,7 @@ public class AuthService {
    *
    * @param email
    */
-  public void checkExistsEmail(String email) {
+  private void checkExistsEmail(String email) {
     boolean existsByEmail = userRepository.existsByEmail(email);
     if (existsByEmail) {
       throw new CustomException(ErrorCode.EMAIL_ALREADY_REGISTERED);
