@@ -38,7 +38,7 @@ public class RedisService {
       throw new CustomException(ErrorCode.REFRESH_TOKEN_EXPIRED);
     }
 
-    if (refreshTokenData.equals(refreshToken)) {
+    if (!refreshTokenData.equals(refreshToken)) {
       throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
     }
   }
