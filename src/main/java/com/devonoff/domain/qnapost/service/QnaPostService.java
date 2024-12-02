@@ -44,8 +44,14 @@ public class QnaPostService {
   @Transactional
   public Map<String, String> createQnaPost(
       QnaPostRequest qnaPostRequest, User user) {
-
-    user  = userRepository.findByEmail(user.getEmail())
+    // 입력값 검증
+    if (qnaPostRequest.getTitle() == null || qnaPostRequest.getTitle().isBlank()) {
+      throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+    }
+    if (qnaPostRequest.getContent() == null || qnaPostRequest.getContent().isBlank()) {
+      throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+    }
+    user = userRepository.findByEmail(user.getEmail())
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
     String uploadedThumbnailUrl = photoService.save(qnaPostRequest.getThumbnail());
@@ -160,25 +166,26 @@ public class QnaPostService {
   @Transactional
   public Map<String, String> deleteQnaPost(Long qnaPostId, User user) {
 
-      QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
-          .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+    QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
+        .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
-      // 게시글 작성자 확인
-      if (!qnaPost.getUser().getId().equals(user.getId())) {
-        throw new CustomException(ErrorCode.USER_NOT_FOUND);
-      }
-      if (qnaPost.getThumbnailUrl() != null) {
-        photoService.delete(qnaPost.getThumbnailUrl());
+    // 게시글 작성자 확인
+    if (!qnaPost.getUser().getId().equals(user.getId())) {
+      throw new CustomException(ErrorCode.USER_NOT_FOUND);
+    }
+    if (qnaPost.getThumbnailUrl() != null) {
+      photoService.delete(qnaPost.getThumbnailUrl());
 
-      }
-      qnaPostRepository.delete(qnaPost);
+    }
+    qnaPostRepository.delete(qnaPost);
 
-      Map<String, String> responseMap = new HashMap<>();
-      responseMap.put("message", "정상적으로 삭제 되었습니다.");
+    Map<String, String> responseMap = new HashMap<>();
+    responseMap.put("message", "정상적으로 삭제 되었습니다.");
 
-      return responseMap;
+    return responseMap;
 
-    }}
+  }
+}
 
 
 

@@ -114,6 +114,42 @@ class QnaPostServiceTest {
   }
 
   @Test
+  @DisplayName("게시글 생성 실패 테스트 - 제목 누락")
+  void createQnaPost_FailDueToMissingTitle() {
+    // Given: 제목이 없는 게시글 요청
+    QnaPostRequest request = QnaPostRequest.builder()
+        .content("Content without title")
+        .thumbnail(mock(MultipartFile.class))
+        .build();
+
+    // When: 생성 요청 처리
+    CustomException exception = assertThrows(CustomException.class,
+        () -> qnaPostService.createQnaPost(request, user));
+
+    // Then: 예외 발생
+    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
+    verify(qnaPostRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("게시글 생성 실패 테스트 - 내용 누락")
+  void createQnaPost_FailDueToMissingContent() {
+    // Given
+    QnaPostRequest request = QnaPostRequest.builder()
+        .title("Valid Title")
+        .thumbnail(mock(MultipartFile.class))
+        .build();
+
+    // When
+    CustomException exception = assertThrows(CustomException.class,
+        () -> qnaPostService.createQnaPost(request, user));
+
+    // Then
+    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
+    verify(qnaPostRepository, never()).save(any());
+  }
+
+  @Test
   @DisplayName("게시글 수정 성공 테스트")
   void updateQnaPost_Success() {
     // Given: 존재하는 게시글과 수정 요청이 주어진 경우
@@ -140,8 +176,29 @@ class QnaPostServiceTest {
   }
 
   @Test
-  @DisplayName("게시글 삭제 실패 테스트 - 작성자가 아님")
+  @DisplayName("게시글 수정 실패 테스트 - 작성자가 아님")
+  void updateQnaPost_FailDueToNotOwner() {
+    // Given: 게시글의 작성자가 아닌 사용자가 수정 요청을 보낸 경우
+    User anotherUser = User.builder().id(2L).build();
+    when(qnaPostRepository.findById(1L)).thenReturn(Optional.of(qnaPost));
 
+    QnaPostUpdateDto updateDto = QnaPostUpdateDto.builder()
+        .title("Updated Title")
+        .content("Updated Content")
+        .thumbnail(mock(MultipartFile.class))
+        .build();
+
+    // When: 게시글 수정 요청을 수행할 때
+    CustomException exception = assertThrows(CustomException.class,
+        () -> qnaPostService.updateQnaPost(1L, updateDto, anotherUser));
+
+    // Then: 작성자 아님 오류가 발생해야 함
+    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+    verify(photoService, never()).delete(any());
+    verify(photoService, never()).save(any());
+  }
+  @Test
+  @DisplayName("게시글 삭제 실패 테스트 - 작성자가 아님")
   void deleteQnaPost_NotOwner2() {
     // Given
     User anotherUser = User.builder().id(2L).build();
@@ -173,6 +230,42 @@ class QnaPostServiceTest {
   }
 
   @Test
+  @DisplayName("게시글 수정 실패 테스트 - 게시글 없음")
+  void updateQnaPost_FailDueToPostNotFound() {
+    // Given: 존재하지 않는 게시글 ID로 수정 요청이 주어진 경우
+    when(qnaPostRepository.findById(1L)).thenReturn(Optional.empty());
+
+    QnaPostUpdateDto updateDto = QnaPostUpdateDto.builder()
+        .title("Updated Title")
+        .content("Updated Content")
+        .thumbnail(mock(MultipartFile.class))
+        .build();
+
+    // When: 게시글 수정 요청을 수행할 때
+    CustomException exception = assertThrows(CustomException.class,
+        () -> qnaPostService.updateQnaPost(1L, updateDto, user));
+
+    // Then: 게시글 없음 오류가 발생해야 함
+    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.POST_NOT_FOUND);
+    verify(photoService, never()).delete(any());
+    verify(photoService, never()).save(any());
+  }
+  @Test
+  @DisplayName("게시글 삭제 실패 테스트 - 게시글 없음")
+  void deleteQnaPost_FailDueToPostNotFound() {
+    // Given: 존재하지 않는 게시글 ID로 삭제 요청이 주어진 경우
+    when(qnaPostRepository.findById(1L)).thenReturn(Optional.empty());
+
+    // When: 게시글 삭제 요청을 수행할 때
+    CustomException exception = assertThrows(CustomException.class,
+        () -> qnaPostService.deleteQnaPost(1L, user));
+
+    // Then: 게시글 없음 오류가 발생해야 함
+    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.POST_NOT_FOUND);
+    verify(photoService, never()).delete(any());
+    verify(qnaPostRepository, never()).delete(any());
+  }
+  @Test
   @DisplayName("게시글 삭제 실패 테스트 - 작성자가 아님")
   void deleteQnaPost_NotOwner() {
     // Given: 삭제 요청 사용자가 게시글 작성자가 아닌 경우
@@ -196,7 +289,8 @@ class QnaPostServiceTest {
     Page<QnaPost> page = new PageImpl<>(Collections.singletonList(qnaPost));
 
     // Mock 설정: Pageable과 검색어에 대해 반환값 지정
-    when(qnaPostRepository.findByTitleContaining(anyString(), any(Pageable.class))).thenReturn(page);
+    when(qnaPostRepository.findByTitleContaining(anyString(), any(Pageable.class))).thenReturn(
+        page);
 
     // When: 게시글 목록 조회를 요청할 때
     var result = qnaPostService.getQnaPostList(1, "Test");
