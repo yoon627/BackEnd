@@ -3,7 +3,8 @@ package com.devonoff.domain.studyPost.controller;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateResponse;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
-import com.devonoff.domain.studyPost.dto.StudyPostUpdateDto;
+import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
+import com.devonoff.domain.studyPost.dto.StudyPostUpdateResponse;
 import com.devonoff.domain.studyPost.service.StudyPostService;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
@@ -66,9 +67,9 @@ public class StudyPostController {
 
   // 스터디 모집글 수정
   @PatchMapping("/{studyPostId}")
-  public ResponseEntity<StudyPostUpdateDto.Response> updateStudyPost(
-      @PathVariable Long studyPostId, @RequestBody StudyPostUpdateDto.Request request) {
-    StudyPostUpdateDto.Response response = studyPostService.updateStudyPost(studyPostId, request);
+  public ResponseEntity<StudyPostUpdateResponse> updateStudyPost(
+      @PathVariable Long studyPostId, @RequestBody StudyPostUpdateRequest request) {
+    StudyPostUpdateResponse response = studyPostService.updateStudyPost(studyPostId, request);
     return ResponseEntity.ok(response);
   }
 
