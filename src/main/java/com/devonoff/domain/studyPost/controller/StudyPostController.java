@@ -1,6 +1,7 @@
 package com.devonoff.domain.studyPost.controller;
 
-import com.devonoff.domain.studyPost.dto.StudyPostCreateDto;
+import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
+import com.devonoff.domain.studyPost.dto.StudyPostCreateResponse;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateDto;
 import com.devonoff.domain.studyPost.service.StudyPostService;
@@ -57,9 +58,9 @@ public class StudyPostController {
 
   // 스터디 모집글 생성
   @PostMapping
-  public ResponseEntity<StudyPostCreateDto.Response> createStudyPost(
-      @RequestBody StudyPostCreateDto.Request request) {
-    StudyPostCreateDto.Response response = studyPostService.createStudyPost(request);
+  public ResponseEntity<StudyPostCreateResponse> createStudyPost(
+      @RequestBody StudyPostCreateRequest request) {
+    StudyPostCreateResponse response = studyPostService.createStudyPost(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 

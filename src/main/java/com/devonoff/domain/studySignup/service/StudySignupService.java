@@ -2,7 +2,8 @@ package com.devonoff.domain.studySignup.service;
 
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
-import com.devonoff.domain.studySignup.dto.StudySignupCreateDto;
+import com.devonoff.domain.studySignup.dto.StudySignupCreateRequest;
+import com.devonoff.domain.studySignup.dto.StudySignupCreateResponse;
 import com.devonoff.domain.studySignup.dto.StudySignupDto;
 import com.devonoff.domain.studySignup.entity.StudySignup;
 import com.devonoff.domain.studySignup.repository.StudySignupRepository;
@@ -28,7 +29,7 @@ public class StudySignupService {
 
   // 스터디 신청
   @Transactional
-  public StudySignupCreateDto.Response createStudySignup(StudySignupCreateDto.Request request) {
+  public StudySignupCreateResponse createStudySignup(StudySignupCreateRequest request) {
     StudyPost studyPost = studyPostRepository.findById(request.getStudyPostId())
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
@@ -52,7 +53,7 @@ public class StudySignupService {
 
     studySignupRepository.save(studySignup);
 
-    return new StudySignupCreateDto.Response("스터디 신청이 완료되었습니다.");
+    return new StudySignupCreateResponse("스터디 신청이 완료되었습니다.");
   }
 
   // 신청 상태 관리(승인/거절)

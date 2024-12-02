@@ -1,7 +1,7 @@
 package com.devonoff.domain.studySignup.controller;
 
-import com.devonoff.domain.studySignup.dto.StudySignupCreateDto;
-import com.devonoff.domain.studySignup.dto.StudySignupCreateDto.Response;
+import com.devonoff.domain.studySignup.dto.StudySignupCreateRequest;
+import com.devonoff.domain.studySignup.dto.StudySignupCreateResponse;
 import com.devonoff.domain.studySignup.dto.StudySignupDto;
 import com.devonoff.domain.studySignup.service.StudySignupService;
 import com.devonoff.type.StudySignupStatus;
@@ -29,9 +29,9 @@ public class StudySignupController {
 
   // 스터디 신청
   @PostMapping
-  public ResponseEntity<Response> createStudySignup(
-      @RequestBody @Valid StudySignupCreateDto.Request request) {
-    StudySignupCreateDto.Response response = studySignupService.createStudySignup(request);
+  public ResponseEntity<StudySignupCreateResponse> createStudySignup(
+      @RequestBody @Valid StudySignupCreateRequest request) {
+    StudySignupCreateResponse response = studySignupService.createStudySignup(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
