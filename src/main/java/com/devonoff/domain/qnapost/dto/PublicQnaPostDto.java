@@ -27,7 +27,7 @@ public class PublicQnaPostDto {
         .id(qnaPost.getId())
         .title(qnaPost.getTitle())
         .thumbnailUrl(qnaPost.getThumbnailUrl())
-        .nickName(qnaPost.getUser().getNickName()) // User의 닉네임만 포함
+        .nickName(qnaPost.getUser().getNickname()) // User의 닉네임만 포함
         .postType(qnaPost.getPostType())
         .build();
   }
