@@ -25,12 +25,12 @@ public class CommentController {
   private final CommentService commentService;
   private final AuthService authService;
 
-  // 댓글 생성
+
   @PostMapping
   public ResponseEntity<CommentDto> createComment(@RequestBody CommentDto dto) {
     Long userId = authService.getLoginUserId(); // 로그인된 사용자 ID 가져오기
-    return ResponseEntity.ok(commentService.createComment(dto, userId));
-
+    CommentDto createdComment = commentService.createComment(dto, userId);
+    return ResponseEntity.ok(createdComment); // 생성된 댓글 DTO 반환
   }
 
   // 특정 게시글의 댓글 조회
@@ -49,6 +49,8 @@ public class CommentController {
     Long userId = authService.getLoginUserId();
     return ResponseEntity.ok(
         commentService.updateComment(commentId, dto.getContent(), dto.getIsSecret(), userId));
+
+
   }
 
   // 댓글 삭제
@@ -56,8 +58,7 @@ public class CommentController {
   public ResponseEntity<String> deleteComment(@PathVariable("commentId") Long commentId) {
     Long userId = authService.getLoginUserId();
     commentService.deleteComment(commentId, userId);
-    //return ResponseEntity.noContent().build();
-    return ResponseEntity.ok("댓글이 성공적으로 삭제되었습니다."); // 성공 메시지 반환
+    return ResponseEntity.ok().build();
   }
 
 

@@ -31,7 +31,7 @@ public class Comment extends BaseTimeEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false)
+  @Column(nullable = false, length = 50)
   @Enumerated(EnumType.STRING)
   private PostType postType; // 게시글 유형
 

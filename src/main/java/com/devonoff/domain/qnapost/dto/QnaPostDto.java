@@ -27,8 +27,10 @@ public class QnaPostDto {
 
 
   public static QnaPostDto fromEntity(QnaPost qnaPost) {
+    if (qnaPost == null) {
+      throw new IllegalArgumentException("QnaPost cannot be null");
+    }
     return QnaPostDto.builder()
-        .id(qnaPost.getId())
         .title(qnaPost.getTitle())
         .content(qnaPost.getContent())
         .thumbnailUrl(qnaPost.getThumbnailUrl())
