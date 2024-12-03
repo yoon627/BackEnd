@@ -106,7 +106,7 @@ public class AuthService {
    * @return ResponseDto
    */
   public void signUp(SignUpRequest signUpRequest) {
-    String nickName = signUpRequest.getNickName();
+    String nickName = signUpRequest.getNickname();
     String email = signUpRequest.getEmail();
 
     checkExistsNickName(nickName);
