@@ -9,6 +9,7 @@ import com.devonoff.domain.qnapost.entity.QnaPost;
 import com.devonoff.domain.qnapost.repository.QnaPostRepository;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
+import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.PostType;
@@ -32,41 +33,41 @@ public class QnaPostService {
 
   private final QnaPostRepository qnaPostRepository;
   private final UserRepository userRepository;
-
+  private final AuthService authService;
   private final PhotoService photoService;
 
   /**
    * 질의 응답 게시글 생성
    *
    * @param qnaPostRequest
-   * @return Map<String, String>
+   *
    */
   @Transactional
-  public ResponseEntity<Void> createQnaPost(
-      QnaPostRequest qnaPostRequest, User user) {
-    // 입력값 검증
-    if (qnaPostRequest.getTitle() == null || qnaPostRequest.getTitle().isBlank()) {
-      throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+  public ResponseEntity<Void> createQnaPost(QnaPostRequest qnaPostRequest) {
+    // 로그인한 사용자 ID 가져오기
+    Long userId = authService.getLoginUserId();
+
+    // 사용자 정보 가져오기
+    User user = authService.findUserById(userId);
+
+    // 썸네일 저장
+    String uploadedThumbnailUrl = null;
+    if (qnaPostRequest.getThumbnail() != null && !qnaPostRequest.getThumbnail().isEmpty()) {
+      uploadedThumbnailUrl = photoService.save(qnaPostRequest.getThumbnail());
     }
-    if (qnaPostRequest.getContent() == null || qnaPostRequest.getContent().isBlank()) {
-      throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
-    }
-    user = userRepository.findByEmail(user.getEmail())
-        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-    String uploadedThumbnailUrl = photoService.save(qnaPostRequest.getThumbnail());
+    // QnaPost 저장
+    QnaPost qnaPost = QnaPost.builder()
+        .title(qnaPostRequest.getTitle())
+        .content(qnaPostRequest.getContent())
+        .thumbnailUrl(uploadedThumbnailUrl)
+        .postType(PostType.QNA)
+        .user(user)
+        .build();
 
-    qnaPostRepository.save(
-        QnaPost.builder()
-            .title(qnaPostRequest.getTitle())
-            .content(qnaPostRequest.getContent())
-            .thumbnailUrl(uploadedThumbnailUrl)
-            .postType(PostType.QNA_POST) //타입설정
-            .user(user)
-            .build()
-    );
+    qnaPostRepository.save(qnaPost);
 
-// 상태 코드만 반환
+    // 상태 코드만 반환
     return ResponseEntity.ok().build(); // HTTP 200
   }
 
@@ -165,7 +166,7 @@ public class QnaPostService {
    * @return QnaPostDto
    */
   @Transactional
-  public ResponseEntity<Void>deleteQnaPost(Long qnaPostId, User user) {
+  public ResponseEntity<Void> deleteQnaPost(Long qnaPostId, User user) {
 
     QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));

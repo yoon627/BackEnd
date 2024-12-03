@@ -36,11 +36,8 @@ public class QnaPostController {
    * @return ResponseEntity<Map < String, String>>
    */
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public ResponseEntity<Void> createQnaPost(
-      @ModelAttribute QnaPostRequest qnaPostRequest,
-      @AuthenticationPrincipal User user) {
-    qnaPostService.createQnaPost(qnaPostRequest, user);
-    return ResponseEntity.ok().build();
+  public ResponseEntity<Void> createQnaPost(@ModelAttribute QnaPostRequest qnaPostRequest) {
+    return qnaPostService.createQnaPost(qnaPostRequest); // 서비스 호출 및 상태 코드 반환
   }
 
   /**

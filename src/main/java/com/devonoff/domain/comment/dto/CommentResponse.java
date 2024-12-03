@@ -15,25 +15,21 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CommentDto {
+//댓글반환
+public class CommentResponse {
 
   private Long id;
   private PostType postType;
   private Long postId;
   private Boolean isSecret;
   private String content;
+  private UserDto user;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
-  private UserDto user; // User 정보를 UserDto로 포함
 
-  /**
-   * Entity -> DTO 변환
-   *
-   * @param comment Comment 엔티티
-   * @return CommentDto
-   */
-  public static CommentDto fromEntity(Comment comment) {
-    return CommentDto.builder()
+
+  public static CommentResponse fromEntity(Comment comment) {
+    return CommentResponse.builder()
         .id(comment.getId())
         .postType(comment.getPostType())
         .postId(comment.getPostId())
@@ -42,23 +38,6 @@ public class CommentDto {
         .createdAt(comment.getCreatedAt())
         .updatedAt(comment.getUpdatedAt())
         .user(comment.getUser() != null ? UserDto.fromEntity(comment.getUser()) : null)
-        .build();
-  }
-
-  /**
-   * DTO -> Entity 변환
-   *
-   * @param commentDto CommentDto
-   * @return Comment
-   */
-  public static Comment toEntity(CommentDto commentDto) {
-    return Comment.builder()
-        .id(commentDto.getId())
-        .postType(commentDto.getPostType())
-        .postId(commentDto.getPostId())
-        .isSecret(commentDto.getIsSecret())
-        .content(commentDto.getContent())
-        .user(commentDto.getUser() != null ? UserDto.toEntity(commentDto.getUser()) : null)
         .build();
   }
 }
