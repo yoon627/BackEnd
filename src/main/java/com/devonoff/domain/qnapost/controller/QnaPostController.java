@@ -1,6 +1,7 @@
 package com.devonoff.domain.qnapost.controller;
 
 
+import com.devonoff.domain.qnapost.dto.PublicQnaPostDto;
 import com.devonoff.domain.qnapost.dto.QnaPostDto;
 import com.devonoff.domain.qnapost.dto.QnaPostRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostUpdateDto;
@@ -8,7 +9,6 @@ import com.devonoff.domain.qnapost.service.QnaPostService;
 import com.devonoff.domain.user.entity.User;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Slf4j
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/qna-posts")
@@ -51,11 +51,11 @@ public class QnaPostController {
    * @return Page<QnaPostDto>
    */
   @GetMapping
-  public Page<QnaPostDto> getQnaPostList(
+  public Page<PublicQnaPostDto> getQnaPostList(
       @RequestParam(name = "page",required = false, defaultValue = "1") Integer page,
       @RequestParam(name = "search",required = false, defaultValue = "") String search
   ) {
-    log.debug("Fetching all QnA posts with page: {}, search: {}", page, search);
+
     return qnaPostService.getQnaPostList(page, search);
   }
 
@@ -67,7 +67,7 @@ public class QnaPostController {
    * @return Page<QnaPostDto>
    */
   @GetMapping("/author/{userId}")
-  public Page<QnaPostDto> getQnaPostByUserIdList(
+  public Page<PublicQnaPostDto> getQnaPostByUserIdList(
       @PathVariable(name = "userId") Long userId,
       @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
       @RequestParam(name = "search",required = false, defaultValue = "") String search

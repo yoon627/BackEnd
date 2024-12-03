@@ -15,17 +15,25 @@ import lombok.Setter;
 public class UserDto {
 
   private Long id;
-  private String nickName;
+  private String nickname;
   private String email;
   private String profileImageUrl;
 
   public static UserDto fromEntity(User user) {
     return UserDto.builder()
         .id(user.getId())
-        .nickName(user.getNickName())
+        .nickname(user.getNickname())
         .email(user.getEmail())
         .profileImageUrl(user.getProfileImage())
         .build();
   }
 
+  public static User toEntity(UserDto userDto) {
+    return User.builder()
+        .id(userDto.getId())
+        .nickname(userDto.getNickname())
+        .email(userDto.getEmail())
+        .profileImage(userDto.getProfileImageUrl())
+        .build();
+  }
 }
