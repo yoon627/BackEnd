@@ -79,7 +79,6 @@ public class StudyPostService {
   }
 
   // 수정
-  @Transactional
   public StudyPostUpdateResponse updateStudyPost(Long studyPostId, StudyPostUpdateRequest request) {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
@@ -100,8 +99,11 @@ public class StudyPostService {
     studyPost.setLongitude(request.getLongitude());
     studyPost.setStatus(request.getStatus());
     studyPost.setThumbnailImgUrl(request.getThumbnailImgUrl());
+    studyPost.setMaxParticipants(request.getMaxParticipants());
 
-    return new StudyPostUpdateResponse("스터디 모집 글이 업데이트되었습니다.");
+    studyPostRepository.save(studyPost);
+
+    return StudyPostUpdateResponse.fromEntity(studyPost);
   }
 
   // 모집 마감 -> 스터디 진행 시작

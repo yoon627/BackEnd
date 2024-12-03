@@ -36,4 +36,5 @@ public class StudyPostUpdateRequest {
   private Double longitude;
   private StudyPostStatus status;
   private String thumbnailImgUrl;
+  private Integer maxParticipants;
 }
