@@ -63,30 +63,11 @@ public class StudySignupService {
 
     StudyPost studyPost = studySignup.getStudyPost();
 
-    if (studyPost.getStatus() != StudyStatus.RECRUITING) {
-      throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
-    }
+    validateStudyPostStatus(studyPost);
+    processSignupStatusChange(studySignup, studyPost, newStatus);
 
-    if (studySignup.getStatus() == StudySignupStatus.PENDING
-        && newStatus == StudySignupStatus.APPROVED) {
-      if (studyPost.isFull()) {
-        throw new CustomException(ErrorCode.STUDY_POST_FULL);
-      }
-      studyPost.incrementParticipants();
-    } else if (studySignup.getStatus() == StudySignupStatus.APPROVED
-        && newStatus == StudySignupStatus.REJECTED) {
-      studyPost.decrementParticipants();
-    } else if (studySignup.getStatus() == StudySignupStatus.PENDING
-        && newStatus == StudySignupStatus.REJECTED) {
-      studySignup.setStatus(StudySignupStatus.REJECTED);
-    } else {
-      throw new CustomException(ErrorCode.SIGNUP_STATUS_ALREADY_FINALIZED);
-    }
-
-    studySignup.setStatus(newStatus);
-    studyPostRepository.save(studyPost);
     studySignupRepository.save(studySignup);
-    // TODO: 리펙토링 예정 (메서드 분리)
+    studyPostRepository.save(studyPost);
   }
 
   // 신청 목록 조회
@@ -123,5 +104,53 @@ public class StudySignupService {
     }
 
     studySignupRepository.delete(studySignup);
+  }
+
+  // ================= 신청 상태 관리(승인/거절) 분리 메서드 =================
+  private void validateStudyPostStatus(StudyPost studyPost) {
+    if (studyPost.getStatus() != StudyStatus.RECRUITING) {
+      throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
+    }
+  }
+
+  private void processSignupStatusChange(StudySignup studySignup, StudyPost studyPost, StudySignupStatus newStatus) {
+    if (isPendingToApproved(studySignup, newStatus)) {
+      approveSignup(studySignup, studyPost);
+    } else if (isApprovedToRejected(studySignup, newStatus)) {
+      rejectApprovedSignup(studySignup, studyPost);
+    } else if (isPendingToRejected(studySignup, newStatus)) {
+      rejectPendingSignup(studySignup);
+    } else {
+      throw new CustomException(ErrorCode.SIGNUP_STATUS_ALREADY_FINALIZED);
+    }
+  }
+
+  private boolean isPendingToApproved(StudySignup studySignup, StudySignupStatus newStatus) {
+    return studySignup.getStatus() == StudySignupStatus.PENDING && newStatus == StudySignupStatus.APPROVED;
+  }
+
+  private boolean isApprovedToRejected(StudySignup studySignup, StudySignupStatus newStatus) {
+    return studySignup.getStatus() == StudySignupStatus.APPROVED && newStatus == StudySignupStatus.REJECTED;
+  }
+
+  private boolean isPendingToRejected(StudySignup studySignup, StudySignupStatus newStatus) {
+    return studySignup.getStatus() == StudySignupStatus.PENDING && newStatus == StudySignupStatus.REJECTED;
+  }
+
+  private void approveSignup(StudySignup studySignup, StudyPost studyPost) {
+    if (studyPost.isFull()) {
+      throw new CustomException(ErrorCode.STUDY_POST_FULL);
+    }
+    studySignup.setStatus(StudySignupStatus.APPROVED);
+    studyPost.incrementParticipants();
+  }
+
+  private void rejectApprovedSignup(StudySignup studySignup, StudyPost studyPost) {
+    studySignup.setStatus(StudySignupStatus.REJECTED);
+    studyPost.decrementParticipants();
+  }
+
+  private void rejectPendingSignup(StudySignup studySignup) {
+    studySignup.setStatus(StudySignupStatus.REJECTED);
   }
 }
