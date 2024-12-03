@@ -12,6 +12,8 @@ import com.devonoff.domain.totalstudytime.entity.TotalStudyTime;
 import com.devonoff.domain.totalstudytime.repository.TotalStudyTimeRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
+import com.devonoff.type.StudyStatus;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class StudyService {
   private final StudyPostRepository studyPostRepository;
   private final TotalStudyTimeRepository totalStudyTimeRepository;
   private final StudentRepository studentRepository;
+  private final TimeProvider timeProvider;
 
   // 모집글 마감 시 자동으로 스터디 생성
   public Study createStudyFromClosedPost(Long studyPostId) {
@@ -34,6 +37,20 @@ public class StudyService {
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
     int totalParticipants = studyPost.getCurrentParticipants() + 1;
+
+    // 현재 시간을 기준으로 상태 설정
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime startDateTime = studyPost.getStartDate().atTime(studyPost.getStartTime());
+    LocalDateTime endDateTime = studyPost.getEndDate().plusDays(1).atStartOfDay();
+    StudyStatus initialStatus;
+
+    if (now.isBefore(startDateTime)) {
+      initialStatus = StudyStatus.PENDING;
+    } else if (now.isBefore(endDateTime)) {
+      initialStatus = StudyStatus.IN_PROGRESS;
+    } else {
+      initialStatus = StudyStatus.COMPLETED;
+    }
 
     Study study = Study.builder()
         .studyName(studyPost.getStudyName())
@@ -47,6 +64,7 @@ public class StudyService {
         .meetingType(studyPost.getMeetingType())
         .studyPost(studyPost)
         .studyLeader(studyPost.getUser()) // 모집글 작성자를 스터디 리더로 설정
+        .status(initialStatus)
         .totalParticipants(totalParticipants)
         .build();
 
@@ -73,5 +91,20 @@ public class StudyService {
     return participants.stream()
         .map(StudentDto::fromEntity)
         .collect(Collectors.toList());
+  }
+
+  // 스터디 상태 변경(스케쥴러)
+  public void updateStudyStatuses() {
+    LocalDateTime now = timeProvider.now();
+
+    List<Study> pendingStudies = studyRepository.findAllByStatusAndStartDateBefore(
+        StudyStatus.PENDING, now);
+    pendingStudies.forEach(study -> study.setStatus(StudyStatus.IN_PROGRESS));
+    studyRepository.saveAll(pendingStudies);
+
+    List<Study> inProgressStudies = studyRepository.findAllByStatusAndEndDateBefore(
+        StudyStatus.IN_PROGRESS, now.toLocalDate().atStartOfDay());
+    inProgressStudies.forEach(study -> study.setStatus(StudyStatus.COMPLETED));
+    studyRepository.saveAll(inProgressStudies);
   }
 }
