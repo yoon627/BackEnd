@@ -1,4 +1,4 @@
-package com.devonoff.studytime.controller;
+package com.devonoff.studytimeline.controller;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -38,7 +38,7 @@ class StudyTimelineControllerTest {
   private JwtProvider jwtProvider;
 
   @Test
-  @DisplayName("학습했던 전체 시간대 조회")
+  @DisplayName("학습했던 전체 시간대 조회 - 성공")
   void shouldReturnStudyTimesForGivenStudyId() throws Exception {
     // Given
     Long studyId = 1L;
