@@ -15,6 +15,7 @@ import com.devonoff.domain.studySignup.entity.StudySignup;
 import com.devonoff.domain.studySignup.repository.StudySignupRepository;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
+import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyDifficulty;
@@ -40,6 +41,7 @@ public class StudyPostService {
   private final StudySignupRepository studySignupRepository;
   private final StudentRepository studentRepository;
   private final StudyService studyService;
+  private final AuthService authService;
 
   // 상세 조회
   public StudyPostDto getStudyPostDetail(Long studyPostId) {
@@ -60,6 +62,8 @@ public class StudyPostService {
 
   // 생성
   public StudyPostCreateResponse createStudyPost(StudyPostCreateRequest request) {
+    validateUserRequestOwnership(request.getUserId());
+
     if (request.getMaxParticipants() < 2 || request.getMaxParticipants() > 10) {
       throw new CustomException(ErrorCode.INVALID_MAX_PARTICIPANTS);
     }
@@ -82,6 +86,8 @@ public class StudyPostService {
   public StudyPostUpdateResponse updateStudyPost(Long studyPostId, StudyPostUpdateRequest request) {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
+
+    validateStudyPostOwnership(studyPost.getUser().getId());
 
     studyPost.setTitle(request.getTitle());
     studyPost.setStudyName(request.getStudyName());
@@ -111,6 +117,8 @@ public class StudyPostService {
   public void closeStudyPost(Long studyPostId) {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
+
+    validateStudyPostOwnership(studyPost.getUser().getId());
 
     if (studyPost.getStatus() != StudyPostStatus.RECRUITING) {
       throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
@@ -142,6 +150,8 @@ public class StudyPostService {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
+    validateStudyPostOwnership(studyPost.getUser().getId());
+
     if (studyPost.getStatus() == StudyPostStatus.CLOSED) {
       throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
     }
@@ -168,6 +178,8 @@ public class StudyPostService {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
+    validateStudyPostOwnership(studyPost.getUser().getId());
+
     if (!StudyPostStatus.CANCELED.equals(studyPost.getStatus())) {
       throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
     }
@@ -181,6 +193,23 @@ public class StudyPostService {
     studyPostRepository.save(studyPost);
   }
 
+  // 모집글 작성자 검증
+  private void validateStudyPostOwnership(Long studyPostOwnerId) {
+    Long loggedInUserId = authService.getLoginUserId();
+    if (!studyPostOwnerId.equals(loggedInUserId)) {
+      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+    }
+  }
+
+  // 생성 요청 사용자 검증
+  private void validateUserRequestOwnership(Long requestUserId) {
+    Long loggedInUserId = authService.getLoginUserId();
+    if (!requestUserId.equals(loggedInUserId)) {
+      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+    }
+  }
+
+  // 스터디 모집글 엔티티 생성
   private StudyPost buildStudyPost(StudyPostCreateRequest request, User user) {
     int dayType = DayTypeUtils.encodeDaysFromRequest(request.getDayType());
 

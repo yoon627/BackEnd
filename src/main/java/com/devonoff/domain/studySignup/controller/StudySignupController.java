@@ -52,10 +52,8 @@ public class StudySignupController {
 
   // 신청 취소
   @DeleteMapping("/{studySignupId}")
-  public ResponseEntity<Void> cancelSignup(
-      @PathVariable Long studySignupId,
-      @RequestParam Long userId) {
-    studySignupService.cancelSignup(studySignupId, userId);
+  public ResponseEntity<Void> cancelSignup(@PathVariable Long studySignupId) {
+    studySignupService.cancelSignup(studySignupId);
     return ResponseEntity.ok().build();
   }
 }
