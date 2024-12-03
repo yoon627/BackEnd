@@ -43,7 +43,7 @@ public class AuthService {
    * @param nickNameCheckRequest
    */
   public void nicknameCheck(NickNameCheckRequest nickNameCheckRequest) {
-    checkExistsNickName(nickNameCheckRequest.getNickName());
+    checkExistsNickName(nickNameCheckRequest.getNickname());
   }
 
   /**

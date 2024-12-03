@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 public class NickNameCheckRequest {
 
   @NotBlank
-  private String nickName;
+  private String nickname;
 
 }
