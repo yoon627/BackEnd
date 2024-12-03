@@ -75,7 +75,7 @@ public class StudyPostService {
     StudyPost studyPost = buildStudyPost(request, user);
     studyPostRepository.save(studyPost);
 
-    return new StudyPostCreateResponse("스터디 모집 글이 생성되었습니다.");
+    return StudyPostCreateResponse.fromEntity(studyPost);
   }
 
   // 수정
