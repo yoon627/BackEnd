@@ -14,6 +14,10 @@ import com.devonoff.domain.redis.repository.AuthRedisRepository;
 import com.devonoff.domain.user.dto.auth.CertificationRequest;
 import com.devonoff.domain.user.dto.auth.EmailRequest;
 import com.devonoff.domain.user.dto.auth.NickNameCheckRequest;
+import com.devonoff.domain.user.dto.auth.ReissueTokenRequest;
+import com.devonoff.domain.user.dto.auth.ReissueTokenResponse;
+import com.devonoff.domain.user.dto.auth.SignInRequest;
+import com.devonoff.domain.user.dto.auth.SignInResponse;
 import com.devonoff.domain.user.dto.auth.SignUpRequest;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
@@ -22,6 +26,7 @@ import com.devonoff.type.ErrorCode;
 import com.devonoff.type.LoginType;
 import com.devonoff.util.EmailProvider;
 import com.devonoff.util.JwtProvider;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -426,4 +431,362 @@ class AuthServiceTest {
     assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.EMAIL_CERTIFICATION_UNCOMPLETED);
   }
 
+  @Test
+  @DisplayName("로그인 - 성공")
+  void testLogin_Success() {
+    // given
+    String email = "test@email.com";
+    String password = "testPassword";
+
+    SignInRequest signInRequest = SignInRequest.builder()
+        .email(email)
+        .password(password)
+        .build();
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email(email)
+        .password("encodedPassword")
+        .isActive(true)
+        .loginType(LoginType.GENERAL)
+        .build();
+
+    given(userRepository.findByEmail(eq(email))).willReturn(Optional.of(user));
+    given(passwordEncoder.matches(eq(password), eq(user.getPassword()))).willReturn(true);
+    given(jwtProvider.createAccessToken(eq(user.getId()))).willReturn("AccessToken");
+    given(jwtProvider.createRefreshToken(eq(user.getId()))).willReturn("RefreshToken");
+
+    willDoNothing().given(authRedisRepository)
+        .setData(eq(email + "-refreshToken"), eq("RefreshToken"), eq(3L), eq(TimeUnit.DAYS));
+
+    // when
+    SignInResponse signInResponse = authService.signIn(signInRequest);
+
+    // then
+    verify(userRepository, times(1)).findByEmail(eq(email));
+    verify(passwordEncoder, times(1))
+        .matches(eq(password), eq(user.getPassword()));
+    verify(jwtProvider, times(1)).createAccessToken(eq(user.getId()));
+    verify(jwtProvider, times(1)).createRefreshToken(eq(user.getId()));
+    verify(authRedisRepository, times(1))
+        .setData(eq(email + "-refreshToken"), eq("RefreshToken"), eq(3L), eq(TimeUnit.DAYS));
+
+    assertThat(signInResponse.getAccessToken()).isEqualTo("AccessToken");
+    assertThat(signInResponse.getRefreshToken()).isEqualTo("RefreshToken");
+  }
+
+  @Test
+  @DisplayName("로그인 - 실패 (존재하지 않는 유저)")
+  void testLogin_Fail_UserNotFound() {
+    // given
+    String email = "test@email.com";
+    String password = "testPassword";
+
+    SignInRequest signInRequest = SignInRequest.builder()
+        .email(email)
+        .password(password)
+        .build();
+
+    given(userRepository.findByEmail(eq(email))).willReturn(Optional.empty());
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> authService.signIn(signInRequest));
+
+    // then
+    verify(userRepository, times(1)).findByEmail(eq(email));
+
+    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+  }
+
+  @Test
+  @DisplayName("로그인 - 실패 (탈퇴한 유저)")
+  void testLogin_Fail_WithdrawalUser() {
+    // given
+    String email = "test@email.com";
+    String password = "testPassword";
+
+    SignInRequest signInRequest = SignInRequest.builder()
+        .email(email)
+        .password(password)
+        .build();
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email(email)
+        .password("encodedPassword")
+        .isActive(false)
+        .loginType(LoginType.GENERAL)
+        .build();
+
+    given(userRepository.findByEmail(eq(email))).willReturn(Optional.of(user));
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> authService.signIn(signInRequest));
+
+    // then
+    verify(userRepository, times(1)).findByEmail(eq(email));
+
+    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.ACCOUNT_PENDING_DELETION);
+  }
+
+  @Test
+  @DisplayName("로그인 - 실패 (비밀번호 불일치)")
+  void testLogin_Fail_PasswordUnMatched() {
+    // given
+    String email = "test@email.com";
+    String password = "testPassword";
+
+    SignInRequest signInRequest = SignInRequest.builder()
+        .email(email)
+        .password(password)
+        .build();
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email(email)
+        .password("encodedPassword")
+        .isActive(true)
+        .loginType(LoginType.GENERAL)
+        .build();
+
+    given(userRepository.findByEmail(eq(email))).willReturn(Optional.of(user));
+    given(passwordEncoder.matches(eq(password), eq(user.getPassword()))).willReturn(false);
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> authService.signIn(signInRequest));
+
+    // then
+    verify(userRepository, times(1)).findByEmail(eq(email));
+    verify(passwordEncoder, times(1))
+        .matches(eq(password), eq(user.getPassword()));
+
+    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.INVALID_CREDENTIALS);
+  }
+
+  @Test
+  @DisplayName("로그아웃 - 성공")
+  void testSignOut_Success() {
+    // given
+    Long userId = 1L;
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email("test@email.com")
+        .password("encodedPassword")
+        .isActive(true)
+        .loginType(LoginType.GENERAL)
+        .build();
+
+    given(userRepository.findById(eq(userId))).willReturn(Optional.of(user));
+    willDoNothing().given(authRedisRepository)
+        .deleteData(eq(user.getEmail() + "-refreshToken"));
+
+    // when
+    authService.signOut();
+
+    // then
+    verify(userRepository, times(1)).findById(eq(userId));
+    verify(authRedisRepository, times(1))
+        .deleteData(eq(user.getEmail() + "-refreshToken"));
+  }
+
+  @Test
+  @DisplayName("로그아웃 - 실패 (존재하지 않는 유저)")
+  void testSignOut_Fail_UserNotFound() {
+    // given
+    Long userId = 1L;
+
+    given(userRepository.findById(eq(userId))).willReturn(Optional.empty());
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> authService.signOut());
+
+    // then
+    verify(userRepository, times(1)).findById(eq(userId));
+
+    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+  }
+
+  @Test
+  @DisplayName("AccessToken 재발급 - 성공")
+  void testReissueToken_Success() {
+    // given
+    String email = "test@email.com";
+    String refreshToken = "RefreshToken";
+
+    ReissueTokenRequest reissueTokenRequest = ReissueTokenRequest.builder()
+        .email(email)
+        .refreshToken(refreshToken)
+        .build();
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email(email)
+        .password("encodedPassword")
+        .isActive(true)
+        .loginType(LoginType.GENERAL)
+        .build();
+
+    given(userRepository.findByEmail(eq(email))).willReturn(Optional.of(user));
+    given(authRedisRepository.getData(eq(email + "-refreshToken"))).willReturn(refreshToken);
+    given(jwtProvider.createAccessToken(eq(user.getId()))).willReturn("AccessToken");
+
+    // when
+    ReissueTokenResponse reissueTokenResponse = authService.reissueToken(reissueTokenRequest);
+
+    // then
+    verify(userRepository, times(1)).findByEmail(eq(email));
+    verify(authRedisRepository, times(1))
+        .getData(eq(email + "-refreshToken"));
+    verify(jwtProvider, times(1)).createAccessToken(eq(user.getId()));
+
+    assertThat(reissueTokenResponse.getAccessToken()).isEqualTo("AccessToken");
+  }
+
+  @Test
+  @DisplayName("AccessToken 재발급 - 실패 (존재하지 않는 유저)")
+  void testReissueToken_Fail_UserNotFound() {
+    // given
+    String email = "test@email.com";
+    String refreshToken = "RefreshToken";
+
+    ReissueTokenRequest reissueTokenRequest = ReissueTokenRequest.builder()
+        .email(email)
+        .refreshToken(refreshToken)
+        .build();
+
+    given(userRepository.findByEmail(eq(email))).willReturn(Optional.empty());
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> authService.reissueToken(reissueTokenRequest));
+
+    // then
+    verify(userRepository, times(1)).findByEmail(eq(email));
+
+    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+  }
+
+  @Test
+  @DisplayName("AccessToken 재발급 - 실패 (RefreshToken 만료)")
+  void testReissueToken_Fail_ExpiredRefreshToken() {
+    // given
+    String email = "test@email.com";
+    String refreshToken = "RefreshToken";
+
+    ReissueTokenRequest reissueTokenRequest = ReissueTokenRequest.builder()
+        .email(email)
+        .refreshToken(refreshToken)
+        .build();
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email(email)
+        .password("encodedPassword")
+        .isActive(true)
+        .loginType(LoginType.GENERAL)
+        .build();
+
+    given(userRepository.findByEmail(eq(email))).willReturn(Optional.of(user));
+    given(authRedisRepository.getData(eq(email + "-refreshToken"))).willReturn(null);
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> authService.reissueToken(reissueTokenRequest));
+
+    // then
+    verify(userRepository, times(1)).findByEmail(eq(email));
+    verify(authRedisRepository, times(1))
+        .getData(eq(email + "-refreshToken"));
+
+    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.REFRESH_TOKEN_EXPIRED);
+  }
+
+  @Test
+  @DisplayName("AccessToken 재발급 - 실패 (유효하지 않은 RefreshToken)")
+  void testReissueToken_Fail_InvalidRefreshToken() {
+    // given
+    String email = "test@email.com";
+    String refreshToken = "RefreshToken";
+
+    ReissueTokenRequest reissueTokenRequest = ReissueTokenRequest.builder()
+        .email(email)
+        .refreshToken(refreshToken)
+        .build();
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email(email)
+        .password("encodedPassword")
+        .isActive(true)
+        .loginType(LoginType.GENERAL)
+        .build();
+
+    given(userRepository.findByEmail(eq(email))).willReturn(Optional.of(user));
+    given(authRedisRepository.getData(eq(email + "-refreshToken")))
+        .willReturn("refresh-token");
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> authService.reissueToken(reissueTokenRequest));
+
+    // then
+    verify(userRepository, times(1)).findByEmail(eq(email));
+    verify(authRedisRepository, times(1))
+        .getData(eq(email + "-refreshToken"));
+
+    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.INVALID_REFRESH_TOKEN);
+  }
+
+  @Test
+  @DisplayName("회원 탈퇴 - 성공")
+  void testWithdrawalUser_Success() {
+    // given
+    Long userId = 1L;
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email("test@email.com")
+        .password("encodedPassword")
+        .isActive(true)
+        .loginType(LoginType.GENERAL)
+        .build();
+
+    given(userRepository.findById(eq(userId))).willReturn(Optional.of(user));
+    willDoNothing().given(authRedisRepository)
+        .deleteData(eq(user.getEmail() + "-refreshToken"));
+
+    // when
+    authService.withdrawalUser();
+
+    // then
+    verify(userRepository, times(1)).findById(eq(userId));
+    verify(authRedisRepository, times(1))
+        .deleteData(eq(user.getEmail() + "-refreshToken"));
+    verify(userRepository, times(1)).save(eq(user));
+
+    assertThat(user.getIsActive()).isFalse();
+  }
+
+  @Test
+  @DisplayName("회원 탈퇴 - 실패 (존재하지 않는 유저)")
+  void testWithdrawalUser_Fail_UserNotFound() {
+    // given
+    Long userId = 1L;
+
+    given(userRepository.findById(eq(userId))).willReturn(Optional.empty());
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> authService.withdrawalUser());
+
+    // then
+    verify(userRepository, times(1)).findById(eq(userId));
+
+    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+  }
 }
