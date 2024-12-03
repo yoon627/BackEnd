@@ -11,8 +11,8 @@ import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
+import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySignupStatus;
-import com.devonoff.type.StudyStatus;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,7 @@ public class StudySignupService {
     StudyPost studyPost = studyPostRepository.findById(request.getStudyPostId())
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
-    if (studyPost.getStatus() != StudyStatus.RECRUITING) {
+    if (studyPost.getStatus() != StudyPostStatus.RECRUITING) {
       throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
     }
 
@@ -108,7 +108,7 @@ public class StudySignupService {
 
   // ================= 신청 상태 관리(승인/거절) 분리 메서드 =================
   private void validateStudyPostStatus(StudyPost studyPost) {
-    if (studyPost.getStatus() != StudyStatus.RECRUITING) {
+    if (studyPost.getStatus() != StudyPostStatus.RECRUITING) {
       throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
     }
   }

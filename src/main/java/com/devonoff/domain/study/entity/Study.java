@@ -5,6 +5,8 @@ import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
+import com.devonoff.type.StudyPostStatus;
+import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -66,6 +68,10 @@ public class Study extends BaseTimeEntity {
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private StudyMeetingType meetingType; // 스터디 진행 유형
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private StudyStatus status; // 스터디 상태
 
   @Column(nullable = false)
   private Integer totalParticipants; // 스터디 총 인원 (스터디장 포함)

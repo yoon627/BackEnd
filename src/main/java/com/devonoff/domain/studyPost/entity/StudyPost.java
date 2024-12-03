@@ -7,7 +7,7 @@ import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
-import com.devonoff.type.StudyStatus;
+import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySubject;
 import com.devonoff.util.DayTypeUtils;
 import jakarta.persistence.Column;
@@ -87,7 +87,7 @@ public class StudyPost extends BaseTimeEntity {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  private StudyStatus status; // 모집글 상태
+  private StudyPostStatus status; // 모집글 상태
 
   @Column
   private String thumbnailImgUrl; // 썸네일 이미지 URL
@@ -137,7 +137,7 @@ public class StudyPost extends BaseTimeEntity {
         .description(request.getDescription())
         .latitude(request.getLatitude())
         .longitude(request.getLongitude())
-        .status(StudyStatus.RECRUITING) // 기본값 설정
+        .status(StudyPostStatus.RECRUITING) // 기본값 설정
         .thumbnailImgUrl(request.getThumbnailImgUrl())
         .maxParticipants(request.getMaxParticipants())
         .currentParticipants(0) // 기본값: 0명

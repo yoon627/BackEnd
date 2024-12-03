@@ -2,7 +2,7 @@ package com.devonoff.domain.studyPost.dto;
 
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
-import com.devonoff.type.StudyStatus;
+import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySubject;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.FutureOrPresent;
@@ -71,7 +71,7 @@ public class StudyPostCreateRequest {
   @Nullable
   private Double longitude;
 
-  private StudyStatus status = StudyStatus.RECRUITING; // 기본값: 모집 중
+  private StudyPostStatus status = StudyPostStatus.RECRUITING; // 기본값: 모집 중
 
   @Nullable
   private String thumbnailImgUrl; // 썸네일 이미지
