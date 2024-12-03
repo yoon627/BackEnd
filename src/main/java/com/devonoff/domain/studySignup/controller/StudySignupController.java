@@ -8,7 +8,6 @@ import com.devonoff.type.StudySignupStatus;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,7 +31,7 @@ public class StudySignupController {
   public ResponseEntity<StudySignupCreateResponse> createStudySignup(
       @RequestBody @Valid StudySignupCreateRequest request) {
     StudySignupCreateResponse response = studySignupService.createStudySignup(request);
-    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    return ResponseEntity.ok(response);
   }
 
   // 신청 상태 관리(승인/거절)
@@ -40,7 +39,7 @@ public class StudySignupController {
   public ResponseEntity<Void> updateSignupStatus(
       @PathVariable Long studySignupId, @RequestParam StudySignupStatus newStatus) {
     studySignupService.updateSignupStatus(studySignupId, newStatus);
-    return ResponseEntity.noContent().build();
+    return ResponseEntity.ok().build();
   }
 
   // 상태별 신청 목록 조회
@@ -58,6 +57,6 @@ public class StudySignupController {
       @PathVariable Long studySignupId,
       @RequestParam Long userId) {
     studySignupService.cancelSignup(studySignupId, userId);
-    return ResponseEntity.noContent().build();
+    return ResponseEntity.ok().build();
   }
 }
