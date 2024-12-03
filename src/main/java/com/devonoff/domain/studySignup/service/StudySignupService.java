@@ -3,7 +3,6 @@ package com.devonoff.domain.studySignup.service;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
 import com.devonoff.domain.studySignup.dto.StudySignupCreateRequest;
-import com.devonoff.domain.studySignup.dto.StudySignupCreateResponse;
 import com.devonoff.domain.studySignup.dto.StudySignupDto;
 import com.devonoff.domain.studySignup.entity.StudySignup;
 import com.devonoff.domain.studySignup.repository.StudySignupRepository;
@@ -17,7 +16,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,8 +26,7 @@ public class StudySignupService {
   private final UserRepository userRepository;
 
   // 스터디 신청
-  @Transactional
-  public StudySignupCreateResponse createStudySignup(StudySignupCreateRequest request) {
+  public StudySignupDto createStudySignup(StudySignupCreateRequest request) {
     StudyPost studyPost = studyPostRepository.findById(request.getStudyPostId())
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
@@ -53,7 +50,7 @@ public class StudySignupService {
 
     studySignupRepository.save(studySignup);
 
-    return new StudySignupCreateResponse("스터디 신청이 완료되었습니다.");
+    return StudySignupDto.fromEntity(studySignup);
   }
 
   // 신청 상태 관리(승인/거절)
@@ -113,7 +110,8 @@ public class StudySignupService {
     }
   }
 
-  private void processSignupStatusChange(StudySignup studySignup, StudyPost studyPost, StudySignupStatus newStatus) {
+  private void processSignupStatusChange(StudySignup studySignup, StudyPost studyPost,
+      StudySignupStatus newStatus) {
     if (isPendingToApproved(studySignup, newStatus)) {
       approveSignup(studySignup, studyPost);
     } else if (isApprovedToRejected(studySignup, newStatus)) {
@@ -126,15 +124,18 @@ public class StudySignupService {
   }
 
   private boolean isPendingToApproved(StudySignup studySignup, StudySignupStatus newStatus) {
-    return studySignup.getStatus() == StudySignupStatus.PENDING && newStatus == StudySignupStatus.APPROVED;
+    return studySignup.getStatus() == StudySignupStatus.PENDING
+        && newStatus == StudySignupStatus.APPROVED;
   }
 
   private boolean isApprovedToRejected(StudySignup studySignup, StudySignupStatus newStatus) {
-    return studySignup.getStatus() == StudySignupStatus.APPROVED && newStatus == StudySignupStatus.REJECTED;
+    return studySignup.getStatus() == StudySignupStatus.APPROVED
+        && newStatus == StudySignupStatus.REJECTED;
   }
 
   private boolean isPendingToRejected(StudySignup studySignup, StudySignupStatus newStatus) {
-    return studySignup.getStatus() == StudySignupStatus.PENDING && newStatus == StudySignupStatus.REJECTED;
+    return studySignup.getStatus() == StudySignupStatus.PENDING
+        && newStatus == StudySignupStatus.REJECTED;
   }
 
   private void approveSignup(StudySignup studySignup, StudyPost studyPost) {
