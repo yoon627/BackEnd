@@ -38,7 +38,7 @@ public class CommentService {
     Comment savedComment = commentRepository.save(comment);
 
     // 저장된 엔티티를 DTO로 변환하여 반환
-    return toDto(savedComment);
+    return CommentDto.fromEntity(savedComment);
   }
 
   @Transactional(readOnly = true)
@@ -48,7 +48,7 @@ public class CommentService {
     if (comments.isEmpty()) {
       return List.of();
     }
-      return comments.stream().map(this::toDto).toList();
+    return comments.stream().map(CommentDto::fromEntity).toList();
 
   }
 
@@ -68,7 +68,7 @@ public class CommentService {
     Comment updatedComment = commentRepository.save(comment);
 
     // 수정된 엔티티를 DTO로 반환
-    return toDto(updatedComment);
+    return CommentDto.fromEntity(updatedComment);
   }
 
   @Transactional
@@ -84,17 +84,5 @@ public class CommentService {
     commentRepository.delete(comment);
   }
 
-  // Comment 엔티티를 DTO로 변환하는 유틸리티 메서드
-  private CommentDto toDto(Comment comment) {
-    return new CommentDto(
-        comment.getId(),
-        comment.getPostType(),
-        comment.getPostId(),
-        comment.getIsSecret(),
-        comment.getContent(),
-        comment.getCreatedAt() != null ? comment.getCreatedAt().toString() : null,
-        comment.getUpdatedAt() != null ? comment.getUpdatedAt().toString() : null,
-        comment.getUser() != null ? comment.getUser().getId() : null
-    );
-  }
+
 }

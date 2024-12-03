@@ -45,18 +45,9 @@ public class Comment extends BaseTimeEntity {
   private String content; // 댓글 내용
 
 
-
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
   private User user; // 댓글 작성자와 연결
 
 
-  @Builder
-  public Comment(PostType postType, Long postId, Boolean isSecret, String content, User user) {
-    this.postType = postType;
-    this.postId = postId;
-    this.isSecret = isSecret;
-    this.content = content;
-    this.user = user;
-  }
 }
