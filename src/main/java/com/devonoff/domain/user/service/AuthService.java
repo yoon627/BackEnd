@@ -251,4 +251,8 @@ public class AuthService {
     return Long.parseLong(userDetails.getUsername());
   }
 
+  public User findUserById(Long userId) {
+    return userRepository.findById(userId)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+  }
 }

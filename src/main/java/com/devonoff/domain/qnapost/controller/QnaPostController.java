@@ -7,7 +7,6 @@ import com.devonoff.domain.qnapost.dto.QnaPostRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostUpdateDto;
 import com.devonoff.domain.qnapost.service.QnaPostService;
 import com.devonoff.domain.user.entity.User;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
@@ -37,10 +36,11 @@ public class QnaPostController {
    * @return ResponseEntity<Map < String, String>>
    */
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public ResponseEntity<Map<String, String>> createQnaPost(
+  public ResponseEntity<Void> createQnaPost(
       @ModelAttribute QnaPostRequest qnaPostRequest,
       @AuthenticationPrincipal User user) {
-    return ResponseEntity.ok(qnaPostService.createQnaPost(qnaPostRequest, user));
+    qnaPostService.createQnaPost(qnaPostRequest, user);
+    return ResponseEntity.status(201).build();
   }
 
   /**
@@ -51,12 +51,12 @@ public class QnaPostController {
    * @return Page<QnaPostDto>
    */
   @GetMapping
-  public Page<PublicQnaPostDto> getQnaPostList(
-      @RequestParam(name = "page",required = false, defaultValue = "1") Integer page,
-      @RequestParam(name = "search",required = false, defaultValue = "") String search
+  public ResponseEntity<Page<PublicQnaPostDto>> getQnaPostList(
+      @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
+      @RequestParam(name = "search", required = false, defaultValue = "") String search
   ) {
+    return ResponseEntity.ok(qnaPostService.getQnaPostList(page, search));
 
-    return qnaPostService.getQnaPostList(page, search);
   }
 
   /**
@@ -67,12 +67,12 @@ public class QnaPostController {
    * @return Page<QnaPostDto>
    */
   @GetMapping("/author/{userId}")
-  public Page<PublicQnaPostDto> getQnaPostByUserIdList(
+  public ResponseEntity<Page<PublicQnaPostDto>> getQnaPostByUserIdList(
       @PathVariable(name = "userId") Long userId,
       @RequestParam(name = "page", required = false, defaultValue = "1") Integer page,
-      @RequestParam(name = "search",required = false, defaultValue = "") String search
+      @RequestParam(name = "search", required = false, defaultValue = "") String search
   ) {
-    return qnaPostService.getQnaPostByUserIdList(userId, page, search);
+    return ResponseEntity.ok(qnaPostService.getQnaPostByUserIdList(userId, page, search));
   }
 
   /**
@@ -82,28 +82,26 @@ public class QnaPostController {
    * @return QnaPostDto
    */
   @GetMapping("/{qnaPostId}")
-  public QnaPostDto getQnaPost(
-      @PathVariable(name = "qnaPostId") Long qnaPostId
-  ) {
-    return qnaPostService.getQnaPost(qnaPostId);
+  public ResponseEntity<QnaPostDto> getQnaPost(@PathVariable Long qnaPostId) {
+    return ResponseEntity.ok(qnaPostService.getQnaPost(qnaPostId));
   }
 
   /**
    * 특정 질의 응답 게시글 수정
    *
    * @param qnaPostId
-   *  @param user
+   * @param user
    * @param QnaPostUpdateDto
    * @return QnaPostDto
    */
   @PostMapping(value = "/{qnaPostId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public QnaPostDto updateQnaPost(
+  public ResponseEntity<QnaPostDto> updateQnaPost(
       @PathVariable("qnaPostId") Long qnaPostId,
       @ModelAttribute QnaPostUpdateDto QnaPostUpdateDto,
       @AuthenticationPrincipal User user
 
   ) {
-    return qnaPostService.updateQnaPost(qnaPostId, QnaPostUpdateDto, user);
+    return ResponseEntity.ok(qnaPostService.updateQnaPost(qnaPostId, QnaPostUpdateDto, user));
   }
 
   /**
@@ -114,11 +112,11 @@ public class QnaPostController {
    * @return QnaPostDto
    */
   @DeleteMapping("/{qnaPostId}")
-  public ResponseEntity<Map<String, String>> deleteQnaPost(
+  public ResponseEntity<Void> deleteQnaPost(
       @PathVariable("qnaPostId") Long qnaPostId,
       @AuthenticationPrincipal User user
   ) {
 
-    return ResponseEntity.ok(qnaPostService.deleteQnaPost(qnaPostId, user));
+    return ResponseEntity.noContent().build(); // HTTP 204 No Content
   }
 }
