@@ -22,6 +22,7 @@ import jakarta.transaction.Transactional;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -242,4 +243,27 @@ public class AuthService {
     }
   }
 
+
+  /**
+   * 로그인된 사용자 ID 가져오기
+   *
+   * @return Long
+   */
+  public Long getLoginUserId() {
+    String email = SecurityContextHolder.getContext().getAuthentication().getName();
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    return user.getId();
+  }
+
+  /**
+   * 이메일로 사용자 조회
+   *
+   * @param email
+   * @return User
+   */
+  public User findUserByEmail(String email) {
+    return userRepository.findByEmail(email)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+  }
 }
