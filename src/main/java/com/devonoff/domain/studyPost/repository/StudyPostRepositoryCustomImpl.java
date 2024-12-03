@@ -5,7 +5,7 @@ import com.devonoff.domain.studyPost.entity.QStudyPost;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
-import com.devonoff.type.StudyStatus;
+import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySubject;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.Expressions;
@@ -27,7 +27,7 @@ public class StudyPostRepositoryCustomImpl implements StudyPostRepositoryCustom 
   @Override
   public Page<StudyPostDto> findStudyPostsByFilters(
       StudyMeetingType meetingType, String title, StudySubject subject,
-      StudyDifficulty difficulty, int dayType, StudyStatus status,
+      StudyDifficulty difficulty, int dayType, StudyPostStatus status,
       Double latitude, Double longitude, Pageable pageable) {
 
     QStudyPost studyPost = QStudyPost.studyPost;
@@ -81,7 +81,7 @@ public class StudyPostRepositoryCustomImpl implements StudyPostRepositoryCustom 
         : new BooleanBuilder();
   }
 
-  private BooleanBuilder equalsStatus(StudyStatus status) {
+  private BooleanBuilder equalsStatus(StudyPostStatus status) {
     return status != null ? new BooleanBuilder(QStudyPost.studyPost.status.eq(status))
         : new BooleanBuilder();
   }

@@ -12,7 +12,6 @@ import com.devonoff.domain.totalstudytime.entity.TotalStudyTime;
 import com.devonoff.domain.totalstudytime.repository.TotalStudyTimeRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
-import com.devonoff.type.StudyStatus;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
