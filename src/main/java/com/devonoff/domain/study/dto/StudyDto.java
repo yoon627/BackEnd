@@ -4,6 +4,7 @@ import com.devonoff.domain.study.entity.Study;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyPostStatus;
+import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
 import com.devonoff.util.DayTypeUtils;
 import java.time.LocalDate;
@@ -32,7 +33,7 @@ public class StudyDto {
   private LocalTime startTime;
   private LocalTime endTime;
   private StudyMeetingType meetingType;
-  private StudyPostStatus status;
+  private StudyStatus status;
   private Long studyPostId;
   private Long studyLeaderId;
   private Integer totalParticipants;
