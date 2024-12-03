@@ -210,6 +210,8 @@ public class AuthService {
     User user = userRepository.findById(loginUserId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
+    authRedisRepository.deleteData(user.getEmail() + "-refreshToken");
+
     user.setIsActive(false);
     userRepository.save(user);
   }
