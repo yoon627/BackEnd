@@ -46,7 +46,7 @@ class InfoSharePostControllerTest {
 
   @Test
   @DisplayName("정보공유 게시글 생성 - 성공")
-  void createInfoSharePost_Success() throws Exception {
+  void testCreateInfoSharePost_Success() throws Exception {
     // given
     MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg",
         "image content".getBytes());
@@ -75,7 +75,7 @@ class InfoSharePostControllerTest {
 
   @Test
   @DisplayName("정보공유 게시글 페이지 조회 - 성공")
-  void getInfoSharePosts_Success() throws Exception {
+  void testGetInfoSharePosts_Success() throws Exception {
     // given
     Page<InfoSharePostDto> page = new PageImpl<>(Collections.singletonList(
         InfoSharePostDto.builder().title("Test Title").build()
@@ -94,7 +94,7 @@ class InfoSharePostControllerTest {
 
   @Test
   @DisplayName("특정 정보공유 게시글 조회 - 성공")
-  void getInfoSharePostByPostId_Success() throws Exception {
+  void testGetInfoSharePostByPostId_Success() throws Exception {
     // given
     InfoSharePostDto responseDto = InfoSharePostDto.builder()
         .title("Test Title")
@@ -112,7 +112,7 @@ class InfoSharePostControllerTest {
 
   @Test
   @DisplayName("특정 정보공유 게시글 수정 - 성공")
-  void updateInfoSharePost_Success() throws Exception {
+  void testUpdateInfoSharePost_Success() throws Exception {
     // given
     MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg",
         "image content".getBytes());
@@ -140,7 +140,7 @@ class InfoSharePostControllerTest {
 
   @Test
   @DisplayName("특정 정보공유 게시글 삭제 - 성공")
-  void deleteInfoSharePost_Success() throws Exception {
+  void testDeleteInfoSharePost_Success() throws Exception {
     // when & then
     mockMvc.perform(delete("/api/info-posts/1"))
         .andExpect(status().isOk());

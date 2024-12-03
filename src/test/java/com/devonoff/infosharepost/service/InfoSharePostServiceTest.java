@@ -52,7 +52,7 @@ class InfoSharePostServiceTest {
 
   @Test
   @DisplayName("정보공유 게시글 생성 - 성공")
-  void createInfoSharePost_Success() {
+  void testCreateInfoSharePost_Success() {
     // given
     MultipartFile file = mock(MultipartFile.class);
     InfoSharePostDto dto = InfoSharePostDto.builder()
@@ -78,7 +78,7 @@ class InfoSharePostServiceTest {
 
   @Test
   @DisplayName("정보공유 게시글 생성 - 실패(사용자가 존재하지 않음)")
-  void createInfoSharePost_UserNotFound_ThrowsException() {
+  void testCreateInfoSharePost_UserNotFound_ThrowsException() {
     // given
     MultipartFile file = mock(MultipartFile.class);
     InfoSharePostDto dto = InfoSharePostDto.builder()
@@ -98,7 +98,7 @@ class InfoSharePostServiceTest {
 
   @Test
   @DisplayName("정보공유 게시글 수정 - 실패(권한 없음)")
-  void updateInfoSharePost_UnauthorizedAccess_ThrowsException() {
+  void testUpdateInfoSharePost_UnauthorizedAccess_ThrowsException() {
     // given
     Long postId = 1L;
     InfoSharePostDto dto = InfoSharePostDto.builder()
@@ -117,7 +117,7 @@ class InfoSharePostServiceTest {
 
   @Test
   @DisplayName("정보공유 게시글 삭제 - 성공")
-  void deleteInfoSharePost_Success() {
+  void testDeleteInfoSharePost_Success() {
     // given
     InfoSharePost post = InfoSharePost.builder().user(User.builder().id(1L).build()).build();
 
@@ -133,7 +133,7 @@ class InfoSharePostServiceTest {
 
   @Test
   @DisplayName("정보공유 게시글 삭제 - 실패(권한 없음)")
-  void deleteInfoSharePost_UnauthorizedAccess_ThrowsException() {
+  void testDeleteInfoSharePost_UnauthorizedAccess_ThrowsException() {
     // given
     InfoSharePost post = InfoSharePost.builder().user(User.builder().id(2L).build()).build();
 
