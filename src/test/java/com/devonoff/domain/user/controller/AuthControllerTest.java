@@ -64,7 +64,7 @@ class AuthControllerTest {
   void testCheckNickname_Success() throws Exception {
     // given
     NickNameCheckRequest nickNameCheckRequest = NickNameCheckRequest.builder()
-        .nickName("testNickname")
+        .nickname("testNickname")
         .build();
 
     willDoNothing().given(authService).nicknameCheck(nickNameCheckRequest);
@@ -184,7 +184,7 @@ class AuthControllerTest {
   void testSignUp_Success() throws Exception {
     // given
     SignUpRequest signUpRequest = SignUpRequest.builder()
-        .nickName("testNickname")
+        .nickname("testNickname")
         .email("test@email.com")
         .password("testPassword")
         .build();

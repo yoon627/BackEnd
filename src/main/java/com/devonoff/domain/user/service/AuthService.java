@@ -38,7 +38,7 @@ public class AuthService {
   private final PasswordEncoder passwordEncoder;
 
   /**
-   * 사용자 NickName 중복 체크
+   * 사용자 Nickname 중복 체크
    *
    * @param nickNameCheckRequest
    */
