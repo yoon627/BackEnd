@@ -4,6 +4,7 @@ import com.devonoff.domain.comment.dto.CommentDto;
 import com.devonoff.domain.comment.entity.Comment;
 import com.devonoff.domain.comment.repository.CommentRepository;
 import com.devonoff.domain.user.entity.User;
+import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.PostType;
@@ -19,12 +20,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommentService {
 
   private final CommentRepository commentRepository;
+  private final AuthService authService;
+  private static final int MAX_COMMENT_LENGTH = 500;
 
   @Transactional
-  public CommentDto createComment(CommentDto dto, User user) {
-    if (dto.getContent() == null || dto.getContent().trim().isEmpty()) {
-      throw new CustomException(ErrorCode.INVALID_COMMENT_CONTENT);
-    } else if (dto.getContent().length() > 500) { // 500자는 예시로
+  public CommentDto createComment(CommentDto dto, Long userId) {
+    // User 객체 가져오기
+    User user = authService.findUserById(userId);
+
+    if (dto.getContent().length() > MAX_COMMENT_LENGTH) {
       throw new CustomException(ErrorCode.INVALID_COMMENT_CONTENT);
     }
     Comment comment = Comment.builder()
@@ -53,12 +57,12 @@ public class CommentService {
   }
 
   @Transactional
-  public CommentDto updateComment(Long commentId, String content, Boolean isSecret, User user) {
+  public CommentDto updateComment(Long commentId, String content, Boolean isSecret, Long userId) {
     Comment comment = commentRepository.findById(commentId)
         .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
     // 작성자 확인
-    if (!comment.getUser().getId().equals(user.getId())) {
+    if (!comment.getUser().getId().equals(userId)) {
       throw new CustomException(ErrorCode.UNAUTHORIZED_COMMENT_ACCESS);
     }
 
@@ -72,12 +76,12 @@ public class CommentService {
   }
 
   @Transactional
-  public void deleteComment(Long commentId, User user) {
+  public void deleteComment(Long commentId, Long userId) {
     Comment comment = commentRepository.findById(commentId)
         .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
     // 작성자 확인
-    if (!comment.getUser().getId().equals(user.getId())) {
+    if (!comment.getUser().getId().equals(userId)) {
       throw new CustomException(ErrorCode.UNAUTHORIZED_COMMENT_ACCESS);
     }
 

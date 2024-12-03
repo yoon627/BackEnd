@@ -21,6 +21,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,7 +44,7 @@ public class QnaPostService {
    * @return Map<String, String>
    */
   @Transactional
-  public Map<String, String> createQnaPost(
+  public ResponseEntity<Void> createQnaPost(
       QnaPostRequest qnaPostRequest, User user) {
     // 입력값 검증
     if (qnaPostRequest.getTitle() == null || qnaPostRequest.getTitle().isBlank()) {
@@ -70,7 +71,7 @@ public class QnaPostService {
     Map<String, String> responseMap = new HashMap<>();
     responseMap.put("message", "게시글 작성이 완료되었습니다.");
 
-    return responseMap;
+    return ResponseEntity.status(201).build();
   }
 
   /**
@@ -165,7 +166,7 @@ public class QnaPostService {
    * @return QnaPostDto
    */
   @Transactional
-  public Map<String, String> deleteQnaPost(Long qnaPostId, User user) {
+  public ResponseEntity<Void>deleteQnaPost(Long qnaPostId, User user) {
 
     QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
@@ -180,10 +181,8 @@ public class QnaPostService {
     }
     qnaPostRepository.delete(qnaPost);
 
-    Map<String, String> responseMap = new HashMap<>();
-    responseMap.put("message", "정상적으로 삭제 되었습니다.");
+    return ResponseEntity.noContent().build();
 
-    return responseMap;
 
   }
 }
