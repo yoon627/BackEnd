@@ -12,8 +12,6 @@ import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.PostType;
-import java.util.HashMap;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -68,10 +66,8 @@ public class QnaPostService {
             .build()
     );
 
-    Map<String, String> responseMap = new HashMap<>();
-    responseMap.put("message", "게시글 작성이 완료되었습니다.");
-
-    return ResponseEntity.status(201).build();
+// 상태 코드만 반환
+    return ResponseEntity.ok().build(); // HTTP 200
   }
 
   /**
@@ -155,7 +151,10 @@ public class QnaPostService {
     qnaPost.setTitle(qnaPostUpdateDto.getTitle());
     qnaPost.setContent(qnaPostUpdateDto.getContent());
 
-    return QnaPostDto.fromEntity(qnaPost);
+    // 저장 로직 추가
+    QnaPost updatedQnaPost = qnaPostRepository.save(qnaPost);
+
+    return QnaPostDto.fromEntity(updatedQnaPost);
   }
 
   /**
@@ -181,7 +180,8 @@ public class QnaPostService {
     }
     qnaPostRepository.delete(qnaPost);
 
-    return ResponseEntity.noContent().build();
+    // 상태 코드만 반환
+    return ResponseEntity.ok().build(); // HTTP 200
 
 
   }

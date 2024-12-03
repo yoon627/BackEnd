@@ -21,10 +21,12 @@ public class CommentService {
 
   private final CommentRepository commentRepository;
   private final AuthService authService;
+  // 댓글의 최대 글자수
   private static final int MAX_COMMENT_LENGTH = 500;
 
   @Transactional
   public CommentDto createComment(CommentDto dto, Long userId) {
+    log.info("Creating comment for user: {}, postId: {}", userId, dto.getPostId());
     // User 객체 가져오기
     User user = authService.findUserById(userId);
 

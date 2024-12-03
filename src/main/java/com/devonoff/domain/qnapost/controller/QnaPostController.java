@@ -40,7 +40,7 @@ public class QnaPostController {
       @ModelAttribute QnaPostRequest qnaPostRequest,
       @AuthenticationPrincipal User user) {
     qnaPostService.createQnaPost(qnaPostRequest, user);
-    return ResponseEntity.status(201).build();
+    return ResponseEntity.ok().build();
   }
 
   /**
@@ -116,7 +116,7 @@ public class QnaPostController {
       @PathVariable("qnaPostId") Long qnaPostId,
       @AuthenticationPrincipal User user
   ) {
-
-    return ResponseEntity.noContent().build(); // HTTP 204 No Content
+    qnaPostService.deleteQnaPost(qnaPostId, user);
+    return ResponseEntity.ok().build();
   }
 }
