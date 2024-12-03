@@ -1,7 +1,7 @@
 package com.devonoff.type;
 
 public enum StudyStatus {
-  RECRUITING,         // 모집 중
-  IN_PROGRESS,        // 진행 중
-  CANCELED            // 모집 취소
+  PENDING,      // 대기
+  IN_PROGRESS,  // 진행 중
+  COMPLETED,    // 진행 종료
 }

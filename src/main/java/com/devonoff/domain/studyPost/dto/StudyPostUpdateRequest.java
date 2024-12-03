@@ -2,7 +2,7 @@ package com.devonoff.domain.studyPost.dto;
 
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
-import com.devonoff.type.StudyStatus;
+import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySubject;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -34,6 +34,6 @@ public class StudyPostUpdateRequest {
   private String description;
   private Double latitude;
   private Double longitude;
-  private StudyStatus status;
+  private StudyPostStatus status;
   private String thumbnailImgUrl;
 }

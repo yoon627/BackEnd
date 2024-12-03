@@ -1,7 +1,7 @@
 package com.devonoff.domain.studyPost.repository;
 
 import com.devonoff.domain.studyPost.entity.StudyPost;
-import com.devonoff.type.StudyStatus;
+import com.devonoff.type.StudyPostStatus;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,8 +12,8 @@ import org.springframework.stereotype.Repository;
 public interface StudyPostRepository extends JpaRepository<StudyPost, Long>,
     StudyPostRepositoryCustom {
 
-  void deleteByStatusAndUpdatedAtBefore(StudyStatus status, LocalDateTime dateTime);
+  void deleteByStatusAndUpdatedAtBefore(StudyPostStatus status, LocalDateTime dateTime);
 
   List<StudyPost> findAllByRecruitmentPeriodBeforeAndStatus(LocalDate recruitmentPeriod,
-      StudyStatus status);
+      StudyPostStatus status);
 }
