@@ -13,9 +13,9 @@ public enum ErrorCode {
   INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED.value(), "이메일 또는 비밀번호가 잘못되었습니다."), // 401
   SOCIAL_LOGIN_FAILED(HttpStatus.UNAUTHORIZED.value(), "소셜 로그인에 실패했습니다."), // 401
   ACCOUNT_PENDING_DELETION(HttpStatus.FORBIDDEN.value(), "해당 계정은 탈퇴 예정 상태입니다."), // 403 -> 필요한가?
-  EMAIL_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST.value(),
+  EMAIL_CERTIFICATION_FAILED(HttpStatus.BAD_REQUEST.value(),
       "이메일 인증에 실패했습니다."), // 400 -> 이거쓸지 아래 두개 쓸지 고려
-  EMAIL_VERIFICATION_UNCOMPLETED(HttpStatus.BAD_REQUEST.value(),
+  EMAIL_CERTIFICATION_UNCOMPLETED(HttpStatus.BAD_REQUEST.value(),
       "이메일 인증이 완료되지 않았습니다."),
   INVALID_EMAIL_CODE(HttpStatus.BAD_REQUEST.value(), "이메일 인증 코드가 유효하지 않습니다."), // 400
   EXPIRED_EMAIL_CODE(HttpStatus.BAD_REQUEST.value(), "이메일 인증 코드가 만료되었습니다."), // 400
