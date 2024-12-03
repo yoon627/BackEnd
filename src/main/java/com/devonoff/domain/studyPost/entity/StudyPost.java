@@ -3,6 +3,8 @@ package com.devonoff.domain.studyPost.entity;
 import com.devonoff.common.entity.BaseTimeEntity;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.user.entity.User;
+import com.devonoff.exception.CustomException;
+import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyStatus;
@@ -90,9 +92,32 @@ public class StudyPost extends BaseTimeEntity {
   @Column
   private String thumbnailImgUrl; // 썸네일 이미지 URL
 
+  @Column(nullable = false)
+  private Integer maxParticipants; // 모집 최대 인원
+
+  @Column(nullable = false)
+  private Integer currentParticipants; // 현재 승인된 참가자 수
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
   private User user; // 작성자
+
+  public boolean isFull() {
+    return currentParticipants >= (maxParticipants - 1); // 스터디장 제외
+  }
+
+  public void incrementParticipants() {
+    if (isFull()) {
+      throw new CustomException(ErrorCode.STUDY_POST_FULL);
+    }
+    this.currentParticipants++;
+  }
+
+  public void decrementParticipants() {
+    if (currentParticipants > 0) {
+      this.currentParticipants--;
+    }
+  }
 
   public static StudyPost createFromRequest(StudyPostCreateRequest request, User user) {
     int dayType = DayTypeUtils.encodeDaysFromRequest(request.getDayType());
@@ -114,6 +139,8 @@ public class StudyPost extends BaseTimeEntity {
         .longitude(request.getLongitude())
         .status(StudyStatus.RECRUITING) // 기본값 설정
         .thumbnailImgUrl(request.getThumbnailImgUrl())
+        .maxParticipants(request.getMaxParticipants())
+        .currentParticipants(0) // 기본값: 0명
         .user(user)
         .build();
   }
