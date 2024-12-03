@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -94,6 +95,7 @@ public class StudyService {
   }
 
   // 스터디 상태 변경(스케쥴러)
+  @Transactional
   public void updateStudyStatuses() {
     LocalDateTime now = timeProvider.now();
 
