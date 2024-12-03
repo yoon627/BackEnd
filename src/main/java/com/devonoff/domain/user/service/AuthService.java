@@ -22,6 +22,9 @@ import jakarta.transaction.Transactional;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -126,7 +129,7 @@ public class AuthService {
 
     userRepository.save(
         User.builder()
-            .nickName(nickName)
+            .nickname(nickName)
             .email(email)
             .password(encodedPassword)
             .isActive(true)
@@ -225,7 +228,7 @@ public class AuthService {
    * @param nickName
    */
   public void checkExistsNickName(String nickName) {
-    boolean existsByNickName = userRepository.existsByNickName(nickName);
+    boolean existsByNickName = userRepository.existsByNickname(nickName);
     if (existsByNickName) {
       throw new CustomException(ErrorCode.NICKNAME_ALREADY_REGISTERED);
     }
@@ -243,27 +246,10 @@ public class AuthService {
     }
   }
 
-
-  /**
-   * 로그인된 사용자 ID 가져오기
-   *
-   * @return Long
-   */
   public Long getLoginUserId() {
-    String email = SecurityContextHolder.getContext().getAuthentication().getName();
-    User user = userRepository.findByEmail(email)
-        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-    return user.getId();
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+    return Long.parseLong(userDetails.getUsername());
   }
 
-  /**
-   * 이메일로 사용자 조회
-   *
-   * @param email
-   * @return User
-   */
-  public User findUserByEmail(String email) {
-    return userRepository.findByEmail(email)
-        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-  }
 }

@@ -27,21 +27,28 @@ public enum ErrorCode {
       "프로필 이미지를 업로드하는 데 실패했습니다."), // 500
   // 스터디 관련
   STUDY_POST_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 모집글을 찾을 수 없습니다."), // 404
+  STUDY_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디를 찾을 수 없습니다."), // 404
   PARTICIPANT_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 참여자를 찾을 수 없습니다."), // 404
   DUPLICATE_APPLICATION(HttpStatus.BAD_REQUEST.value(), "이미 해당 스터디에 신청했습니다."), // 400
-  APPLICATION_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 신청 내역을 찾을 수 없습니다."), // 404
+  SIGNUP_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 신청 내역을 찾을 수 없습니다."), // 404
+  SIGNUP_STATUS_ALREADY_FINALIZED(HttpStatus.BAD_REQUEST.value(), "이미 확정된 신청 상태입니다."), // 400
+  NO_APPROVED_SIGNUPS(HttpStatus.BAD_REQUEST.value(), "승인된 신청자가 없습니다."), // 400
   APPLICATION_PERIOD_CLOSED(HttpStatus.BAD_REQUEST.value(), "스터디 신청 기간이 종료되었습니다."), // 400
   STUDY_EXTENSION_FAILED(HttpStatus.BAD_REQUEST.value(), "스터디 모집 기한 연장은 최대 1개월입니다."), // 400
   INVALID_STUDY_STATUS(HttpStatus.BAD_REQUEST.value(), "잘못된 스터디 상태값입니다."), // 400
   MAP_API_REQUEST_FAILED(HttpStatus.INTERNAL_SERVER_ERROR.value(), "지도 API 요청에 실패했습니다."), // 500
-  LOCATION_REQUIRED_FOR_HYBRID(HttpStatus.BAD_REQUEST.value(), "온/오프라인 병행 스터디의 경우 위치 정보가 필수입니다."), // 400
+  LOCATION_REQUIRED_FOR_HYBRID(HttpStatus.BAD_REQUEST.value(),
+      "온/오프라인 병행 스터디의 경우 위치 정보가 필수입니다."), // 400
   // QnA 게시글
+  INVALID_INPUT_VALUE(HttpStatus.NOT_FOUND.value(), "입력이 정상적으로 되지 않았습니다."),
+
   POST_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "게시글을 찾을 수 없습니다."), // 404
   UNAUTHORIZED_POST_ACCESS(HttpStatus.FORBIDDEN.value(), "게시글에 접근할 권한이 없습니다."), // 403
   // 정보 공유 게시글
   SHARED_POST_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "정보 공유 게시글을 찾을 수 없습니다."), // 404
   UNAUTHORIZED_SHARED_POST_ACCESS(HttpStatus.FORBIDDEN.value(), "정보 공유 게시글에 접근할 권한이 없습니다."), // 403
   // 댓글
+  INVALID_COMMENT_CONTENT(HttpStatus.BAD_REQUEST.value(), "댓글 내용이 유효하지 않습니다"),
   COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "댓글을 찾을 수 없습니다."), // 404
   UNAUTHORIZED_COMMENT_ACCESS(HttpStatus.FORBIDDEN.value(), "댓글에 접근할 권한이 없습니다."), // 403
   // 채팅
