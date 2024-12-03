@@ -40,6 +40,8 @@ public class StudyPostDto {
   private Double longitude;
   private StudyStatus status;
   private String thumbnailImgUrl;
+  private Integer maxParticipants;
+  private Integer currentParticipants;
   private Long userId;
 
   public static StudyPostDto fromEntity(StudyPost studyPost) {
@@ -61,6 +63,8 @@ public class StudyPostDto {
         .longitude(studyPost.getLongitude())
         .status(studyPost.getStatus())
         .thumbnailImgUrl(studyPost.getThumbnailImgUrl())
+        .maxParticipants(studyPost.getMaxParticipants())
+        .currentParticipants(studyPost.getCurrentParticipants())
         .userId(studyPost.getUser().getId())
         .build();
   }
