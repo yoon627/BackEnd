@@ -1,5 +1,8 @@
 package com.devonoff.domain.study.service;
 
+import com.devonoff.domain.student.dto.StudentDto;
+import com.devonoff.domain.student.entity.Student;
+import com.devonoff.domain.student.repository.StudentRepository;
 import com.devonoff.domain.study.dto.StudyDto;
 import com.devonoff.domain.study.entity.Study;
 import com.devonoff.domain.study.repository.StudyRepository;
@@ -10,11 +13,12 @@ import com.devonoff.domain.totalstudytime.repository.TotalStudyTimeRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyStatus;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +27,7 @@ public class StudyService {
   private final StudyRepository studyRepository;
   private final StudyPostRepository studyPostRepository;
   private final TotalStudyTimeRepository totalStudyTimeRepository;
+  private final StudentRepository studentRepository;
 
   // 모집글 마감 시 자동으로 스터디 생성
   public Study createStudyFromClosedPost(Long studyPostId) {
@@ -47,14 +52,25 @@ public class StudyService {
     Study savedStudy = studyRepository.save(study);
     totalStudyTimeRepository.save(
         TotalStudyTime.builder().studyId(savedStudy.getId()).totalStudyTime(0L).build());
-    
+
     return savedStudy;
   }
 
   // 스터디 목록 조회
-  @Transactional(readOnly = true)
   public Page<StudyDto> getStudyList(Pageable pageable) {
     return studyRepository.findAllByOrderByCreatedAtDesc(pageable)
         .map(StudyDto::fromEntity);
+  }
+
+  // 스터디 참가자 목록 조회
+  public List<StudentDto> getParticipants(Long studyId) {
+    Study study = studyRepository.findById(studyId)
+        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_NOT_FOUND));
+
+    List<Student> participants = studentRepository.findByStudy(study);
+
+    return participants.stream()
+        .map(StudentDto::fromEntity)
+        .collect(Collectors.toList());
   }
 }
