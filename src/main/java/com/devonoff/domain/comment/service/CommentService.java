@@ -1,6 +1,8 @@
 package com.devonoff.domain.comment.service;
 
 import com.devonoff.domain.comment.dto.CommentDto;
+import com.devonoff.domain.comment.dto.CommentRequest;
+import com.devonoff.domain.comment.dto.CommentResponse;
 import com.devonoff.domain.comment.entity.Comment;
 import com.devonoff.domain.comment.repository.CommentRepository;
 import com.devonoff.domain.user.entity.User;
@@ -24,28 +26,39 @@ public class CommentService {
   // 댓글의 최대 글자수
   private static final int MAX_COMMENT_LENGTH = 500;
 
+
   @Transactional
-  public CommentDto createComment(CommentDto dto, Long userId) {
-    log.info("Creating comment for user: {}, postId: {}", userId, dto.getPostId());
-    // User 객체 가져오기
+  public CommentResponse createComment(CommentRequest request, Long userId) {
+    // 유저 정보 가져오기
     User user = authService.findUserById(userId);
 
-    if (dto.getContent().length() > MAX_COMMENT_LENGTH) {
-      throw new CustomException(ErrorCode.INVALID_COMMENT_CONTENT);
-    }
-    Comment comment = Comment.builder()
-        .postType(dto.getPostType())
-        .postId(dto.getPostId())
-        .isSecret(dto.getIsSecret())
-        .content(dto.getContent())
-        .user(user) // 로그인된 사용자 연결
-        .build();
+    // 요청 값 검증
+    validateRequest(request);
 
+    // DTO -> Entity 변환
+    Comment comment = request.toEntity(user);
+
+    // 댓글 저장
     Comment savedComment = commentRepository.save(comment);
 
-    // 저장된 엔티티를 DTO로 변환하여 반환
-    return CommentDto.fromEntity(savedComment);
+    // 로깅
+    log.info("Comment created by user ID: {}, Post ID: {}, Comment ID: {}",
+        userId, savedComment.getPostId(), savedComment.getId());
+
+    // 저장된 엔티티를 응답 DTO로 변환
+    return CommentResponse.fromEntity(savedComment);
   }
+
+  private void validateRequest(CommentRequest request) {
+    if (request.getContent() == null || request.getContent().isBlank()) {
+      throw new CustomException(ErrorCode.INVALID_COMMENT_CONTENT, "댓글 내용을 입력하세요.");
+    }
+    if (request.getContent().length() > MAX_COMMENT_LENGTH) {
+      throw new CustomException(ErrorCode.INVALID_COMMENT_CONTENT,
+          "댓글 내용은 최대 " + MAX_COMMENT_LENGTH + "자까지 입력할 수 있습니다.");
+    }
+  }
+
 
   @Transactional(readOnly = true)
   public List<CommentDto> getCommentsByPost(Long postId, PostType postType) {

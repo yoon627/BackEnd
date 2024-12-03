@@ -31,11 +31,13 @@ public class Comment extends BaseTimeEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+
   @Column(nullable = false, length = 50)
   @Enumerated(EnumType.STRING)
   private PostType postType; // 게시글 유형
 
-  @Column(nullable = false)
+
+  @JoinColumn(name ="")
   private Long postId; // 게시글 ID
 
   @Column(nullable = false)

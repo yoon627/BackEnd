@@ -13,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 @AllArgsConstructor
 @Builder
 public class QnaPostRequest {
-
+  private String author;
   private MultipartFile thumbnail;
   private String title;
   private String content;
