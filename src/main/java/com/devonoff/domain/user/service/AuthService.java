@@ -1,6 +1,5 @@
 package com.devonoff.domain.user.service;
 
-import com.devonoff.common.dto.ResponseDto;
 import com.devonoff.domain.redis.service.RedisService;
 import com.devonoff.domain.user.dto.auth.CertificationRequest;
 import com.devonoff.domain.user.dto.auth.EmailRequest;
@@ -18,10 +17,8 @@ import com.devonoff.type.LoginType;
 import com.devonoff.util.CertificationNumber;
 import com.devonoff.util.EmailProvider;
 import com.devonoff.util.JwtProvider;
-import jakarta.transaction.Transactional;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -44,31 +41,26 @@ public class AuthService {
    * 사용자 NickName 중복 체크
    *
    * @param nickNameCheckRequest
-   * @return ResponseDto
    */
-  public ResponseDto nickNameCheck(NickNameCheckRequest nickNameCheckRequest) {
+  public void nicknameCheck(NickNameCheckRequest nickNameCheckRequest) {
     checkExistsNickName(nickNameCheckRequest.getNickName());
-    return ResponseDto.getResponseBody("사용 가능한 닉네임 입니다.");
   }
 
   /**
    * 사용자 Email 중복 체크
    *
    * @param emailRequest
-   * @return ResponseDto
    */
-  public ResponseDto emailCheck(EmailRequest emailRequest) {
+  public void emailCheck(EmailRequest emailRequest) {
     checkExistsEmail(emailRequest.getEmail());
-    return ResponseDto.getResponseBody("사용 가능한 이메일 입니다.");
   }
 
   /**
    * 이메일 인증번호 전송
    *
    * @param emailSendRequest
-   * @return ResponseDto
    */
-  public ResponseDto emailSend(EmailRequest emailSendRequest) {
+  public void emailSend(EmailRequest emailSendRequest) {
     String email = emailSendRequest.getEmail();
 
     checkExistsEmail(email);
@@ -83,25 +75,22 @@ public class AuthService {
 
     // Redis 에 email 을 키값으로 CertificationNumber 를 저장. (유효시간 3분으로 설정)
     redisService.saveDataWithTTL(email, certificationNumber, 3, TimeUnit.MINUTES);
-    return ResponseDto.getResponseBody("이메일 전송에 성공했습니다.");
   }
 
   /**
    * 인증번호 확인
    *
    * @param certificationRequest
-   * @return ResponseDto
    */
-  public ResponseDto certificationEmail(CertificationRequest certificationRequest) {
     boolean isVerified = redisService.verifyCertificationNumber(
         certificationRequest.getEmail(), certificationRequest.getCertificationNumber()
     );
+  public void certificationEmail(CertificationRequest certificationRequest) {
 
     if (!isVerified) {
       throw new CustomException(ErrorCode.EMAIL_VERIFICATION_FAILED);
     }
 
-    return ResponseDto.getResponseBody("이메일 인증에 성공했습니다.");
   }
 
   /**
@@ -110,8 +99,7 @@ public class AuthService {
    * @param signUpRequest
    * @return ResponseDto
    */
-  @Transactional
-  public ResponseDto signUp(SignUpRequest signUpRequest) {
+  public void signUp(SignUpRequest signUpRequest) {
     String nickName = signUpRequest.getNickName();
     String email = signUpRequest.getEmail();
 
@@ -134,8 +122,6 @@ public class AuthService {
             .loginType(LoginType.GENERAL)
             .build()
     );
-
-    return ResponseDto.getResponseBody("회원가입이 완료되었습니다.");
   }
 
   /**
@@ -171,17 +157,13 @@ public class AuthService {
 
   /**
    * 로그아웃
-   *
-   * @param userId
-   * @return ResponseDto
    */
-  public ResponseDto signOut(Long userId) {
-    User user = userRepository.findById(userId)
+  public void signOut() {
+    Long loginUserId = getLoginUserId();
+    User user = userRepository.findById(loginUserId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
     redisService.deleteToken(user.getEmail() + "-refreshToken");
-
-    return ResponseDto.getResponseBody("로그아웃 되었습니다.");
   }
 
   /**
@@ -206,18 +188,13 @@ public class AuthService {
 
   /**
    * 회원 탈퇴
-   *
-   * @param userId
-   * @return ResponseDto
    */
-  @Transactional
-  public ResponseDto withdrawalUser(Long userId) {
-    User user = userRepository.findById(userId)
+  public void withdrawalUser() {
+    Long loginUserId = getLoginUserId();
+    User user = userRepository.findById(loginUserId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
     user.setIsActive(false);
-
-    return ResponseDto.getResponseBody("회원 탈퇴 처리 되었습니다.");
   }
 
   /**
