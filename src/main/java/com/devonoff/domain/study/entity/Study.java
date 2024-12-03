@@ -5,7 +5,6 @@ import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
-import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
 import jakarta.persistence.Column;
