@@ -86,7 +86,7 @@ class AuthServiceTest {
     String nickname = "testNickname";
 
     NickNameCheckRequest nickNameCheckRequest =
-        NickNameCheckRequest.builder().nickName(nickname).build();
+        NickNameCheckRequest.builder().nickname(nickname).build();
 
     given(userRepository.existsByNickname(eq(nickname))).willReturn(false);
 
@@ -104,7 +104,7 @@ class AuthServiceTest {
     String nickname = "testNickname";
 
     NickNameCheckRequest nickNameCheckRequest =
-        NickNameCheckRequest.builder().nickName(nickname).build();
+        NickNameCheckRequest.builder().nickname(nickname).build();
 
     given(userRepository.existsByNickname(eq(nickname))).willReturn(true);
 
@@ -307,7 +307,7 @@ class AuthServiceTest {
 
     SignUpRequest signUpRequest = SignUpRequest.builder()
         .email(email)
-        .nickName(nickname)
+        .nickname(nickname)
         .password(password)
         .build();
 
@@ -356,7 +356,7 @@ class AuthServiceTest {
 
     SignUpRequest signUpRequest = SignUpRequest.builder()
         .email(email)
-        .nickName(nickname)
+        .nickname(nickname)
         .password(password)
         .build();
 
@@ -382,7 +382,7 @@ class AuthServiceTest {
 
     SignUpRequest signUpRequest = SignUpRequest.builder()
         .email(email)
-        .nickName(nickname)
+        .nickname(nickname)
         .password(password)
         .build();
 
@@ -410,7 +410,7 @@ class AuthServiceTest {
 
     SignUpRequest signUpRequest = SignUpRequest.builder()
         .email(email)
-        .nickName(nickname)
+        .nickname(nickname)
         .password(password)
         .build();
 
