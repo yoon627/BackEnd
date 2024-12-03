@@ -138,7 +138,6 @@ public class StudyPostService {
   }
 
   // 모집 취소 -> 사용자가 직접 취소
-  @Transactional
   public void cancelStudyPost(Long studyPostId) {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
@@ -148,6 +147,7 @@ public class StudyPostService {
     }
 
     studyPost.setStatus(StudyPostStatus.CANCELED);
+    studyPostRepository.save(studyPost);
   }
 
   // 모집 취소 -> 배치 작업으로 자동 취소
@@ -164,7 +164,6 @@ public class StudyPostService {
   }
 
   // 모집 취소된 스터디 모집 기간 연장
-  @Transactional
   public void extendCanceledStudy(Long studyPostId, LocalDate newRecruitmentPeriod) {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
@@ -179,6 +178,7 @@ public class StudyPostService {
 
     studyPost.setStatus(StudyPostStatus.RECRUITING);
     studyPost.setRecruitmentPeriod(newRecruitmentPeriod);
+    studyPostRepository.save(studyPost);
   }
 
   private StudyPost buildStudyPost(StudyPostCreateRequest request, User user) {
