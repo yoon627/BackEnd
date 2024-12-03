@@ -39,7 +39,7 @@ class StudyTimelineControllerTest {
 
   @Test
   @DisplayName("학습했던 전체 시간대 조회 - 성공")
-  void shouldReturnStudyTimesForGivenStudyId() throws Exception {
+  void testFindAllStudyTimelinesForGivenStudyId_success() throws Exception {
     // Given
     Long studyId = 1L;
     List<StudyTimelineDto> mockStudyTimes = Arrays.asList(
