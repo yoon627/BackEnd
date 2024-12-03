@@ -60,6 +60,10 @@ public class StudyPostService {
 
   // 생성
   public StudyPostCreateResponse createStudyPost(StudyPostCreateRequest request) {
+    if (request.getMaxParticipants() < 2 || request.getMaxParticipants() > 10) {
+      throw new CustomException(ErrorCode.INVALID_MAX_PARTICIPANTS);
+    }
+
     User user = userRepository.findById(request.getUserId())
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
