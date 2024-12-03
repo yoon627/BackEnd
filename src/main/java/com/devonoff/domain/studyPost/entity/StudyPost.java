@@ -1,7 +1,6 @@
 package com.devonoff.domain.studyPost.entity;
 
 import com.devonoff.common.entity.BaseTimeEntity;
-import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
@@ -9,7 +8,6 @@ import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySubject;
-import com.devonoff.util.DayTypeUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -117,31 +115,5 @@ public class StudyPost extends BaseTimeEntity {
     if (currentParticipants > 0) {
       this.currentParticipants--;
     }
-  }
-
-  public static StudyPost createFromRequest(StudyPostCreateRequest request, User user) {
-    int dayType = DayTypeUtils.encodeDaysFromRequest(request.getDayType());
-
-    return StudyPost.builder()
-        .title(request.getTitle())
-        .studyName(request.getStudyName())
-        .subject(request.getSubject())
-        .difficulty(request.getDifficulty())
-        .dayType(dayType)
-        .startDate(request.getStartDate())
-        .endDate(request.getEndDate())
-        .startTime(request.getStartTime())
-        .endTime(request.getEndTime())
-        .meetingType(request.getMeetingType())
-        .recruitmentPeriod(request.getRecruitmentPeriod())
-        .description(request.getDescription())
-        .latitude(request.getLatitude())
-        .longitude(request.getLongitude())
-        .status(StudyPostStatus.RECRUITING) // 기본값 설정
-        .thumbnailImgUrl(request.getThumbnailImgUrl())
-        .maxParticipants(request.getMaxParticipants())
-        .currentParticipants(0) // 기본값: 0명
-        .user(user)
-        .build();
   }
 }

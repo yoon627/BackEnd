@@ -72,7 +72,7 @@ public class StudyPostService {
       throw new CustomException(ErrorCode.LOCATION_REQUIRED_FOR_HYBRID);
     }
 
-    StudyPost studyPost = StudyPost.createFromRequest(request, user);
+    StudyPost studyPost = buildStudyPost(request, user);
     studyPostRepository.save(studyPost);
 
     return new StudyPostCreateResponse("스터디 모집 글이 생성되었습니다.");
@@ -177,5 +177,31 @@ public class StudyPostService {
 
     studyPost.setStatus(StudyPostStatus.RECRUITING);
     studyPost.setRecruitmentPeriod(newRecruitmentPeriod);
+  }
+
+  private StudyPost buildStudyPost(StudyPostCreateRequest request, User user) {
+    int dayType = DayTypeUtils.encodeDaysFromRequest(request.getDayType());
+
+    return StudyPost.builder()
+        .title(request.getTitle())
+        .studyName(request.getStudyName())
+        .subject(request.getSubject())
+        .difficulty(request.getDifficulty())
+        .dayType(dayType)
+        .startDate(request.getStartDate())
+        .endDate(request.getEndDate())
+        .startTime(request.getStartTime())
+        .endTime(request.getEndTime())
+        .meetingType(request.getMeetingType())
+        .recruitmentPeriod(request.getRecruitmentPeriod())
+        .description(request.getDescription())
+        .latitude(request.getLatitude())
+        .longitude(request.getLongitude())
+        .status(StudyPostStatus.RECRUITING) // 기본값 설정
+        .thumbnailImgUrl(request.getThumbnailImgUrl())
+        .maxParticipants(request.getMaxParticipants())
+        .currentParticipants(0) // 기본값: 0명
+        .user(user)
+        .build();
   }
 }
