@@ -18,8 +18,10 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
 @Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -70,6 +72,8 @@ public class StudyPostCreateRequest {
   private StudyPostStatus status;
 
   private String thumbnailImgUrl; // 썸네일 이미지
+
+  private MultipartFile file;
 
   @NotNull(message = "최대 모집 인원은 필수입니다.")
   @Min(value = 2, message = "최소 모집 인원은 2명입니다.")
