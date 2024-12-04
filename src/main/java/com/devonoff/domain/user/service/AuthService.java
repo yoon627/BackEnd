@@ -1,7 +1,6 @@
 package com.devonoff.domain.user.service;
 
-import com.devonoff.common.dto.ResponseDto;
-import com.devonoff.domain.redis.service.RedisService;
+import com.devonoff.domain.redis.repository.AuthRedisRepository;
 import com.devonoff.domain.user.dto.auth.CertificationRequest;
 import com.devonoff.domain.user.dto.auth.EmailRequest;
 import com.devonoff.domain.user.dto.auth.NickNameCheckRequest;
@@ -18,91 +17,86 @@ import com.devonoff.type.LoginType;
 import com.devonoff.util.CertificationNumber;
 import com.devonoff.util.EmailProvider;
 import com.devonoff.util.JwtProvider;
-import jakarta.transaction.Transactional;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
   private final UserRepository userRepository;
 
-  private final RedisService redisService;
+  private final AuthRedisRepository authRedisRepository;
 
   private final EmailProvider emailProvider;
   private final JwtProvider jwtProvider;
   private final PasswordEncoder passwordEncoder;
 
   /**
-   * 사용자 NickName 중복 체크
+   * 사용자 Nickname 중복 체크
    *
    * @param nickNameCheckRequest
-   * @return ResponseDto
    */
-  public ResponseDto nickNameCheck(NickNameCheckRequest nickNameCheckRequest) {
-    checkExistsNickName(nickNameCheckRequest.getNickName());
-    return ResponseDto.getResponseBody("사용 가능한 닉네임 입니다.");
+  public void nicknameCheck(NickNameCheckRequest nickNameCheckRequest) {
+    checkExistsNickName(nickNameCheckRequest.getNickname());
   }
 
   /**
    * 사용자 Email 중복 체크
    *
    * @param emailRequest
-   * @return ResponseDto
    */
-  public ResponseDto emailCheck(EmailRequest emailRequest) {
+  public void emailCheck(EmailRequest emailRequest) {
     checkExistsEmail(emailRequest.getEmail());
-    return ResponseDto.getResponseBody("사용 가능한 이메일 입니다.");
   }
 
   /**
    * 이메일 인증번호 전송
    *
    * @param emailSendRequest
-   * @return ResponseDto
    */
-  public ResponseDto emailSend(EmailRequest emailSendRequest) {
+  public void emailSend(EmailRequest emailSendRequest) {
     String email = emailSendRequest.getEmail();
 
     checkExistsEmail(email);
 
     String certificationNumber = CertificationNumber.getCertificationNumber();
 
-    boolean isSucceed =
-        emailProvider.sendCertificationMail(email, certificationNumber);
+    boolean isSucceed = emailProvider.sendCertificationMail(email, certificationNumber);
     if (!isSucceed) {
       throw new CustomException(ErrorCode.EMAIL_SEND_FAILED);
     }
 
     // Redis 에 email 을 키값으로 CertificationNumber 를 저장. (유효시간 3분으로 설정)
-    redisService.saveDataWithTTL(email, certificationNumber, 3, TimeUnit.MINUTES);
-    return ResponseDto.getResponseBody("이메일 전송에 성공했습니다.");
+    authRedisRepository.setData(email, certificationNumber, 3, TimeUnit.MINUTES);
   }
 
   /**
    * 인증번호 확인
    *
    * @param certificationRequest
-   * @return ResponseDto
    */
-  public ResponseDto certificationEmail(CertificationRequest certificationRequest) {
-    boolean isVerified = redisService.verifyCertificationNumber(
-        certificationRequest.getEmail(), certificationRequest.getCertificationNumber()
-    );
+  public void certificationEmail(CertificationRequest certificationRequest) {
+    String email = certificationRequest.getEmail();
+    String savedCertificationNumber = authRedisRepository.getData(email);
 
-    if (!isVerified) {
-      throw new CustomException(ErrorCode.EMAIL_VERIFICATION_FAILED);
+    if (savedCertificationNumber == null) {
+      throw new CustomException(ErrorCode.EXPIRED_EMAIL_CODE);
     }
 
-    return ResponseDto.getResponseBody("이메일 인증에 성공했습니다.");
+    if (!savedCertificationNumber.equals(certificationRequest.getCertificationNumber())) {
+      throw new CustomException(ErrorCode.INVALID_EMAIL_CODE);
+    }
+
+    // Redis 에 UserId 를 키값으로 인증 완료 여부를 저장. (유효시간 1시간으로 설정)
+    authRedisRepository.setData(email + ":certificated", "true", 1, TimeUnit.HOURS);
+    // 기존에 Redis 에 UserId 를 키값으로 가지는 인증번호 데이터는 유효시간에 관계없이 삭제
+    authRedisRepository.deleteData(email);
   }
 
   /**
@@ -111,17 +105,16 @@ public class AuthService {
    * @param signUpRequest
    * @return ResponseDto
    */
-  @Transactional
-  public ResponseDto signUp(SignUpRequest signUpRequest) {
-    String nickName = signUpRequest.getNickName();
+  public void signUp(SignUpRequest signUpRequest) {
+    String nickName = signUpRequest.getNickname();
     String email = signUpRequest.getEmail();
 
     checkExistsNickName(nickName);
     checkExistsEmail(email);
 
-    boolean isCheckVerified = redisService.checkVerified(email + ":verified");
-    if (!isCheckVerified) {
-      throw new CustomException(ErrorCode.EMAIL_VERIFICATION_UNCOMPLETED);
+    String isCheckVerified = authRedisRepository.getData(email + ":certificated");
+    if (isCheckVerified == null) {
+      throw new CustomException(ErrorCode.EMAIL_CERTIFICATION_UNCOMPLETED);
     }
 
     String encodedPassword = passwordEncoder.encode(signUpRequest.getPassword());
@@ -135,8 +128,6 @@ public class AuthService {
             .loginType(LoginType.GENERAL)
             .build()
     );
-
-    return ResponseDto.getResponseBody("회원가입이 완료되었습니다.");
   }
 
   /**
@@ -162,7 +153,9 @@ public class AuthService {
     String refreshToken = jwtProvider.createRefreshToken(user.getId());
 
     // 리프레쉬 토큰을 3일 동안만 레디스에 저장
-    redisService.saveDataWithTTL(user.getEmail() + "-refreshToken", refreshToken, 3, TimeUnit.DAYS);
+    authRedisRepository.setData(
+        user.getEmail() + "-refreshToken", refreshToken, 3, TimeUnit.DAYS
+    );
 
     return SignInResponse.builder()
         .accessToken(accessToken)
@@ -172,17 +165,13 @@ public class AuthService {
 
   /**
    * 로그아웃
-   *
-   * @param userId
-   * @return ResponseDto
    */
-  public ResponseDto signOut(Long userId) {
-    User user = userRepository.findById(userId)
+  public void signOut() {
+    Long loginUserId = getLoginUserId();
+    User user = userRepository.findById(loginUserId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-    redisService.deleteToken(user.getEmail() + "-refreshToken");
-
-    return ResponseDto.getResponseBody("로그아웃 되었습니다.");
+    authRedisRepository.deleteData(user.getEmail() + "-refreshToken");
   }
 
   /**
@@ -192,11 +181,19 @@ public class AuthService {
    * @return ReissueTokenResponse
    */
   public ReissueTokenResponse reissueToken(ReissueTokenRequest reissueTokenRequest) {
-    String refreshTokenKey = reissueTokenRequest.getEmail() + "-refreshToken";
-    redisService.checkRefreshToken(refreshTokenKey, reissueTokenRequest.getRefreshToken());
-
     User user = userRepository.findByEmail(reissueTokenRequest.getEmail())
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+    String refreshTokenKey = reissueTokenRequest.getEmail() + "-refreshToken";
+    String refreshTokenData = authRedisRepository.getData(refreshTokenKey);
+
+    if (refreshTokenData == null) {
+      throw new CustomException(ErrorCode.REFRESH_TOKEN_EXPIRED);
+    }
+
+    if (!refreshTokenData.equals(reissueTokenRequest.getRefreshToken())) {
+      throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
+    }
 
     String accessToken = jwtProvider.createAccessToken(user.getId());
 
@@ -207,18 +204,16 @@ public class AuthService {
 
   /**
    * 회원 탈퇴
-   *
-   * @param userId
-   * @return ResponseDto
    */
-  @Transactional
-  public ResponseDto withdrawalUser(Long userId) {
-    User user = userRepository.findById(userId)
+  public void withdrawalUser() {
+    Long loginUserId = getLoginUserId();
+    User user = userRepository.findById(loginUserId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-    user.setIsActive(false);
+    authRedisRepository.deleteData(user.getEmail() + "-refreshToken");
 
-    return ResponseDto.getResponseBody("회원 탈퇴 처리 되었습니다.");
+    user.setIsActive(false);
+    userRepository.save(user);
   }
 
   /**
@@ -226,9 +221,8 @@ public class AuthService {
    *
    * @param nickName
    */
-  public void checkExistsNickName(String nickName) {
-    boolean existsByNickName = userRepository.existsByNickname(nickName);
-    if (existsByNickName) {
+  private void checkExistsNickName(String nickName) {
+    if (userRepository.existsByNickname(nickName)) {
       throw new CustomException(ErrorCode.NICKNAME_ALREADY_REGISTERED);
     }
   }
@@ -238,13 +232,17 @@ public class AuthService {
    *
    * @param email
    */
-  public void checkExistsEmail(String email) {
-    boolean existsByEmail = userRepository.existsByEmail(email);
-    if (existsByEmail) {
+  private void checkExistsEmail(String email) {
+    if (userRepository.existsByEmail(email)) {
       throw new CustomException(ErrorCode.EMAIL_ALREADY_REGISTERED);
     }
   }
 
+  /**
+   * SecurityContext 에 있는 유저 ID 정보 추출
+   *
+   * @return Long
+   */
   public Long getLoginUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     UserDetails userDetails = (UserDetails) authentication.getPrincipal();
