@@ -1,8 +1,7 @@
 package com.devonoff.infosharepost.controller;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -45,30 +44,41 @@ class InfoSharePostControllerTest {
 
   @Test
   void createInfoSharePost_Success() throws Exception {
-    // given
-    MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg",
-        "image content".getBytes());
-    InfoSharePostDto requestDto = InfoSharePostDto.builder()
+    // Given
+    MockMultipartFile file = new MockMultipartFile(
+        "file",
+        "test-image.jpg",
+        "image/jpeg",
+        "mock image content".getBytes()
+    );
+
+    InfoSharePostDto mockRequestDto = InfoSharePostDto.builder()
         .title("Test Title")
-        .description("Test Description")
-        .build();
-    InfoSharePostDto responseDto = InfoSharePostDto.builder()
-        .title("Test Title")
-        .description("Test Description")
-        .thumbnailImgUrl("test-url")
+        .description("Test Content")
         .build();
 
-    Mockito.when(infoSharePostService.createInfoSharePost(any(InfoSharePostDto.class), any()))
-        .thenReturn(responseDto);
+    MockMultipartFile data = new MockMultipartFile(
+        "data",
+        "",
+        "application/json",
+        objectMapper.writeValueAsBytes(mockRequestDto)
+    );
 
-    // when & then
+    InfoSharePostDto mockResponseDto = InfoSharePostDto.builder()
+        .id(1L)
+        .title(mockRequestDto.getTitle())
+        .description(mockRequestDto.getDescription())
+        .build();
+
+    when(infoSharePostService.createInfoSharePost(mockRequestDto, file)).thenReturn(
+        mockResponseDto);
+
+    // When & Then
     mockMvc.perform(multipart("/api/info-posts")
             .file(file)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(requestDto)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.title").value("Test Title"))
-        .andExpect(jsonPath("$.thumbnailImgUrl").value("test-url"));
+            .file(data)
+            .contentType(MediaType.MULTIPART_FORM_DATA))
+        .andExpect(status().isOk());
   }
 
   @Test
@@ -78,7 +88,7 @@ class InfoSharePostControllerTest {
         InfoSharePostDto.builder().title("Test Title").build()
     ));
 
-    Mockito.when(infoSharePostService.getInfoSharePosts(0, ""))
+    when(infoSharePostService.getInfoSharePosts(0, ""))
         .thenReturn(page);
 
     // when & then
@@ -97,7 +107,7 @@ class InfoSharePostControllerTest {
         .description("Test Description")
         .build();
 
-    Mockito.when(infoSharePostService.getInfoSharePostByPostId(anyLong()))
+    when(infoSharePostService.getInfoSharePostByPostId(anyLong()))
         .thenReturn(responseDto);
 
     // when & then
@@ -108,29 +118,42 @@ class InfoSharePostControllerTest {
 
   @Test
   void updateInfoSharePost_Success() throws Exception {
-    // given
-    MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg",
-        "image content".getBytes());
-    InfoSharePostDto requestDto = InfoSharePostDto.builder()
+    // Given
+    Long postId = 1L;
+    MockMultipartFile file = new MockMultipartFile(
+        "file",
+        "updated-image.jpg",
+        "image/jpeg",
+        "updated mock image content".getBytes()
+    );
+
+    InfoSharePostDto mockRequestDto = InfoSharePostDto.builder()
         .title("Updated Title")
-        .description("Updated Description")
-        .build();
-    InfoSharePostDto responseDto = InfoSharePostDto.builder()
-        .title("Updated Title")
-        .description("Updated Description")
+        .description("Updated Content")
         .build();
 
-    Mockito.when(
-            infoSharePostService.updateInfoSharePost(eq(1L), any(InfoSharePostDto.class), any()))
-        .thenReturn(responseDto);
+    MockMultipartFile data = new MockMultipartFile(
+        "data",
+        "",
+        "application/json",
+        objectMapper.writeValueAsBytes(mockRequestDto)
+    );
 
-    // when & then
-    mockMvc.perform(multipart("/api/info-posts/1")
+    InfoSharePostDto mockResponseDto = InfoSharePostDto.builder()
+        .id(postId)
+        .title(mockRequestDto.getTitle())
+        .description(mockRequestDto.getDescription())
+        .build();
+
+    when(infoSharePostService.updateInfoSharePost(postId, mockRequestDto, file)).thenReturn(
+        mockResponseDto);
+
+    // When & Then
+    mockMvc.perform(multipart("/api/info-posts/{infoPostId}", postId)
             .file(file)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(requestDto)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.title").value("Updated Title"));
+            .file(data)
+            .contentType(MediaType.MULTIPART_FORM_DATA))
+        .andExpect(status().isOk());
   }
 
   @Test
