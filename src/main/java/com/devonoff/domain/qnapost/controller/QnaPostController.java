@@ -1,6 +1,6 @@
 package com.devonoff.domain.qnapost.controller;
 
-import com.devonoff.domain.qnapost.dto.PublicQnaPostDto;
+
 import com.devonoff.domain.qnapost.dto.QnaPostDto;
 import com.devonoff.domain.qnapost.dto.QnaPostRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostUpdateDto;
@@ -65,37 +65,39 @@ public class QnaPostController {
    * @return 페이징된 게시글 목록
    */
   @GetMapping
-  public ResponseEntity<Page<PublicQnaPostDto>> getQnaPostList(
-      @RequestParam(defaultValue = "1") Integer page,
-      @RequestParam(required = false) String search) {
+  public ResponseEntity<Page<QnaPostDto>> getQnaPostList(
+      @RequestParam(name = "page",defaultValue = "1") Integer page,
+      @RequestParam(name = "search",required = false) String search) {
     return ResponseEntity.ok(qnaPostService.getQnaPostList(page, search));
   }
 
   /**
    * 특정 사용자의 질의 응답 게시글 목록 조회
-   *
+   *  토큰O
    * @param userId 사용자 ID
    * @param page   페이지 번호
    * @param search 검색어
    * @return 페이징된 게시글 목록
    */
-  @GetMapping("/user/{userId}")
-  public ResponseEntity<Page<PublicQnaPostDto>> getQnaPostByUserIdList(
-      @PathVariable Long userId,
-      @RequestParam(defaultValue = "1") Integer page,
-      @RequestParam(required = false) String search) {
-    return ResponseEntity.ok(qnaPostService.getQnaPostByUserIdList(userId, page, search));
+  @GetMapping("/author/{userId}")
+  public ResponseEntity<Page<QnaPostDto>> getQnaPostByUserIdList(
+      @PathVariable("userId") Long userId,
+      @RequestParam(name = "page",defaultValue = "1") Integer page,
+      @RequestParam(name = "search",required = false) String search) {
+    Page<QnaPostDto> response = qnaPostService.getQnaPostByUserIdList(userId, page, search);
+    return ResponseEntity.ok(response);
   }
 
   /**
-   * 특정 게시글 조회
-   *
-   * @param qnaPostId 게시글 ID
-   * @return 게시글 상세 정보
+   * 특정 질의 응답 게시글 상세 조회
+   * 토큰 X
+   * @param qnaPostId
+   * @return QnaPostDto
    */
   @GetMapping("/{qnaPostId}")
-  public ResponseEntity<QnaPostDto> getQnaPost(@PathVariable Long qnaPostId) {
-    return ResponseEntity.ok(qnaPostService.getQnaPost(qnaPostId));
+  public ResponseEntity<QnaPostDto> getQnaPost(@PathVariable("qnaPostId") Long qnaPostId) {
+    QnaPostDto response = qnaPostService.getQnaPost(qnaPostId);
+    return ResponseEntity.ok(response);
   }
 
 

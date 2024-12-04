@@ -1,7 +1,7 @@
 package com.devonoff.domain.qnapost.service;
 
 import com.devonoff.domain.photo.service.PhotoService;
-import com.devonoff.domain.qnapost.dto.PublicQnaPostDto;
+
 import com.devonoff.domain.qnapost.dto.QnaPostDto;
 import com.devonoff.domain.qnapost.dto.QnaPostRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostUpdateDto;
@@ -69,56 +69,62 @@ public class QnaPostService {
 
   /**
    * 질의 응답 게시글 전체 목록 조회 (최신순)
-   *
+   *  토큰 X
    * @param page
    * @param search
    * @return Page<QnaPostDto>
    */
-  public Page<PublicQnaPostDto> getQnaPostList(Integer page, String search) {
+  public Page<QnaPostDto> getQnaPostList(Integer page, String search) {
 
     Sort sort = Sort.by(Direction.DESC, "createdAt");
 
-    Pageable pageable = PageRequest.of(page - 1, QNA_PAGE_SIZE, sort);
+    Pageable pageable = PageRequest.of(page - 1, 5, Sort.by(Sort.Direction.DESC, "createdAt"));
 
     // search가 비어있는 경우 전체 게시물 조회
+    Page<QnaPost> posts;
     if (search == null || search.isBlank()) {
       return qnaPostRepository.findAll(pageable)
-          .map(PublicQnaPostDto::fromEntity);
+          .map(QnaPostDto::fromEntity);
     }
     return qnaPostRepository.findByTitleContaining(search, pageable)
-        .map(PublicQnaPostDto::fromEntity);
+        .map(QnaPostDto::fromEntity);
   }
 
   /**
    * 특정 사용자의 질의 응답 게시글 목록 조회 (최신순)
-   *
+   * 토큰O
    * @param userId
    * @param page
    * @param search
    * @return Page<QnaPostDto>
    */
-  public Page<PublicQnaPostDto> getQnaPostByUserIdList(Long userId, Integer page, String search) {
+  public Page<QnaPostDto> getQnaPostByUserIdList(Long userId, Integer page, String search) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
     Sort sort = Sort.by(Direction.DESC, "createdAt");
 
-    Pageable pageable = PageRequest.of(page - 1, QNA_PAGE_SIZE, sort);
+    Pageable pageable = PageRequest.of(page - 1, 5, sort);
 
-    return qnaPostRepository.findByUserAndTitleContaining(user, search, pageable)
-        .map(PublicQnaPostDto::fromEntity);
+    // 검색어가 없을 경우와 있을 경우 구분
+    Page<QnaPost> posts = (search != null && !search.isEmpty())
+        ? qnaPostRepository.findByUserAndTitleContaining(user, search, pageable)
+        : qnaPostRepository.findByUser(user, pageable);
+
+    return posts.map(QnaPostDto::fromEntity);
   }
 
   /**
    * 특정 질의 응답 게시글 상세 조회
-   *
+   * 토큰 X
    * @param qnaPostId
    * @return QnaPostDto
    */
-  public com.devonoff.domain.qnapost.dto.QnaPostDto getQnaPost(Long qnaPostId) {
-    return QnaPostDto.fromEntity(
-        qnaPostRepository.findById(qnaPostId).orElseThrow(() -> new CustomException(
-            ErrorCode.POST_NOT_FOUND)));
+  public QnaPostDto getQnaPost(Long qnaPostId) {
+    QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
+        .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+    return QnaPostDto.fromEntity(qnaPost);
   }
 
   /**
