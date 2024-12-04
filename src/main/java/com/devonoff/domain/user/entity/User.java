@@ -40,11 +40,11 @@ public class User extends BaseTimeEntity implements UserDetails {
   @Column(nullable = false)
   private String password;
 
-  @Column(name = "profile_image_url", nullable = true)
+  @Column(name = "profile_image_url")
   private String profileImage;
 
   @Column(name = "is_active", nullable = false)
-  private Boolean isActive = true;
+  private Boolean isActive;
 
   @Column(name = "login_type", nullable = false)
   @Enumerated(EnumType.STRING)
