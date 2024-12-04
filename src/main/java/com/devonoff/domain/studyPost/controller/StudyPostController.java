@@ -3,7 +3,6 @@ package com.devonoff.domain.studyPost.controller;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
-import com.devonoff.domain.studyPost.dto.StudyPostUpdateResponse;
 import com.devonoff.domain.studyPost.service.StudyPostService;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
