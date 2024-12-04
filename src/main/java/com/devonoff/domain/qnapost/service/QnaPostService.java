@@ -9,7 +9,6 @@ import com.devonoff.domain.qnapost.entity.QnaPost;
 import com.devonoff.domain.qnapost.repository.QnaPostRepository;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
-import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.PostType;
@@ -21,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,22 +33,18 @@ public class QnaPostService {
 
   private final QnaPostRepository qnaPostRepository;
   private final UserRepository userRepository;
-  private final AuthService authService;
   private final PhotoService photoService;
 
   /**
    * 질의 응답 게시글 생성
    *
+   * @param email
    * @param qnaPostRequest
-   *
    */
   @Transactional
-  public ResponseEntity<Void> createQnaPost(QnaPostRequest qnaPostRequest) {
-    // 로그인한 사용자 ID 가져오기
-    Long userId = authService.getLoginUserId();
-
-    // 사용자 정보 가져오기
-    User user = authService.findUserById(userId);
+  public ResponseEntity<Void> createQnaPost(QnaPostRequest qnaPostRequest, String email) {
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
     // 썸네일 저장
     String uploadedThumbnailUrl = null;
@@ -129,30 +125,39 @@ public class QnaPostService {
    * 특정 질의 응답 게시글 수정
    *
    * @param qnaPostId
-   * @param user
    * @param qnaPostUpdateDto
    * @return QnaPostDto
    */
   @Transactional
   public QnaPostDto updateQnaPost(Long qnaPostId,
-      QnaPostUpdateDto qnaPostUpdateDto, User user) {
+      QnaPostUpdateDto qnaPostUpdateDto) {
 
-    // TO DO 토큰에서 유저 확인 후 수정 작업
+    // 작성자 이메일을 DTO에서 가져오기
+    String email = qnaPostUpdateDto.getAuthor();
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
+    // 게시글 가져오기 및 작성자 확인
     QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
-        .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
-
-    // 작성자 확인
+        .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND, "게시글을 찾을 수 없습니다."));
     if (!qnaPost.getUser().getId().equals(user.getId())) {
-      throw new CustomException(ErrorCode.USER_NOT_FOUND);
+      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS, "작성자만 게시글을 수정할 수 있습니다.");
     }
-    photoService.delete(qnaPost.getThumbnailUrl());
-    String uploadedThumbnailUrl = photoService.save(qnaPostUpdateDto.getThumbnail());
 
-    qnaPost.setThumbnailUrl(uploadedThumbnailUrl);
+    // 썸네일 업데이트 로직
+    String updatedThumbnailUrl = qnaPost.getThumbnailUrl();
+    if (qnaPostUpdateDto.getThumbnail() != null && !qnaPostUpdateDto.getThumbnail().isEmpty()) {
+      if (qnaPost.getThumbnailUrl() != null) {
+        photoService.delete(qnaPost.getThumbnailUrl());
+      }
+      updatedThumbnailUrl = photoService.save(qnaPostUpdateDto.getThumbnail());
+    }
+
+    // 게시글 업데이트
     qnaPost.setTitle(qnaPostUpdateDto.getTitle());
     qnaPost.setContent(qnaPostUpdateDto.getContent());
+    qnaPost.setThumbnailUrl(updatedThumbnailUrl);
 
-    // 저장 로직 추가
     QnaPost updatedQnaPost = qnaPostRepository.save(qnaPost);
 
     return QnaPostDto.fromEntity(updatedQnaPost);
@@ -162,29 +167,31 @@ public class QnaPostService {
    * 특정 질의 응답 게시글 삭제
    *
    * @param qnaPostId
-   * @param user
    * @return QnaPostDto
    */
   @Transactional
-  public ResponseEntity<Void> deleteQnaPost(Long qnaPostId, User user) {
+  public void deleteQnaPost(Long qnaPostId) {
+    // SecurityContext에서 인증된 사용자 ID 가져오기
+    Long userId = Long.parseLong(SecurityContextHolder.getContext().getAuthentication().getName());
 
+    // 사용자 조회
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
+    // 게시글 조회 및 작성자 확인
     QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
-        .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
-
-    // 게시글 작성자 확인
+        .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND, "게시글을 찾을 수 없습니다."));
     if (!qnaPost.getUser().getId().equals(user.getId())) {
-      throw new CustomException(ErrorCode.USER_NOT_FOUND);
+      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS, "작성자만 게시글을 삭제할 수 있습니다.");
     }
+
+    // 썸네일 파일 삭제
     if (qnaPost.getThumbnailUrl() != null) {
       photoService.delete(qnaPost.getThumbnailUrl());
-
     }
+
+    // 게시글 삭제
     qnaPostRepository.delete(qnaPost);
-
-    // 상태 코드만 반환
-    return ResponseEntity.ok().build(); // HTTP 200
-
-
   }
 }
 
