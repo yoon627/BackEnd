@@ -11,8 +11,8 @@ import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
+import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySignupStatus;
-import com.devonoff.type.StudyStatus;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,7 @@ public class StudySignupService {
     StudyPost studyPost = studyPostRepository.findById(request.getStudyPostId())
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
-    if (studyPost.getStatus() != StudyStatus.RECRUITING) {
+    if (studyPost.getStatus() != StudyPostStatus.RECRUITING) {
       throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
     }
 
@@ -61,12 +61,13 @@ public class StudySignupService {
     StudySignup studySignup = studySignupRepository.findById(studySignupId)
         .orElseThrow(() -> new CustomException(ErrorCode.SIGNUP_NOT_FOUND));
 
-    if (studySignup.getStatus() != StudySignupStatus.PENDING) {
-      throw new CustomException(ErrorCode.SIGNUP_STATUS_ALREADY_FINALIZED);
-    }
+    StudyPost studyPost = studySignup.getStudyPost();
 
-    studySignup.setStatus(newStatus);
+    validateStudyPostStatus(studyPost);
+    processSignupStatusChange(studySignup, studyPost, newStatus);
+
     studySignupRepository.save(studySignup);
+    studyPostRepository.save(studyPost);
   }
 
   // 신청 목록 조회
@@ -96,6 +97,60 @@ public class StudySignupService {
       throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
     }
 
+    if (studySignup.getStatus() == StudySignupStatus.APPROVED) {
+      StudyPost studyPost = studySignup.getStudyPost();
+      studyPost.decrementParticipants();
+      studyPostRepository.save(studyPost);
+    }
+
     studySignupRepository.delete(studySignup);
+  }
+
+  // ================= 신청 상태 관리(승인/거절) 분리 메서드 =================
+  private void validateStudyPostStatus(StudyPost studyPost) {
+    if (studyPost.getStatus() != StudyPostStatus.RECRUITING) {
+      throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
+    }
+  }
+
+  private void processSignupStatusChange(StudySignup studySignup, StudyPost studyPost, StudySignupStatus newStatus) {
+    if (isPendingToApproved(studySignup, newStatus)) {
+      approveSignup(studySignup, studyPost);
+    } else if (isApprovedToRejected(studySignup, newStatus)) {
+      rejectApprovedSignup(studySignup, studyPost);
+    } else if (isPendingToRejected(studySignup, newStatus)) {
+      rejectPendingSignup(studySignup);
+    } else {
+      throw new CustomException(ErrorCode.SIGNUP_STATUS_ALREADY_FINALIZED);
+    }
+  }
+
+  private boolean isPendingToApproved(StudySignup studySignup, StudySignupStatus newStatus) {
+    return studySignup.getStatus() == StudySignupStatus.PENDING && newStatus == StudySignupStatus.APPROVED;
+  }
+
+  private boolean isApprovedToRejected(StudySignup studySignup, StudySignupStatus newStatus) {
+    return studySignup.getStatus() == StudySignupStatus.APPROVED && newStatus == StudySignupStatus.REJECTED;
+  }
+
+  private boolean isPendingToRejected(StudySignup studySignup, StudySignupStatus newStatus) {
+    return studySignup.getStatus() == StudySignupStatus.PENDING && newStatus == StudySignupStatus.REJECTED;
+  }
+
+  private void approveSignup(StudySignup studySignup, StudyPost studyPost) {
+    if (studyPost.isFull()) {
+      throw new CustomException(ErrorCode.STUDY_POST_FULL);
+    }
+    studySignup.setStatus(StudySignupStatus.APPROVED);
+    studyPost.incrementParticipants();
+  }
+
+  private void rejectApprovedSignup(StudySignup studySignup, StudyPost studyPost) {
+    studySignup.setStatus(StudySignupStatus.REJECTED);
+    studyPost.decrementParticipants();
+  }
+
+  private void rejectPendingSignup(StudySignup studySignup) {
+    studySignup.setStatus(StudySignupStatus.REJECTED);
   }
 }

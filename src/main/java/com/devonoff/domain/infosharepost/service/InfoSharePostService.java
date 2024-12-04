@@ -11,16 +11,15 @@ import com.devonoff.domain.photo.service.PhotoService;
 import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
+import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,16 +31,14 @@ public class InfoSharePostService {
   private final InfoSharePostRepository infoSharePostRepository;
   private final UserRepository userRepository;
   private final PhotoService photoService;
+  private final AuthService authService;
 
   public InfoSharePostDto createInfoSharePost(InfoSharePostDto infoSharePostDto,
       MultipartFile file) {
     if (!file.isEmpty()) {
       infoSharePostDto.setThumbnailImgUrl(photoService.save(file));
     }
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-    Long userId = Long.parseLong(userDetails.getUsername());
-    User user = this.userRepository.findById(userId)
+    User user = this.userRepository.findById(authService.getLoginUserId())
         .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
     infoSharePostDto.setUserDto(UserDto.fromEntity(user));
     return InfoSharePostDto.fromEntity(
@@ -71,9 +68,7 @@ public class InfoSharePostService {
     if (!file.isEmpty()) {
       infoSharePostDto.setThumbnailImgUrl(photoService.save(file));
     }
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-    if (Long.parseLong(userDetails.getUsername()) != infoSharePostDto.getUserDto().getId()) {
+    if (!Objects.equals(authService.getLoginUserId(), infoSharePostDto.getUserDto().getId())) {
       throw new CustomException(UNAUTHORIZED_ACCESS);
     }
     InfoSharePost infoSharePost = this.infoSharePostRepository.findById(infoPostId)
@@ -87,9 +82,7 @@ public class InfoSharePostService {
   public void deleteInfoSharePost(Long infoPostId) {
     InfoSharePost infoSharePost = this.infoSharePostRepository.findById(infoPostId)
         .orElseThrow(() -> new CustomException(POST_NOT_FOUND));
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-    if (Long.parseLong(userDetails.getUsername()) != infoSharePost.getUser().getId()) {
+    if (!Objects.equals(authService.getLoginUserId(), infoSharePost.getUser().getId())) {
       throw new CustomException(UNAUTHORIZED_ACCESS);
     }
     if (infoSharePost.getThumbnailImgUrl() != null) {
