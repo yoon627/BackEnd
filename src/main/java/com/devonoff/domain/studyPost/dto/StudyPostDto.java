@@ -4,7 +4,7 @@ package com.devonoff.domain.studyPost.dto;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
-import com.devonoff.type.StudyStatus;
+import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySubject;
 import com.devonoff.util.DayTypeUtils;
 import java.time.LocalDate;
@@ -38,8 +38,10 @@ public class StudyPostDto {
   private String description;
   private Double latitude;
   private Double longitude;
-  private StudyStatus status;
+  private StudyPostStatus status;
   private String thumbnailImgUrl;
+  private Integer maxParticipants;
+  private Integer currentParticipants;
   private Long userId;
 
   public static StudyPostDto fromEntity(StudyPost studyPost) {
@@ -61,6 +63,8 @@ public class StudyPostDto {
         .longitude(studyPost.getLongitude())
         .status(studyPost.getStatus())
         .thumbnailImgUrl(studyPost.getThumbnailImgUrl())
+        .maxParticipants(studyPost.getMaxParticipants())
+        .currentParticipants(studyPost.getCurrentParticipants())
         .userId(studyPost.getUser().getId())
         .build();
   }

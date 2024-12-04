@@ -19,8 +19,8 @@ import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
+import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySignupStatus;
-import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
 import com.devonoff.util.DayTypeUtils;
 import java.time.LocalDate;
@@ -51,7 +51,7 @@ public class StudyPostService {
 
   // 조회 (검색리스트)
   public Page<StudyPostDto> searchStudyPosts(StudyMeetingType meetingType, String title,
-      StudySubject subject, StudyDifficulty difficulty, int dayType, StudyStatus status,
+      StudySubject subject, StudyDifficulty difficulty, int dayType, StudyPostStatus status,
       Double latitude, Double longitude, Pageable pageable) {
 
     return studyPostRepository.findStudyPostsByFilters(meetingType, title, subject, difficulty,
@@ -60,6 +60,10 @@ public class StudyPostService {
 
   // 생성
   public StudyPostCreateResponse createStudyPost(StudyPostCreateRequest request) {
+    if (request.getMaxParticipants() < 2 || request.getMaxParticipants() > 10) {
+      throw new CustomException(ErrorCode.INVALID_MAX_PARTICIPANTS);
+    }
+
     User user = userRepository.findById(request.getUserId())
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
@@ -106,11 +110,11 @@ public class StudyPostService {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
-    if (studyPost.getStatus() != StudyStatus.RECRUITING) {
+    if (studyPost.getStatus() != StudyPostStatus.RECRUITING) {
       throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
     }
 
-    studyPost.setStatus(StudyStatus.IN_PROGRESS);
+    studyPost.setStatus(StudyPostStatus.CLOSED);
 
     List<StudySignup> approvedSignups = studySignupRepository.findByStudyPostAndStatus(studyPost,
         StudySignupStatus.APPROVED);
@@ -137,11 +141,11 @@ public class StudyPostService {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
-    if (studyPost.getStatus() == StudyStatus.IN_PROGRESS) {
+    if (studyPost.getStatus() == StudyPostStatus.CLOSED) {
       throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
     }
 
-    studyPost.setStatus(StudyStatus.CANCELED);
+    studyPost.setStatus(StudyPostStatus.CANCELED);
   }
 
   // 모집 취소 -> 배치 작업으로 자동 취소
@@ -150,10 +154,10 @@ public class StudyPostService {
     LocalDate currentDate = LocalDate.now();
 
     List<StudyPost> studyPosts = studyPostRepository.findAllByRecruitmentPeriodBeforeAndStatus(
-        currentDate, StudyStatus.RECRUITING);
+        currentDate, StudyPostStatus.RECRUITING);
 
     for (StudyPost studyPost : studyPosts) {
-      studyPost.setStatus(StudyStatus.CANCELED);
+      studyPost.setStatus(StudyPostStatus.CANCELED);
     }
   }
 
@@ -163,7 +167,7 @@ public class StudyPostService {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
-    if (!StudyStatus.CANCELED.equals(studyPost.getStatus())) {
+    if (!StudyPostStatus.CANCELED.equals(studyPost.getStatus())) {
       throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
     }
 
@@ -171,7 +175,7 @@ public class StudyPostService {
       throw new CustomException(ErrorCode.STUDY_EXTENSION_FAILED);
     }
 
-    studyPost.setStatus(StudyStatus.RECRUITING);
+    studyPost.setStatus(StudyPostStatus.RECRUITING);
     studyPost.setRecruitmentPeriod(newRecruitmentPeriod);
   }
 }

@@ -8,7 +8,7 @@ import com.devonoff.domain.studyPost.dto.StudyPostUpdateResponse;
 import com.devonoff.domain.studyPost.service.StudyPostService;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
-import com.devonoff.type.StudyStatus;
+import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySubject;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +48,7 @@ public class StudyPostController {
       @RequestParam(required = false) StudySubject subject,
       @RequestParam(required = false) StudyDifficulty difficulty,
       @RequestParam(required = false, defaultValue = "0") int dayType,
-      @RequestParam(required = false) StudyStatus status,
+      @RequestParam(required = false) StudyPostStatus status,
       @RequestParam(required = false) Double latitude,
       @RequestParam(required = false) Double longitude,
       Pageable pageable) {
