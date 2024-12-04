@@ -6,6 +6,7 @@ import com.devonoff.type.PostType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
+ // 요청값
 
 @Getter
 @Setter

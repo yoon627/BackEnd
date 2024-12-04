@@ -48,7 +48,7 @@ class CommentServiceTest {
     Long userId = 1L;
     User user = User.builder().id(userId).build();
     CommentDto dto = CommentDto.builder()
-        .postType(PostType.QNA_POST)
+        .postType(PostType.QNA)
         .postId(100L)
         .content("This is a comment")
         .isSecret(false)
@@ -72,7 +72,7 @@ class CommentServiceTest {
     // Given
     Long userId = 1L;
     CommentDto dto = CommentDto.builder()
-        .postType(PostType.QNA_POST)
+        .postType(PostType.QNA)
         .postId(100L)
         .content("A".repeat(501))
         .isSecret(false)
