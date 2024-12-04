@@ -1,5 +1,6 @@
 package com.devonoff.domain.studyPost.service;
 
+import com.devonoff.domain.photo.service.PhotoService;
 import com.devonoff.domain.student.entity.Student;
 import com.devonoff.domain.student.repository.StudentRepository;
 import com.devonoff.domain.study.entity.Study;
@@ -40,6 +41,7 @@ public class StudyPostService {
   private final StudentRepository studentRepository;
   private final StudyService studyService;
   private final AuthService authService;
+  private final PhotoService photoService;
 
   // 상세 조회
   public StudyPostDto getStudyPostDetail(Long studyPostId) {
@@ -73,6 +75,9 @@ public class StudyPostService {
         || request.getLongitude() == null)) {
       throw new CustomException(ErrorCode.LOCATION_REQUIRED_FOR_HYBRID);
     }
+
+    String save = photoService.save(request.getFile());
+    request.setThumbnailImgUrl(save);
 
     StudyPost studyPost = buildStudyPost(request, user);
     studyPostRepository.save(studyPost);
@@ -210,7 +215,6 @@ public class StudyPostService {
   // 스터디 모집글 엔티티 생성
   private StudyPost buildStudyPost(StudyPostCreateRequest request, User user) {
     int dayType = DayTypeUtils.encodeDaysFromRequest(request.getDayType());
-
     return StudyPost.builder()
         .title(request.getTitle())
         .studyName(request.getStudyName())
