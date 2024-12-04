@@ -1,9 +1,10 @@
 package com.devonoff.domain.qnapost.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -19,7 +20,7 @@ import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
-import com.devonoff.type.PostType;
+import java.util.Collections;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,15 +28,20 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 
 class QnaPostServiceTest {
 
   @Mock
-  private UserRepository userRepository;
+  private QnaPostRepository qnaPostRepository;
 
   @Mock
-  private QnaPostRepository qnaPostRepository;
+  private UserRepository userRepository;
 
   @Mock
   private PhotoService photoService;
@@ -43,210 +49,213 @@ class QnaPostServiceTest {
   @InjectMocks
   private QnaPostService qnaPostService;
 
-  private User user;
-  private User anotherUser;
-  private QnaPost qnaPost;
-
   @BeforeEach
   void setUp() {
     MockitoAnnotations.openMocks(this);
+  }
 
-    user = User.builder()
+  // =======================================================================
+  // createQnaPost 테스트
+  // =======================================================================
+  @DisplayName("QnaPostDto 생성 테스트")
+  @Test
+  void testQnaPostDtoCreation() {
+    // Given
+    User user = new User();
+    user.setId(1L);
+    user.setEmail("test@example.com");
+    user.setNickname("testUser");
+
+    QnaPost qnaPost = QnaPost.builder()
         .id(1L)
-        .email("test@example.com")
-        .build();
-
-    anotherUser = User.builder()
-        .id(2L)
-        .email("another@example.com")
-        .build();
-
-    qnaPost = QnaPost.builder()
-        .id(1L)
+        .user(user)
         .title("Test Title")
         .content("Test Content")
-        .thumbnailUrl("test-url")
-        .user(user)
-        .postType(PostType.QNA_POST)
         .build();
-  }
-
-  @Test
-  @DisplayName("게시글 수정 성공 테스트")
-  void shouldUpdateQnaPostSuccessfully() {
-    // Given
-    MultipartFile mockThumbnail = mock(MultipartFile.class);
-    when(mockThumbnail.getOriginalFilename()).thenReturn("updated-thumbnail.jpg");
-
-    QnaPostUpdateDto updateDto = QnaPostUpdateDto.builder()
-        .title("Updated Title")
-        .content("Updated Content")
-        .thumbnail(mockThumbnail)
-        .build();
-
-    when(qnaPostRepository.findById(1L)).thenReturn(Optional.of(qnaPost));
-    when(photoService.save(any())).thenReturn("updated-thumbnail-url");
-    when(qnaPostRepository.save(any())).thenReturn(qnaPost); // 반환값 설정
 
     // When
-    var updatedPost = qnaPostService.updateQnaPost(1L, updateDto, user);
+    QnaPostDto qnaPostDto = QnaPostDto.fromEntity(qnaPost);
 
     // Then
-    assertThat(updatedPost.getTitle()).isEqualTo("Updated Title");
-    assertThat(updatedPost.getThumbnailUrl()).isEqualTo("updated-thumbnail-url");
-    verify(photoService, times(1)).delete("test-url");
-    verify(photoService, times(1)).save(mockThumbnail);
-    verify(qnaPostRepository, times(1)).save(qnaPost);
+    assertThat(qnaPostDto.getId()).isEqualTo(1L);
+    assertThat(qnaPostDto.getUser().getId()).isEqualTo(1L);
+    assertThat(qnaPostDto.getTitle()).isEqualTo("Test Title");
+    assertThat(qnaPostDto.getContent()).isEqualTo("Test Content");
   }
 
+  @DisplayName("createQnaPost 실패 - 사용자 없음")
   @Test
-  @DisplayName("게시글 수정 실패 테스트 - 권한 없음")
-  void shouldFailToUpdateQnaPostWhenNotOwner() {
+  void createQnaPost_Failure_UserNotFound() {
     // Given
-    QnaPostUpdateDto updateDto = QnaPostUpdateDto.builder()
-        .title("Updated Title")
-        .content("Updated Content")
-        .thumbnail(mock(MultipartFile.class))
-        .build();
+    String email = "nonexistent@example.com";
+    QnaPostRequest request = new QnaPostRequest();
 
-    when(qnaPostRepository.findById(1L)).thenReturn(Optional.of(qnaPost));
+    when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
 
     // When
-    CustomException exception = assertThrows(CustomException.class,
-        () -> qnaPostService.updateQnaPost(1L, updateDto, anotherUser));
+    CustomException exception = assertThrows(CustomException.class, () ->
+        qnaPostService.createQnaPost(request, email)
+    );
 
     // Then
     assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
-    verify(photoService, never()).delete(any());
-    verify(photoService, never()).save(any());
+    verify(qnaPostRepository, never()).save(any());
   }
 
+  // =======================================================================
+  // getQnaPostList 테스트
+  // =======================================================================
+  @DisplayName("getQnaPostList 성공 - 검색어 없이 전체 조회")
   @Test
-  @DisplayName("게시글 생성 실패 테스트 - 제목 누락")
-  void createQnaPost_FailDueToMissingTitle() {
+  void getQnaPostList_Success_NoSearch() {
     // Given
-    QnaPostRequest request = QnaPostRequest.builder()
-        .content("Content without title")
-        .thumbnail(mock(MultipartFile.class))
-        .build();
+    Pageable pageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAt"));
+    Page<QnaPost> emptyPage = new PageImpl<>(Collections.emptyList()); // 빈 페이지 객체 생성
+
+    when(qnaPostRepository.findAll(pageable)).thenReturn(emptyPage);
 
     // When
-    CustomException exception = assertThrows(CustomException.class,
-        () -> qnaPostService.createQnaPost(request, user));
+    Page<QnaPostDto> result = qnaPostService.getQnaPostList(1, null);
 
     // Then
-    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
-    verify(qnaPostRepository, never()).save(any());
+    assertThat(result.getContent()).isEmpty(); // 결과가 빈 리스트인지 확인
+    verify(qnaPostRepository, times(1)).findAll(pageable);
   }
 
+
+
+  // =======================================================================
+  // getQnaPostByUserIdList 테스트
+  // =======================================================================
+  @DisplayName("getQnaPostByUserIdList 성공 - 사용자 ID로 조회")
   @Test
-  @DisplayName("게시글 생성 실패 테스트 - 제목과 내용 모두 누락")
-  void createQnaPost_FailDueToMissingTitleAndContent() {
+  void getQnaPostByUserIdList_Success() {
     // Given
-    QnaPostRequest request = QnaPostRequest.builder()
-        .title("")
-        .content("")
-        .thumbnail(mock(MultipartFile.class))
-        .build();
+    Long userId = 1L;
+    User user = new User(); // Mock User 객체 생성
+    PageRequest pageable = PageRequest.of(0, 5, Sort.by(Direction.DESC, "createdAt"));
+
+    // Mock 설정
+    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    when(qnaPostRepository.findByUser(user, pageable)).thenReturn(Page.empty());
 
     // When
-    CustomException exception = assertThrows(CustomException.class,
-        () -> qnaPostService.createQnaPost(request, user));
+    Page<QnaPostDto> result = qnaPostService.getQnaPostByUserIdList(userId, 1, null);
 
     // Then
-    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
-    verify(qnaPostRepository, never()).save(any());
-    verify(photoService, never()).save(any());
+    assertNotNull(result);
+    verify(qnaPostRepository).findByUser(user, pageable); // 정렬 포함된 Pageable로 확인
   }
 
+  @DisplayName("getQnaPostByUserIdList 실패 - 사용자 없음")
   @Test
-  @DisplayName("게시글 생성 실패 테스트 - 내용 누락")
-  void shouldFailToCreateQnaPostWhenContentIsMissing() {
-    // Given: 내용이 없는 게시글 요청
-    QnaPostRequest request = QnaPostRequest.builder()
-        .title("Valid Title") // 제목 있음
-        .content("")          // 내용 없음
-        .thumbnail(mock(MultipartFile.class))
-        .build();
+  void getQnaPostByUserIdList_Failure_UserNotFound() {
+    // Given
+    Long userId = 1L;
 
-    // When: 게시글 생성 요청 시
-    CustomException exception = assertThrows(CustomException.class,
-        () -> qnaPostService.createQnaPost(request, user));
+    when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-    // Then: INVALID_INPUT_VALUE 에러 발생
-    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
-    verify(qnaPostRepository, never()).save(any());
-    verify(photoService, never()).save(any());
+    // When
+    CustomException exception = assertThrows(CustomException.class, () ->
+        qnaPostService.getQnaPostByUserIdList(userId, 1, null)
+    );
+
+    // Then
+    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+    verify(userRepository, times(1)).findById(userId);
   }
 
+  // =======================================================================
+  // getQnaPost 테스트
+  // =======================================================================
+  @DisplayName("getQnaPost 성공 - 게시글 조회")
   @Test
-  @DisplayName("게시글 조회 실패 테스트 - 게시글 없음")
-  void shouldFailToGetQnaPostWhenPostNotFound() {
-    // Given: 존재하지 않는 게시글 ID 요청
-    when(qnaPostRepository.findById(1L)).thenReturn(Optional.empty());
+  void getQnaPost_Success() {
+    // Given
+    Long postId = 1L;
 
-    // When: 게시글 조회 요청 시
-    CustomException exception = assertThrows(CustomException.class,
-        () -> qnaPostService.getQnaPost(1L));
+    // QnaPost 객체 초기화
+    User user = new User();
+    user.setId(1L);
+    user.setEmail("test@example.com");
 
-    // Then: POST_NOT_FOUND 에러 발생
+    QnaPost qnaPost = new QnaPost();
+    qnaPost.setId(postId);
+    qnaPost.setTitle("Test Title");
+    qnaPost.setContent("Test Content");
+    qnaPost.setUser(user);
+
+    // Mock 설정
+    when(qnaPostRepository.findById(postId)).thenReturn(Optional.of(qnaPost));
+
+    // When
+    QnaPostDto result = qnaPostService.getQnaPost(postId);
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getId()).isEqualTo(postId);
+    assertThat(result.getTitle()).isEqualTo("Test Title");
+    assertThat(result.getContent()).isEqualTo("Test Content");
+    assertThat(result.getUser().getId()).isEqualTo(1L);
+    assertThat(result.getUser().getEmail()).isEqualTo("test@example.com");
+
+    // Mock 검증
+    verify(qnaPostRepository, times(1)).findById(postId);
+  }
+  @DisplayName("getQnaPost 실패 - 게시글 없음")
+  @Test
+  void getQnaPost_Failure_PostNotFound() {
+    // Given
+    Long postId = 1L;
+
+    when(qnaPostRepository.findById(postId)).thenReturn(Optional.empty());
+
+    // When
+    CustomException exception = assertThrows(CustomException.class, () ->
+        qnaPostService.getQnaPost(postId)
+    );
+
+    // Then
     assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.POST_NOT_FOUND);
-    verify(qnaPostRepository, times(1)).findById(1L);
+    verify(qnaPostRepository, times(1)).findById(postId);
   }
 
+  // =======================================================================
+  // updateQnaPost 테스트
+  // =======================================================================
+  @DisplayName("updateQnaPost 성공 - 게시글 수정")
   @Test
-  @DisplayName("게시글 조회 성공 테스트")
-  void shouldGetQnaPostSuccessfully() {
-    // Given: 존재하는 게시글 ID 요청
-    when(qnaPostRepository.findById(1L)).thenReturn(Optional.of(qnaPost));
-
-    // When: 게시글 조회 요청 시
-    QnaPostDto result = qnaPostService.getQnaPost(1L);
-
-    // Then: 정상적으로 게시글 반환
-    assertThat(result.getId()).isEqualTo(qnaPost.getId());
-    assertThat(result.getTitle()).isEqualTo(qnaPost.getTitle());
-    assertThat(result.getContent()).isEqualTo(qnaPost.getContent());
-    verify(qnaPostRepository, times(1)).findById(1L);
-  }
-
-  @Test
-  @DisplayName("게시글 생성 실패 테스트 - 제목 없음")
-  void shouldFailToCreateQnaPostWhenTitleIsMissing() {
-    // Given: 제목이 없는 게시글 요청
-    QnaPostRequest request = QnaPostRequest.builder()
-        .title("") // 제목 없음
-        .content("Content")
-        .thumbnail(mock(MultipartFile.class))
-        .build();
-
-    // When: 게시글 생성 요청 시
-    CustomException exception = assertThrows(CustomException.class,
-        () -> qnaPostService.createQnaPost(request, user));
-
-    // Then: INVALID_INPUT_VALUE 에러 발생
-    assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
-    verify(qnaPostRepository, never()).save(any());
-  }
-
-  @Test
-  @DisplayName("게시글 생성 성공 테스트")
-  void shouldCreateQnaPostSuccessfully() {
+  void updateQnaPost_Success() {
     // Given
-    QnaPostRequest request = QnaPostRequest.builder()
-        .title("Valid Title")
-        .content("Valid Content")
-        .thumbnail(mock(MultipartFile.class))
-        .build();
+    Long postId = 1L;
+    QnaPostUpdateDto updateDto = new QnaPostUpdateDto();
+    updateDto.setTitle("Updated Title");
+    updateDto.setAuthor("user@example.com"); // 이메일 추가
 
-    when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-    when(photoService.save(any())).thenReturn("uploaded-thumbnail-url");
+    User user = new User();
+    user.setId(1L);
+
+    QnaPost qnaPost = new QnaPost();
+    qnaPost.setId(postId);
+    qnaPost.setTitle("Original Title");
+    qnaPost.setUser(user);
+
+    // Mock 설정
+    when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+    when(qnaPostRepository.findById(postId)).thenReturn(Optional.of(qnaPost));
+    when(photoService.save(any())).thenReturn("http://s3.amazonaws.com/test/updated-thumbnail.jpg");
+    when(qnaPostRepository.save(any())).thenReturn(qnaPost);
 
     // When
-    qnaPostService.createQnaPost(request, user);
+    QnaPostDto result = qnaPostService.updateQnaPost(postId, updateDto);
 
     // Then
-    verify(qnaPostRepository, times(1)).save(any(QnaPost.class));
-    verify(photoService, times(1)).save(any());
-  }
-}
+    assertThat(result.getTitle()).isEqualTo("Updated Title");
+    assertThat(result.getId()).isEqualTo(postId);
+    assertThat(result.getUser().getId()).isEqualTo(user.getId());
+
+    verify(qnaPostRepository, times(1)).save(argThat(post ->
+        post.getTitle().equals("Updated Title") &&
+            post.getUser().getId().equals(1L)
+    ));
+  }}

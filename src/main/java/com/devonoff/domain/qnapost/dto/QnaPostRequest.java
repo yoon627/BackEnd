@@ -17,4 +17,5 @@ public class QnaPostRequest {
   private MultipartFile thumbnail;
   private String title;
   private String content;
+  //private PostType postType;
 }

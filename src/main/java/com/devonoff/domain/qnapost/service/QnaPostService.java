@@ -1,7 +1,6 @@
 package com.devonoff.domain.qnapost.service;
 
 import com.devonoff.domain.photo.service.PhotoService;
-
 import com.devonoff.domain.qnapost.dto.QnaPostDto;
 import com.devonoff.domain.qnapost.dto.QnaPostRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostUpdateDto;
@@ -12,9 +11,11 @@ import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.PostType;
+import java.util.Collections;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -69,27 +70,31 @@ public class QnaPostService {
 
   /**
    * 질의 응답 게시글 전체 목록 조회 (최신순)
-   *  토큰 X
-   * @param page
-   * @param search
+   * 토큰 X
+   *
+   * @param page   조회할 페이지 번호 (1부터 시작)
+   * @param search 검색 키워드 (optional)
    * @return Page<QnaPostDto>
    */
   public Page<QnaPostDto> getQnaPostList(Integer page, String search) {
 
-    Sort sort = Sort.by(Direction.DESC, "createdAt");
+    // 페이지 번호 유효성 검사
+    if (page == null || page < 1) {
+      throw new CustomException(ErrorCode.BAD_REQUEST, "잘못된 요청입니다.");
+    }
 
+    // 페이지네이션 및 정렬 설정
     Pageable pageable = PageRequest.of(page - 1, 5, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-    // search가 비어있는 경우 전체 게시물 조회
-    Page<QnaPost> posts;
+    // 검색 조건에 따라 전체 게시물 또는 검색 결과 반환
     if (search == null || search.isBlank()) {
       return qnaPostRepository.findAll(pageable)
           .map(QnaPostDto::fromEntity);
     }
-    return qnaPostRepository.findByTitleContaining(search, pageable)
+
+    return qnaPostRepository.findByTitleContaining(search.trim(), pageable)
         .map(QnaPostDto::fromEntity);
   }
-
   /**
    * 특정 사용자의 질의 응답 게시글 목록 조회 (최신순)
    * 토큰O
@@ -100,16 +105,20 @@ public class QnaPostService {
    */
   public Page<QnaPostDto> getQnaPostByUserIdList(Long userId, Integer page, String search) {
     User user = userRepository.findById(userId)
-        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
     Sort sort = Sort.by(Direction.DESC, "createdAt");
-
     Pageable pageable = PageRequest.of(page - 1, 5, sort);
 
     // 검색어가 없을 경우와 있을 경우 구분
-    Page<QnaPost> posts = (search != null && !search.isEmpty())
+    Page<QnaPost> posts = (search != null && !search.isBlank())
         ? qnaPostRepository.findByUserAndTitleContaining(user, search, pageable)
         : qnaPostRepository.findByUser(user, pageable);
+
+    // posts가 null인 경우 처리
+    if (posts == null) {
+      posts = new PageImpl<>(Collections.emptyList());
+    }
 
     return posts.map(QnaPostDto::fromEntity);
   }
