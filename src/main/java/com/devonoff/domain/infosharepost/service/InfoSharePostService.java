@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -46,14 +47,14 @@ public class InfoSharePostService {
   }
 
   public Page<InfoSharePostDto> getInfoSharePosts(Integer page, String search) {
-    Pageable pageable = PageRequest.of(page, 10);
+    Pageable pageable = PageRequest.of(page, 10, Sort.by("createdAt").descending());
     return this.infoSharePostRepository.findAllByTitleContaining(search,
         pageable).map(InfoSharePostDto::fromEntity);
   }
 
   public Page<InfoSharePostDto> getInfoSharePostsByUserId(Long userId, Integer page,
       String search) {
-    Pageable pageable = PageRequest.of(page, 10);
+    Pageable pageable = PageRequest.of(page, 10, Sort.by("createdAt").descending());
     return this.infoSharePostRepository.findAllByUserIdAndTitleContaining(userId, search, pageable)
         .map(InfoSharePostDto::fromEntity);
   }
