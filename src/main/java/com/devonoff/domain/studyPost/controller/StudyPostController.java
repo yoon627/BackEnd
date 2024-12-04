@@ -1,7 +1,6 @@
 package com.devonoff.domain.studyPost.controller;
 
 import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
-import com.devonoff.domain.studyPost.dto.StudyPostCreateResponse;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateResponse;
@@ -14,7 +13,6 @@ import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -60,17 +58,17 @@ public class StudyPostController {
 
   // 스터디 모집글 생성
   @PostMapping
-  public ResponseEntity<StudyPostCreateResponse> createStudyPost(
+  public ResponseEntity<StudyPostDto> createStudyPost(
       @RequestBody StudyPostCreateRequest request) {
-    StudyPostCreateResponse response = studyPostService.createStudyPost(request);
-    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    StudyPostDto response = studyPostService.createStudyPost(request);
+    return ResponseEntity.ok(response);
   }
 
   // 스터디 모집글 수정
   @PutMapping("/{studyPostId}")
-  public ResponseEntity<StudyPostUpdateResponse> updateStudyPost(
+  public ResponseEntity<StudyPostDto> updateStudyPost(
       @PathVariable Long studyPostId, @RequestBody StudyPostUpdateRequest request) {
-    StudyPostUpdateResponse response = studyPostService.updateStudyPost(studyPostId, request);
+    StudyPostDto response = studyPostService.updateStudyPost(studyPostId, request);
     return ResponseEntity.ok(response);
   }
 
