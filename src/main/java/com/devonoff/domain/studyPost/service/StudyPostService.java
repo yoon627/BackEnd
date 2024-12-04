@@ -5,7 +5,6 @@ import com.devonoff.domain.student.repository.StudentRepository;
 import com.devonoff.domain.study.entity.Study;
 import com.devonoff.domain.study.service.StudyService;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
-import com.devonoff.domain.studyPost.dto.StudyPostCreateResponse;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateResponse;
@@ -61,7 +60,7 @@ public class StudyPostService {
   }
 
   // 생성
-  public StudyPostCreateResponse createStudyPost(StudyPostCreateRequest request) {
+  public StudyPostDto createStudyPost(StudyPostCreateRequest request) {
     validateUserRequestOwnership(request.getUserId());
 
     if (request.getMaxParticipants() < 2 || request.getMaxParticipants() > 10) {
@@ -79,11 +78,11 @@ public class StudyPostService {
     StudyPost studyPost = buildStudyPost(request, user);
     studyPostRepository.save(studyPost);
 
-    return StudyPostCreateResponse.fromEntity(studyPost);
+    return StudyPostDto.fromEntity(studyPost);
   }
 
   // 수정
-  public StudyPostUpdateResponse updateStudyPost(Long studyPostId, StudyPostUpdateRequest request) {
+  public StudyPostDto updateStudyPost(Long studyPostId, StudyPostUpdateRequest request) {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
@@ -109,7 +108,7 @@ public class StudyPostService {
 
     studyPostRepository.save(studyPost);
 
-    return StudyPostUpdateResponse.fromEntity(studyPost);
+    return StudyPostDto.fromEntity(studyPost);
   }
 
   // 모집 마감 -> 스터디 진행 시작
