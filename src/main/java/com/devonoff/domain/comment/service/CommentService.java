@@ -6,31 +6,33 @@ import com.devonoff.domain.comment.dto.CommentResponse;
 import com.devonoff.domain.comment.entity.Comment;
 import com.devonoff.domain.comment.repository.CommentRepository;
 import com.devonoff.domain.user.entity.User;
-import com.devonoff.domain.user.service.AuthService;
+import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.PostType;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Slf4j
+
 @Service
 @RequiredArgsConstructor
 public class CommentService {
 
   private final CommentRepository commentRepository;
-  private final AuthService authService;
+  private final UserRepository userRepository;
+
   // 댓글의 최대 글자수
   private static final int MAX_COMMENT_LENGTH = 500;
 
 
   @Transactional
-  public CommentResponse createComment(CommentRequest request, Long userId) {
+  public CommentResponse createComment(CommentRequest request) {
     // 유저 정보 가져오기
-    User user = authService.findUserById(userId);
+    // 유저 정보 가져오기
+    User user = userRepository.findByEmail(request.getAuthor())
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "유저를 찾을 수 없습니다."));
 
     // 요청 값 검증
     validateRequest(request);
@@ -41,14 +43,11 @@ public class CommentService {
     // 댓글 저장
     Comment savedComment = commentRepository.save(comment);
 
-    // 로깅
-    log.info("Comment created by user ID: {}, Post ID: {}, Comment ID: {}",
-        userId, savedComment.getPostId(), savedComment.getId());
-
     // 저장된 엔티티를 응답 DTO로 변환
     return CommentResponse.fromEntity(savedComment);
   }
 
+  // 댓글 검증
   private void validateRequest(CommentRequest request) {
     if (request.getContent() == null || request.getContent().isBlank()) {
       throw new CustomException(ErrorCode.INVALID_COMMENT_CONTENT, "댓글 내용을 입력하세요.");

@@ -11,6 +11,8 @@ import lombok.Setter;
 @Setter
 public class CommentRequest {
 
+  private String author;
+
   @JsonProperty("is_secret")
   private Boolean isSecret;
 
