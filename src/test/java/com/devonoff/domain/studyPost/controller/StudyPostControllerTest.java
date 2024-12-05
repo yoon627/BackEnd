@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -622,5 +623,60 @@ class StudyPostControllerTest {
         .andDo(print());
 
     verify(studyPostService, times(1)).closeStudyPost(studyPostId);
+  }
+
+  @DisplayName("스터디 모집글 취소 성공")
+  @Test
+  void cancelStudyPost_Success() throws Exception {
+    // Given
+    Long studyPostId = 1L;
+
+    doNothing().when(studyPostService).cancelStudyPost(studyPostId);
+
+    // When & Then
+    mockMvc.perform(patch("/api/study-posts/{studyPostId}/cancel", studyPostId)
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andDo(print());
+
+    verify(studyPostService, times(1)).cancelStudyPost(studyPostId);
+  }
+
+  @DisplayName("스터디 모집글 취소 실패 - 모집글 없음")
+  @Test
+  void cancelStudyPost_Fail_StudyPostNotFound() throws Exception {
+    // Given
+    Long studyPostId = 999L;
+
+    doThrow(new CustomException(ErrorCode.STUDY_POST_NOT_FOUND))
+        .when(studyPostService).cancelStudyPost(studyPostId);
+
+    // When & Then
+    mockMvc.perform(patch("/api/study-posts/{studyPostId}/cancel", studyPostId)
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isNotFound()) // 404
+        .andExpect(content().string("스터디 모집글을 찾을 수 없습니다."))
+        .andDo(print());
+
+    verify(studyPostService, times(1)).cancelStudyPost(studyPostId);
+  }
+
+  @DisplayName("스터디 모집글 취소 실패 - 이미 취소된 모집글")
+  @Test
+  void cancelStudyPost_Fail_InvalidStudyStatus() throws Exception {
+    // Given
+    Long studyPostId = 1L;
+
+    doThrow(new CustomException(ErrorCode.INVALID_STUDY_STATUS))
+        .when(studyPostService).cancelStudyPost(studyPostId);
+
+    // When & Then
+    mockMvc.perform(patch("/api/study-posts/{studyPostId}/cancel", studyPostId)
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest()) // 400
+        .andExpect(content().string("잘못된 스터디 상태값입니다."))
+        .andDo(print());
+
+    verify(studyPostService, times(1)).cancelStudyPost(studyPostId);
   }
 }

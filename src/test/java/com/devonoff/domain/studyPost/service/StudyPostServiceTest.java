@@ -9,6 +9,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.devonoff.domain.photo.service.PhotoService;
@@ -591,4 +592,81 @@ class StudyPostServiceTest {
     assertEquals(ErrorCode.NO_APPROVED_SIGNUPS, exception.getErrorCode());
     assertEquals("승인된 신청자가 없습니다.", exception.getErrorMessage());
   }
+
+  @DisplayName("스터디 모집글 취소 성공")
+  @Test
+  void cancelStudyPost_Success() {
+    // Given
+    Long studyPostId = 1L;
+    Long userId = 1L;
+
+    User user = new User();
+    user.setId(userId);
+
+    StudyPost studyPost = new StudyPost();
+    studyPost.setId(studyPostId);
+    studyPost.setUser(user);
+    studyPost.setStatus(StudyPostStatus.RECRUITING); // 모집 중 상태
+
+    // Mocking
+    when(authService.getLoginUserId()).thenReturn(userId);
+    when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
+
+    // When
+    studyPostService.cancelStudyPost(studyPostId);
+
+    // Then
+    verify(authService, times(1)).getLoginUserId();
+    verify(studyPostRepository, times(1)).findById(studyPostId);
+    verify(studyPostRepository, times(1)).save(studyPost);
+
+    // Assertions
+    assertEquals(StudyPostStatus.CANCELED, studyPost.getStatus());
+  }
+
+  @DisplayName("스터디 모집글 취소 실패 - 모집글 없음")
+  @Test
+  void cancelStudyPost_Fail_StudyPostNotFound() {
+    // Given
+    Long studyPostId = 999L;
+
+    when(studyPostRepository.findById(studyPostId))
+        .thenThrow(new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class,
+        () -> studyPostService.cancelStudyPost(studyPostId));
+
+    assertEquals(ErrorCode.STUDY_POST_NOT_FOUND, exception.getErrorCode());
+    verify(studyPostRepository, times(1)).findById(studyPostId);
+    verifyNoMoreInteractions(studyPostRepository);
+  }
+
+  @DisplayName("스터디 모집글 취소 실패 - 이미 취소된 모집글")
+  @Test
+  void cancelStudyPost_Fail_AlreadyCanceled() {
+    // Given
+    Long studyPostId = 1L;
+
+    User user = new User();
+    user.setId(1L);
+
+    StudyPost studyPost = new StudyPost();
+    studyPost.setId(studyPostId);
+    studyPost.setUser(user);
+    studyPost.setStatus(StudyPostStatus.CLOSED);
+
+    when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
+    when(authService.getLoginUserId()).thenReturn(user.getId());
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class,
+        () -> studyPostService.cancelStudyPost(studyPostId));
+
+    assertEquals(ErrorCode.INVALID_STUDY_STATUS, exception.getErrorCode());
+    verify(studyPostRepository, times(1)).findById(studyPostId);
+    verify(authService, times(1)).getLoginUserId();
+    verifyNoMoreInteractions(studyPostRepository);
+  }
+
 }
