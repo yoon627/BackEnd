@@ -20,7 +20,7 @@ public class StudyController {
 
   private final StudyService studyService;
 
-  // 스터디 목록 조회
+  // 본인이 속한 스터디 목록 조회
   @GetMapping
   public ResponseEntity<Page<StudyDto>> getStudyList(Pageable pageable) {
     Page<StudyDto> studyList = studyService.getStudyList(pageable);
