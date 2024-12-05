@@ -20,6 +20,7 @@ import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
 import com.devonoff.domain.studyPost.service.StudyPostService;
+import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyDifficulty;
@@ -59,6 +60,9 @@ class StudyPostControllerTest {
 
   @MockBean
   private JwtProvider jwtProvider;
+
+  @MockBean
+  private AuthService authService;
 
   @DisplayName("스터디 모집글 상세 조회 성공")
   @Test
@@ -149,8 +153,8 @@ class StudyPostControllerTest {
     Page<StudyPostDto> mockPage = new PageImpl<>(List.of(studyPostDto), PageRequest.of(0, 20), 1);
 
     when(studyPostService.searchStudyPosts(
-            any(), any(), any(), any(),
-            Mockito.anyInt(), any(), any(), any(), any()))
+        any(), any(), any(), any(),
+        Mockito.anyInt(), any(), any(), any(), any()))
         .thenReturn(mockPage);
 
     // When & Then
@@ -257,6 +261,167 @@ class StudyPostControllerTest {
         .andExpect(jsonPath("$.thumbnailImgUrl").value("mock_thumbnail_url"));
   }
 
+  @DisplayName("스터디 모집글 생성 실패 - 모집 인원이 잘못된 경우")
+  @Test
+  void createStudyPost_Fail_InvalidMaxParticipants() throws Exception {
+    // Given
+    Long userId = 1L;
+
+    MockMultipartFile file = new MockMultipartFile(
+        "file", "test.jpg", MediaType.IMAGE_JPEG_VALUE, "Mock File Content".getBytes());
+
+    StudyPostCreateRequest request = StudyPostCreateRequest.builder()
+        .title("코딩 테스트 준비")
+        .studyName("코테")
+        .subject(StudySubject.JOB_PREPARATION)
+        .difficulty(StudyDifficulty.MEDIUM)
+        .dayType(List.of("월", "화"))
+        .startDate(LocalDate.of(2024, 12, 10))
+        .endDate(LocalDate.of(2024, 12, 20))
+        .startTime(LocalTime.of(18, 0))
+        .endTime(LocalTime.of(20, 0))
+        .meetingType(StudyMeetingType.ONLINE)
+        .recruitmentPeriod(LocalDate.of(2024, 12, 5))
+        .description("코딩 테스트 스터디 모집")
+        .maxParticipants(15) // 잘못된 모집 인원
+        .userId(userId)
+        .file(file)
+        .build();
+
+    when(authService.getLoginUserId()).thenReturn(userId);
+    doThrow(new CustomException(ErrorCode.INVALID_MAX_PARTICIPANTS))
+        .when(studyPostService).createStudyPost(any(StudyPostCreateRequest.class));
+
+    // When & Then
+    mockMvc.perform(multipart("/api/study-posts")
+            .file(file)
+            .param("title", request.getTitle())
+            .param("studyName", request.getStudyName())
+            .param("subject", request.getSubject().name())
+            .param("difficulty", request.getDifficulty().name())
+            .param("dayType", String.join(",", request.getDayType()))
+            .param("startDate", request.getStartDate().toString())
+            .param("endDate", request.getEndDate().toString())
+            .param("startTime", request.getStartTime().toString())
+            .param("endTime", request.getEndTime().toString())
+            .param("meetingType", request.getMeetingType().name())
+            .param("recruitmentPeriod", request.getRecruitmentPeriod().toString())
+            .param("description", request.getDescription())
+            .param("maxParticipants", String.valueOf(request.getMaxParticipants()))
+            .param("userId", String.valueOf(request.getUserId()))
+            .contentType(MediaType.MULTIPART_FORM_DATA))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().string("모집 인원은 최소 2명, 최대 10명까지 설정할 수 있습니다."));
+  }
+
+  @DisplayName("스터디 모집글 생성 실패 - 유저가 없는 경우")
+  @Test
+  void createStudyPost_Fail_UserNotFound() throws Exception {
+    // Given
+    Long userId = 1L;
+
+    MockMultipartFile file = new MockMultipartFile(
+        "file", "test.jpg", MediaType.IMAGE_JPEG_VALUE, "Mock File Content".getBytes());
+
+    StudyPostCreateRequest request = StudyPostCreateRequest.builder()
+        .title("코딩 테스트 준비")
+        .studyName("코테")
+        .subject(StudySubject.JOB_PREPARATION)
+        .difficulty(StudyDifficulty.MEDIUM)
+        .dayType(List.of("월", "화"))
+        .startDate(LocalDate.of(2024, 12, 10))
+        .endDate(LocalDate.of(2024, 12, 20))
+        .startTime(LocalTime.of(18, 0))
+        .endTime(LocalTime.of(20, 0))
+        .meetingType(StudyMeetingType.ONLINE)
+        .recruitmentPeriod(LocalDate.of(2024, 12, 5))
+        .description("코딩 테스트 스터디 모집")
+        .maxParticipants(5)
+        .userId(userId)
+        .file(file)
+        .build();
+
+    when(authService.getLoginUserId()).thenReturn(userId);
+    doThrow(new CustomException(ErrorCode.USER_NOT_FOUND))
+        .when(studyPostService).createStudyPost(any(StudyPostCreateRequest.class));
+
+    // When & Then
+    mockMvc.perform(multipart("/api/study-posts")
+            .file(file)
+            .param("title", request.getTitle())
+            .param("studyName", request.getStudyName())
+            .param("subject", request.getSubject().name())
+            .param("difficulty", request.getDifficulty().name())
+            .param("dayType", String.join(",", request.getDayType()))
+            .param("startDate", request.getStartDate().toString())
+            .param("endDate", request.getEndDate().toString())
+            .param("startTime", request.getStartTime().toString())
+            .param("endTime", request.getEndTime().toString())
+            .param("meetingType", request.getMeetingType().name())
+            .param("recruitmentPeriod", request.getRecruitmentPeriod().toString())
+            .param("description", request.getDescription())
+            .param("maxParticipants", String.valueOf(request.getMaxParticipants()))
+            .param("userId", String.valueOf(request.getUserId()))
+            .contentType(MediaType.MULTIPART_FORM_DATA))
+        .andExpect(status().isNotFound())
+        .andExpect(content().string("사용자를 찾을 수 없습니다."));
+  }
+
+  @DisplayName("스터디 모집글 생성 실패 - 병행 스터디에서 위도/경도 없음")
+  @Test
+  void createStudyPost_Fail_LocationRequiredForHybrid() throws Exception {
+    // Given
+    Long userId = 1L;
+
+    MockMultipartFile file = new MockMultipartFile(
+        "file", "test.jpg", MediaType.IMAGE_JPEG_VALUE, "Mock File Content".getBytes());
+
+    StudyPostCreateRequest request = StudyPostCreateRequest.builder()
+        .title("코딩 테스트 준비")
+        .studyName("코테")
+        .subject(StudySubject.JOB_PREPARATION)
+        .difficulty(StudyDifficulty.MEDIUM)
+        .dayType(List.of("월", "화"))
+        .startDate(LocalDate.of(2024, 12, 10))
+        .endDate(LocalDate.of(2024, 12, 20))
+        .startTime(LocalTime.of(18, 0))
+        .endTime(LocalTime.of(20, 0))
+        .meetingType(StudyMeetingType.HYBRID) // 병행 스터디
+        .recruitmentPeriod(LocalDate.of(2024, 12, 5))
+        .description("코딩 테스트 스터디 모집")
+        .maxParticipants(5)
+        .userId(userId)
+        .latitude(null) // 위치 정보 없음
+        .longitude(null) // 위치 정보 없음
+        .file(file)
+        .build();
+
+    when(authService.getLoginUserId()).thenReturn(userId);
+    doThrow(new CustomException(ErrorCode.LOCATION_REQUIRED_FOR_HYBRID))
+        .when(studyPostService).createStudyPost(any(StudyPostCreateRequest.class));
+
+    // When & Then
+    mockMvc.perform(multipart("/api/study-posts")
+            .file(file)
+            .param("title", request.getTitle())
+            .param("studyName", request.getStudyName())
+            .param("subject", request.getSubject().name())
+            .param("difficulty", request.getDifficulty().name())
+            .param("dayType", String.join(",", request.getDayType()))
+            .param("startDate", request.getStartDate().toString())
+            .param("endDate", request.getEndDate().toString())
+            .param("startTime", request.getStartTime().toString())
+            .param("endTime", request.getEndTime().toString())
+            .param("meetingType", request.getMeetingType().name())
+            .param("recruitmentPeriod", request.getRecruitmentPeriod().toString())
+            .param("description", request.getDescription())
+            .param("maxParticipants", String.valueOf(request.getMaxParticipants()))
+            .param("userId", String.valueOf(request.getUserId()))
+            .contentType(MediaType.MULTIPART_FORM_DATA))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().string("온/오프라인 병행 스터디의 경우 위치 정보가 필수입니다."));
+  }
+
   @DisplayName("스터디 모집글 수정 성공")
   @Test
   void updateStudyPost_Success() throws Exception {
@@ -311,26 +476,26 @@ class StudyPostControllerTest {
     mockMvc.perform(put("/api/study-posts/{studyPostId}", studyPostId)
             .contentType(MediaType.APPLICATION_JSON)
             .content("""
-                    {
-                      "title": "Updated Title",
-                      "studyName": "Updated Study",
-                      "subject": "JOB_PREPARATION",
-                      "difficulty": "HIGH",
-                      "dayType": ["월", "화"],
-                      "startDate": "2024-12-10",
-                      "endDate": "2024-12-20",
-                      "startTime": "18:00:00",
-                      "endTime": "20:00:00",
-                      "meetingType": "ONLINE",
-                      "recruitmentPeriod": "2024-12-05",
-                      "description": "Updated Description",
-                      "latitude": 37.5665,
-                      "longitude": 126.9780,
-                      "status": "RECRUITING",
-                      "thumbnailImgUrl": "updated_thumbnail_url",
-                      "maxParticipants": 10
-                    }
-                    """))
+                {
+                  "title": "Updated Title",
+                  "studyName": "Updated Study",
+                  "subject": "JOB_PREPARATION",
+                  "difficulty": "HIGH",
+                  "dayType": ["월", "화"],
+                  "startDate": "2024-12-10",
+                  "endDate": "2024-12-20",
+                  "startTime": "18:00:00",
+                  "endTime": "20:00:00",
+                  "meetingType": "ONLINE",
+                  "recruitmentPeriod": "2024-12-05",
+                  "description": "Updated Description",
+                  "latitude": 37.5665,
+                  "longitude": 126.9780,
+                  "status": "RECRUITING",
+                  "thumbnailImgUrl": "updated_thumbnail_url",
+                  "maxParticipants": 10
+                }
+                """))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(studyPostId))
         .andExpect(jsonPath("$.title").value("Updated Title"))
@@ -353,7 +518,8 @@ class StudyPostControllerTest {
         .andExpect(jsonPath("$.maxParticipants").value(10))
         .andDo(print());
 
-    verify(studyPostService, times(1)).updateStudyPost(eq(studyPostId), any(StudyPostUpdateRequest.class));
+    verify(studyPostService, times(1)).updateStudyPost(eq(studyPostId),
+        any(StudyPostUpdateRequest.class));
   }
 
   @DisplayName("스터디 모집글 수정 실패 - 모집글 없음")
@@ -370,14 +536,15 @@ class StudyPostControllerTest {
     mockMvc.perform(put("/api/study-posts/{studyPostId}", studyPostId)
             .contentType(MediaType.APPLICATION_JSON)
             .content("""
-                    {
-                      "title": "Non-existent Title"
-                    }
-                    """))
+                {
+                  "title": "Non-existent Title"
+                }
+                """))
         .andExpect(status().isNotFound())
         .andExpect(content().string("스터디 모집글을 찾을 수 없습니다."))
         .andDo(print());
 
-    verify(studyPostService, times(1)).updateStudyPost(eq(studyPostId), any(StudyPostUpdateRequest.class));
+    verify(studyPostService, times(1)).updateStudyPost(eq(studyPostId),
+        any(StudyPostUpdateRequest.class));
   }
 }
