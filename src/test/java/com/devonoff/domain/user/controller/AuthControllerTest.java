@@ -260,8 +260,8 @@ class AuthControllerTest {
   }
 
   @Test
-  @DisplayName("카카오 로그인 - 성공")
-  void testKakaoSignIn_Success() throws Exception {
+  @DisplayName("소셜 로그인 (카카오) - 성공")
+  void testSocialSignInKakao_Success() throws Exception {
     // given
     SocialAuthRequest socialAuthRequest = SocialAuthRequest.builder()
         .code("Authentication-Code")
@@ -272,7 +272,7 @@ class AuthControllerTest {
         .refreshToken("RefreshToken")
         .build();
 
-    given(socialAuthService.kakaoSignIn(anyString())).willReturn(signInResponse);
+    given(socialAuthService.socialSignIn(anyString(), anyString())).willReturn(signInResponse);
 
     // when, then
     mockMvc.perform(post("/api/auth/sign-in/kakao")
@@ -284,50 +284,13 @@ class AuthControllerTest {
   }
 
   @Test
-  @DisplayName("카카오 로그인 - 실패 (유효성 검증 실패)")
-  void testKakaoSignIn_Fail_ValidationFail() throws Exception {
+  @DisplayName("소셜 로그인 - 실패 (유효성 검증 실패)")
+  void testSocialSignIn_Fail_ValidationFailed() throws Exception {
     // given
     SocialAuthRequest socialAuthRequest = SocialAuthRequest.builder().build();
 
     // when, then
     mockMvc.perform(post("/api/auth/sign-in/kakao")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(socialAuthRequest)))
-        .andExpect(status().isBadRequest());
-  }
-
-  @Test
-  @DisplayName("네이버 로그인 - 성공")
-  void testNaverSignIn_Success() throws Exception {
-    // given
-    SocialAuthRequest socialAuthRequest = SocialAuthRequest.builder()
-        .code("Authentication-Code")
-        .build();
-
-    SignInResponse signInResponse = SignInResponse.builder()
-        .accessToken("AccessToken")
-        .refreshToken("RefreshToken")
-        .build();
-
-    given(socialAuthService.naverSignIn(anyString())).willReturn(signInResponse);
-
-    // when, then
-    mockMvc.perform(post("/api/auth/sign-in/naver")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(socialAuthRequest)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.accessToken").value("AccessToken"))
-        .andExpect(jsonPath("$.refreshToken").value("RefreshToken"));
-  }
-
-  @Test
-  @DisplayName("네이버 로그인 - 실패 (유효성 검증 실패)")
-  void testNaverSignIn_Fail_ValidationFail() throws Exception {
-    // given
-    SocialAuthRequest socialAuthRequest = SocialAuthRequest.builder().build();
-
-    // when, then
-    mockMvc.perform(post("/api/auth/sign-in/naver")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(socialAuthRequest)))
         .andExpect(status().isBadRequest());
@@ -369,7 +332,7 @@ class AuthControllerTest {
   }
 
   @Test
-  @DisplayName("Access Token 재발급 - 실패")
+  @DisplayName("Access Token 재발급 - 실패 (유효성 검증 실패)")
   void testReissueToken_Fail_ValidationFail() throws Exception {
     // given
     ReissueTokenRequest reissueTokenRequest = ReissueTokenRequest.builder()
