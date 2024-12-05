@@ -256,6 +256,7 @@ class StudyServiceTest {
     assertEquals("참가자2", result.get(1).getNickname());
   }
 
+  @DisplayName("스터디 상태 자동 업데이트")
   @Test
   void testUpdateStudyStatuses() {
     // given
