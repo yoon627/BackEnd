@@ -10,11 +10,12 @@ import com.devonoff.domain.user.dto.auth.SignInResponse;
 import com.devonoff.domain.user.dto.auth.SignUpRequest;
 import com.devonoff.domain.user.dto.auth.SocialAuthRequest;
 import com.devonoff.domain.user.service.AuthService;
-import com.devonoff.domain.user.service.SocialAuthService;
+import com.devonoff.domain.user.service.social.SocialAuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -113,29 +114,17 @@ public class AuthController {
   }
 
   /**
-   * 카카오 로그인
+   * 소셜 로그인
    *
    * @param socialAuthRequest
    * @return ResponseEntity<SignInResponse>
    */
-  @PostMapping("/sign-in/kakao")
+  @PostMapping("/sign-in/{provider}")
   public ResponseEntity<SignInResponse> signInKakao(
+      @PathVariable String provider,
       @RequestBody @Valid SocialAuthRequest socialAuthRequest
   ) {
-    return ResponseEntity.ok(socialAuthService.kakaoSignIn(socialAuthRequest.getCode()));
-  }
-
-  /**
-   * 네이버 로그인
-   *
-   * @param socialAuthRequest
-   * @return ResponseEntity<SignInResponse>
-   */
-  @PostMapping("/sign-in/naver")
-  public ResponseEntity<SignInResponse> signInNaver(
-      @RequestBody @Valid SocialAuthRequest socialAuthRequest
-  ) {
-    return ResponseEntity.ok(socialAuthService.naverSignIn(socialAuthRequest.getCode()));
+    return ResponseEntity.ok(socialAuthService.socialSignIn(provider, socialAuthRequest.getCode()));
   }
 
   /**
