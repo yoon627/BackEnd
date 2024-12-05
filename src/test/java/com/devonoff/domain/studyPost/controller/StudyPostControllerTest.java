@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -547,4 +548,23 @@ class StudyPostControllerTest {
     verify(studyPostService, times(1)).updateStudyPost(eq(studyPostId),
         any(StudyPostUpdateRequest.class));
   }
+
+  @DisplayName("스터디 모집글 모집 마감 성공")
+  @Test
+  void closeStudyPost_Success() throws Exception {
+    // Given
+    Long studyPostId = 1L;
+    Long leaderId = 1L;
+
+    when(authService.getLoginUserId()).thenReturn(leaderId);
+
+    // When & Then
+    mockMvc.perform(patch("/api/study-posts/{studyPostId}/close", studyPostId)
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andDo(print());
+
+    verify(studyPostService, times(1)).closeStudyPost(studyPostId);
+  }
+
 }

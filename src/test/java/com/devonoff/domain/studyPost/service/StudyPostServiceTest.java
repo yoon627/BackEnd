@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -11,11 +12,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.devonoff.domain.photo.service.PhotoService;
+import com.devonoff.domain.student.entity.Student;
+import com.devonoff.domain.student.repository.StudentRepository;
+import com.devonoff.domain.study.entity.Study;
+import com.devonoff.domain.study.service.StudyService;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
+import com.devonoff.domain.studySignup.entity.StudySignup;
+import com.devonoff.domain.studySignup.repository.StudySignupRepository;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.domain.user.service.AuthService;
@@ -24,6 +31,7 @@ import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyPostStatus;
+import com.devonoff.type.StudySignupStatus;
 import com.devonoff.type.StudySubject;
 import com.devonoff.util.DayTypeUtils;
 import java.time.LocalDate;
@@ -54,10 +62,19 @@ class StudyPostServiceTest {
   private UserRepository userRepository;
 
   @Mock
+  private StudySignupRepository studySignupRepository;
+
+  @Mock
+  private StudentRepository studentRepository;
+
+  @Mock
   private PhotoService photoService;
 
   @Mock
   private AuthService authService;
+
+  @Mock
+  private StudyService studyService;
 
   @InjectMocks
   private StudyPostService studyPostService;
@@ -452,5 +469,57 @@ class StudyPostServiceTest {
     assertEquals(ErrorCode.STUDY_POST_NOT_FOUND, exception.getErrorCode());
     verify(studyPostRepository, times(1)).findById(studyPostId);
     verify(studyPostRepository, never()).save(any(StudyPost.class));
+  }
+
+  @DisplayName("스터디 모집글 모집 마감 성공")
+  @Test
+  void closeStudyPost_Success() {
+    // Given
+    Long studyPostId = 1L;
+    Long leaderId = 1L;
+
+    User leader = User.builder().id(leaderId).build();
+    StudyPost studyPost = StudyPost.builder()
+        .id(studyPostId)
+        .studyName("코딩 스터디")
+        .subject(StudySubject.JOB_PREPARATION)
+        .difficulty(StudyDifficulty.MEDIUM)
+        .dayType(3) // 월, 화
+        .startDate(LocalDate.of(2024, 12, 10))
+        .endDate(LocalDate.of(2024, 12, 20))
+        .startTime(LocalTime.of(18, 0))
+        .endTime(LocalTime.of(20, 0))
+        .meetingType(StudyMeetingType.ONLINE)
+        .status(StudyPostStatus.RECRUITING)
+        .user(leader)
+        .currentParticipants(2)
+        .build();
+
+    StudySignup approvedSignup = StudySignup.builder()
+        .id(1L)
+        .studyPost(studyPost)
+        .user(User.builder().id(2L).build())
+        .status(StudySignupStatus.APPROVED)
+        .build();
+
+    Study study = Study.builder()
+        .id(1L)
+        .studyName(studyPost.getStudyName())
+        .build();
+
+    when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
+    when(authService.getLoginUserId()).thenReturn(leaderId);
+    when(studySignupRepository.findByStudyPostAndStatus(studyPost, StudySignupStatus.APPROVED))
+        .thenReturn(List.of(approvedSignup));
+    when(studyService.createStudyFromClosedPost(studyPostId)).thenReturn(study);
+
+    // When
+    studyPostService.closeStudyPost(studyPostId);
+
+    // Then
+    assertEquals(StudyPostStatus.CLOSED, studyPost.getStatus());
+    verify(studentRepository, times(1)).save(any(Student.class));
+    verify(studentRepository, times(1)).saveAll(anyList());
+    verify(studyService, times(1)).createStudyFromClosedPost(studyPostId);
   }
 }
