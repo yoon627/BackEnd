@@ -26,14 +26,15 @@ public class CommentService {
 
   private final CommentRepository commentRepository;
   private final UserRepository userRepository;
- // 시큐리티에서 로그인된 사용자 유저아이디 꺼내기
-  private String extractEmailFromPrincipal() {
+
+  // 시큐리티에서 로그인된 사용자 유저아이디 꺼내기
+  private Long extractUserIdFromPrincipal() {
     Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
     if (principal instanceof String) {
-      return (String) principal;
+      return Long.parseLong((String) principal);
     } else if (principal instanceof UserDetails) {
-      return ((UserDetails) principal).getUsername();
+      return Long.parseLong(((UserDetails) principal).getUsername());
     } else {
       throw new CustomException(ErrorCode.USER_NOT_FOUND, "로그인된 사용자만 접근 가능합니다.");
     }
@@ -42,13 +43,12 @@ public class CommentService {
   @Transactional
   public CommentResponse createComment(CommentRequest commentRequest) {
 
-    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    // 인증된 사용자 아이디 가져오기
+    Long userId = extractUserIdFromPrincipal();
 
-    if (!(principal instanceof User)) {
-      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS, "잘못된 사용자 인증 정보입니다.");
-    }
-
-    User user = (User) principal;
+    // 사용자 정보 조회
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
     // Comment 엔티티 생성 및 저장
     Comment comment = commentRequest.toEntity(user);
@@ -60,6 +60,7 @@ public class CommentService {
 
   @Transactional(readOnly = true)
   public Page<CommentResponse> getComments(Long postId, PostType postType, Pageable pageable) {
+
     // 댓글 페이징 조회
     Page<Comment> comments = commentRepository.findByPostIdAndPostType(postId, postType, pageable);
 
@@ -71,20 +72,12 @@ public class CommentService {
   @Transactional
   public void updateComment(Long commentId, CommentUpdateRequest commentUpdateRequest) {
 
-    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    String userId;
+    Long userId = extractUserIdFromPrincipal();
 
-    if (principal instanceof String) {
-      userId = (String) principal;
-    } else if (principal instanceof UserDetails) {
-      userId = ((UserDetails) principal).getUsername();
-    } else {
-      throw new CustomException(ErrorCode.USER_NOT_FOUND, "로그인된 사용자만 접근 가능합니다.");
-    }
-
-// 사용자 ID를 이용해 이메일 가져오기
-    User user = userRepository.findById(Long.parseLong(userId))
+    // 사용자 조회
+    User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
     // 댓글 조회
     Comment comment = commentRepository.findById(commentId)
         .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND, "댓글을 찾을 수 없습니다."));
@@ -93,6 +86,7 @@ public class CommentService {
     if (!comment.getUser().getId().equals(user.getId())) {
       throw new CustomException(ErrorCode.UNAUTHORIZED_COMMENT_ACCESS);
     }
+
     // 수정
     comment.setContent(commentUpdateRequest.getContent());
     comment.setIsSecret(commentUpdateRequest.getIsSecret());
@@ -101,11 +95,10 @@ public class CommentService {
 
   @Transactional
   public void deleteComment(Long commentId) {
-    // JWT 토큰에서 userId 추출
-    String userId = extractEmailFromPrincipal();
+    Long userId = extractUserIdFromPrincipal();
 
     // 사용자 정보 확인
-    User user = userRepository.findById(Long.parseLong(userId))
+    User user = userRepository.findById(Long.parseLong(String.valueOf(userId)))
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
     // 댓글 조회
@@ -120,7 +113,6 @@ public class CommentService {
     // 댓글 삭제
     commentRepository.delete(comment);
   }
-
 
 
 }
