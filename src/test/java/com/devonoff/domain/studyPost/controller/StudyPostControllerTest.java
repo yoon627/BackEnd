@@ -679,4 +679,82 @@ class StudyPostControllerTest {
 
     verify(studyPostService, times(1)).cancelStudyPost(studyPostId);
   }
+
+  @DisplayName("모집 취소된 스터디 모집 기간 연장 - 성공")
+  @Test
+  void extendCanceledStudy_Success() throws Exception {
+    // Given
+    Long studyPostId = 1L;
+    LocalDate newRecruitmentPeriod = LocalDate.of(2024, 12, 20);
+
+    doNothing().when(studyPostService).extendCanceledStudy(studyPostId, newRecruitmentPeriod);
+
+    // When & Then
+    mockMvc.perform(patch("/api/study-posts/{studyPostId}/extend-canceled", studyPostId)
+            .param("recruitmentPeriod", newRecruitmentPeriod.toString())
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk());
+
+    verify(studyPostService, times(1)).extendCanceledStudy(studyPostId, newRecruitmentPeriod);
+  }
+
+  @DisplayName("모집 취소된 스터디 모집 기간 연장 실패 - 모집글 없음")
+  @Test
+  void extendCanceledStudy_Fail_StudyPostNotFound() throws Exception {
+    // Given
+    Long studyPostId = 999L;
+    LocalDate newRecruitmentPeriod = LocalDate.of(2024, 12, 20);
+
+    doThrow(new CustomException(ErrorCode.STUDY_POST_NOT_FOUND))
+        .when(studyPostService).extendCanceledStudy(studyPostId, newRecruitmentPeriod);
+
+    // When & Then
+    mockMvc.perform(patch("/api/study-posts/{studyPostId}/extend-canceled", studyPostId)
+            .param("recruitmentPeriod", newRecruitmentPeriod.toString())
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isNotFound())
+        .andExpect(content().string("스터디 모집글을 찾을 수 없습니다."));
+
+    verify(studyPostService, times(1)).extendCanceledStudy(studyPostId, newRecruitmentPeriod);
+  }
+
+  @DisplayName("모집 취소된 스터디 모집 기간 연장 실패 - 모집글 상태가 취소 상태가 아님")
+  @Test
+  void extendCanceledStudy_Fail_InvalidStudyStatus() throws Exception {
+    // Given
+    Long studyPostId = 1L;
+    LocalDate newRecruitmentPeriod = LocalDate.of(2024, 12, 20);
+
+    doThrow(new CustomException(ErrorCode.INVALID_STUDY_STATUS))
+        .when(studyPostService).extendCanceledStudy(studyPostId, newRecruitmentPeriod);
+
+    // When & Then
+    mockMvc.perform(patch("/api/study-posts/{studyPostId}/extend-canceled", studyPostId)
+            .param("recruitmentPeriod", newRecruitmentPeriod.toString())
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().string("잘못된 스터디 상태값입니다."));
+
+    verify(studyPostService, times(1)).extendCanceledStudy(studyPostId, newRecruitmentPeriod);
+  }
+
+  @DisplayName("모집 취소된 스터디 모집 기간 연장 실패 - 모집기간 연장 한달 초과")
+  @Test
+  void extendCanceledStudy_Fail_StudyExtensionFailed() throws Exception {
+    // Given
+    Long studyPostId = 1L;
+    LocalDate newRecruitmentPeriod = LocalDate.of(2025, 1, 20);
+
+    doThrow(new CustomException(ErrorCode.STUDY_EXTENSION_FAILED))
+        .when(studyPostService).extendCanceledStudy(studyPostId, newRecruitmentPeriod);
+
+    // When & Then
+    mockMvc.perform(patch("/api/study-posts/{studyPostId}/extend-canceled", studyPostId)
+            .param("recruitmentPeriod", newRecruitmentPeriod.toString())
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest()) // 상태 코드 확인
+        .andExpect(content().string("스터디 모집 기한 연장은 최대 1개월입니다."));
+
+    verify(studyPostService, times(1)).extendCanceledStudy(studyPostId, newRecruitmentPeriod);
+  }
 }
