@@ -1,9 +1,11 @@
 package com.devonoff.domain.studySignup.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -122,5 +124,36 @@ class StudySignupControllerTest {
             .content("{\"studyPostId\": 100, \"userId\": 1}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$").value("이미 해당 스터디에 신청했습니다."));
+  }
+
+  @Test
+  @DisplayName("신청 상태 관리 성공 - 승인")
+  void updateSignupStatus_Approve_Success() throws Exception {
+    // Given
+    Long studySignupId = 1L;
+    StudySignupStatus newStatus = StudySignupStatus.APPROVED;
+
+    // When & Then
+    mockMvc.perform(patch("/api/study-signup/{studySignupId}", studySignupId)
+            .param("newStatus", newStatus.name()))
+        .andExpect(status().isOk());
+
+    verify(studySignupService, times(1)).updateSignupStatus(anyLong(),
+        any(StudySignupStatus.class));
+  }
+
+  @Test
+  @DisplayName("신청 상태 관리 성공 - 취소")
+  void updateSignupStatus_Reject_Success() throws Exception {
+    // Given
+    Long studySignupId = 1L;
+    StudySignupStatus newStatus = StudySignupStatus.REJECTED;
+
+    // When & Then
+    mockMvc.perform(patch("/api/study-signup/{studySignupId}", studySignupId)
+            .param("newStatus", newStatus.name()))
+        .andExpect(status().isOk());
+
+    verify(studySignupService, times(1)).updateSignupStatus(anyLong(), any(StudySignupStatus.class));
   }
 }

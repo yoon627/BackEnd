@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.devonoff.domain.studyPost.entity.StudyPost;
@@ -185,4 +186,73 @@ class StudySignupServiceTest {
     assertEquals(ErrorCode.DUPLICATE_APPLICATION, exception.getErrorCode());
   }
 
+  @Test
+  @DisplayName("신청 상태 관리 성공 - 승인")
+  void updateSignupStatus_Approve_Success() {
+    // Given
+    Long studySignupId = 1L;
+    Long loggedInUserId = 100L;
+
+    StudyPost studyPost = StudyPost.builder()
+        .id(10L)
+        .status(StudyPostStatus.RECRUITING)
+        .currentParticipants(2)
+        .maxParticipants(5)
+        .user(User.builder().id(loggedInUserId).build())
+        .build();
+
+    StudySignup studySignup = StudySignup.builder()
+        .id(studySignupId)
+        .status(StudySignupStatus.PENDING)
+        .studyPost(studyPost)
+        .build();
+
+    when(studySignupRepository.findById(studySignupId)).thenReturn(Optional.of(studySignup));
+    when(authService.getLoginUserId()).thenReturn(loggedInUserId);
+
+    // When
+    studySignupService.updateSignupStatus(studySignupId, StudySignupStatus.APPROVED);
+
+    // Then
+    assertEquals(StudySignupStatus.APPROVED, studySignup.getStatus());
+    assertEquals(3, studyPost.getCurrentParticipants());
+
+    verify(studySignupRepository).save(studySignup);
+    verify(studyPostRepository).save(studyPost);
+  }
+
+  @Test
+  @DisplayName("신청 상태 관리 성공 - 취소")
+  void updateSignupStatus_Reject_Success() {
+    // Given
+    Long studySignupId = 1L;
+    Long loggedInUserId = 100L;
+
+    StudyPost studyPost = StudyPost.builder()
+        .id(10L)
+        .status(StudyPostStatus.RECRUITING)
+        .currentParticipants(3)
+        .maxParticipants(5)
+        .user(User.builder().id(loggedInUserId).build())
+        .build();
+
+    StudySignup studySignup = StudySignup.builder()
+        .id(studySignupId)
+        .status(StudySignupStatus.PENDING)
+        .studyPost(studyPost)
+        .build();
+
+    when(studySignupRepository.findById(studySignupId)).thenReturn(Optional.of(studySignup));
+    when(authService.getLoginUserId()).thenReturn(loggedInUserId);
+
+    // When
+    studySignupService.updateSignupStatus(studySignupId, StudySignupStatus.REJECTED);
+
+    // Then
+    assertEquals(StudySignupStatus.REJECTED, studySignup.getStatus());
+    assertEquals(3, studyPost.getCurrentParticipants());
+
+    verify(studySignupRepository).save(studySignup);
+    verify(studyPostRepository).save(studyPost);
+  }
 }
