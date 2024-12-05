@@ -1,5 +1,7 @@
 package com.devonoff.domain.user.service.social;
 
+import com.devonoff.exception.CustomException;
+import com.devonoff.type.ErrorCode;
 import com.devonoff.type.LoginType;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -41,10 +43,14 @@ public class KakaoAuthProviderService implements SocialAuthProviderService {
     body.add("redirect_uri", kakaoRedirectUri);
     body.add("code", code);
 
-    HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
-    ResponseEntity<Map> response = restTemplate.exchange(tokenUrl, HttpMethod.POST, request, Map.class);
+    try {
+      HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
+      ResponseEntity<Map> response = restTemplate.exchange(tokenUrl, HttpMethod.POST, request, Map.class);
 
-    return response.getBody().get("access_token").toString();
+      return response.getBody().get("access_token").toString();
+    } catch(Exception e) {
+      throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "Kakao 로그인에 실패했습니다.");
+    }
   }
 
   @Override
@@ -57,7 +63,12 @@ public class KakaoAuthProviderService implements SocialAuthProviderService {
     HttpEntity<Void> request = new HttpEntity<>(headers);
     ResponseEntity<Map> response = restTemplate.exchange(userInfoUrl, HttpMethod.GET, request, Map.class);
 
-    return (Map<String, Object>) response.getBody().get("kakao_account");
+    Map<String, Object> kakaoAccount = (Map<String, Object>) response.getBody().get("kakao_account");
+
+    return Map.of(
+        "id", response.getBody().get("id"),
+        "email", kakaoAccount.get("email")
+    );
   }
 
   @Override
