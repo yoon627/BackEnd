@@ -31,11 +31,13 @@ public class Comment extends BaseTimeEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false)
+
+  @Column(nullable = false, length = 50)
   @Enumerated(EnumType.STRING)
   private PostType postType; // 게시글 유형
 
-  @Column(nullable = false)
+
+  @JoinColumn(name ="")
   private Long postId; // 게시글 ID
 
   @Column(nullable = false)
@@ -45,18 +47,9 @@ public class Comment extends BaseTimeEntity {
   private String content; // 댓글 내용
 
 
-
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
   private User user; // 댓글 작성자와 연결
 
 
-  @Builder
-  public Comment(PostType postType, Long postId, Boolean isSecret, String content, User user) {
-    this.postType = postType;
-    this.postId = postId;
-    this.isSecret = isSecret;
-    this.content = content;
-    this.user = user;
-  }
 }

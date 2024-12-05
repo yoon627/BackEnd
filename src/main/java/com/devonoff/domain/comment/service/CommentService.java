@@ -1,15 +1,21 @@
 package com.devonoff.domain.comment.service;
 
-import com.devonoff.domain.comment.dto.CommentDto;
+import com.devonoff.domain.comment.dto.CommentRequest;
+import com.devonoff.domain.comment.dto.CommentResponse;
+import com.devonoff.domain.comment.dto.CommentUpdateRequest;
 import com.devonoff.domain.comment.entity.Comment;
 import com.devonoff.domain.comment.repository.CommentRepository;
 import com.devonoff.domain.user.entity.User;
+import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.PostType;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,82 +25,102 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommentService {
 
   private final CommentRepository commentRepository;
+  private final UserRepository userRepository;
+ // 시큐리티에서 로그인된 사용자 유저아이디 꺼내기
+  private String extractEmailFromPrincipal() {
+    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+    if (principal instanceof String) {
+      return (String) principal;
+    } else if (principal instanceof UserDetails) {
+      return ((UserDetails) principal).getUsername();
+    } else {
+      throw new CustomException(ErrorCode.USER_NOT_FOUND, "로그인된 사용자만 접근 가능합니다.");
+    }
+  }
 
   @Transactional
-  public CommentDto createComment(CommentDto dto, User user) {
-    if (dto.getContent() == null || dto.getContent().trim().isEmpty()) {
-      throw new CustomException(ErrorCode.INVALID_COMMENT_CONTENT);
-    } else if (dto.getContent().length() > 500) { // 500자는 예시로
-      throw new CustomException(ErrorCode.INVALID_COMMENT_CONTENT);
-    }
-    Comment comment = Comment.builder()
-        .postType(dto.getPostType())
-        .postId(dto.getPostId())
-        .isSecret(dto.getIsSecret())
-        .content(dto.getContent())
-        .user(user) // 로그인된 사용자 연결
-        .build();
+  public CommentResponse createComment(CommentRequest commentRequest) {
 
+    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+    if (!(principal instanceof User)) {
+      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS, "잘못된 사용자 인증 정보입니다.");
+    }
+
+    User user = (User) principal;
+
+    // Comment 엔티티 생성 및 저장
+    Comment comment = commentRequest.toEntity(user);
     Comment savedComment = commentRepository.save(comment);
 
-    // 저장된 엔티티를 DTO로 변환하여 반환
-    return toDto(savedComment);
+    // 저장된 엔티티를 CommentResponse로 변환하여 반환
+    return CommentResponse.fromEntity(savedComment);
   }
 
   @Transactional(readOnly = true)
-  public List<CommentDto> getCommentsByPost(Long postId, PostType postType) {
-    // 댓글 리스트를 가져오고 DTO로 변환하여 반환
-    List<Comment> comments = commentRepository.findByPostIdAndPostType(postId, postType);
-    if (comments.isEmpty()) {
-      return List.of();
-    }
-      return comments.stream().map(this::toDto).toList();
+  public Page<CommentResponse> getComments(Long postId, PostType postType, Pageable pageable) {
+    // 댓글 페이징 조회
+    Page<Comment> comments = commentRepository.findByPostIdAndPostType(postId, postType, pageable);
 
+    // Comment -> CommentResponse 변환
+    return comments.map(CommentResponse::fromEntity);
   }
 
+
   @Transactional
-  public CommentDto updateComment(Long commentId, String content, Boolean isSecret, User user) {
+  public void updateComment(Long commentId, CommentUpdateRequest commentUpdateRequest) {
+
+    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    String userId;
+
+    if (principal instanceof String) {
+      userId = (String) principal;
+    } else if (principal instanceof UserDetails) {
+      userId = ((UserDetails) principal).getUsername();
+    } else {
+      throw new CustomException(ErrorCode.USER_NOT_FOUND, "로그인된 사용자만 접근 가능합니다.");
+    }
+
+// 사용자 ID를 이용해 이메일 가져오기
+    User user = userRepository.findById(Long.parseLong(userId))
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+    // 댓글 조회
     Comment comment = commentRepository.findById(commentId)
-        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND, "댓글을 찾을 수 없습니다."));
 
     // 작성자 확인
     if (!comment.getUser().getId().equals(user.getId())) {
       throw new CustomException(ErrorCode.UNAUTHORIZED_COMMENT_ACCESS);
     }
-
     // 수정
-    comment.setContent(content);
-    comment.setIsSecret(isSecret);
-    Comment updatedComment = commentRepository.save(comment);
-
-    // 수정된 엔티티를 DTO로 반환
-    return toDto(updatedComment);
+    comment.setContent(commentUpdateRequest.getContent());
+    comment.setIsSecret(commentUpdateRequest.getIsSecret());
+    commentRepository.save(comment);
   }
 
   @Transactional
-  public void deleteComment(Long commentId, User user) {
+  public void deleteComment(Long commentId) {
+    // JWT 토큰에서 userId 추출
+    String userId = extractEmailFromPrincipal();
+
+    // 사용자 정보 확인
+    User user = userRepository.findById(Long.parseLong(userId))
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
+    // 댓글 조회
     Comment comment = commentRepository.findById(commentId)
-        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND, "댓글을 찾을 수 없습니다."));
 
     // 작성자 확인
     if (!comment.getUser().getId().equals(user.getId())) {
-      throw new CustomException(ErrorCode.UNAUTHORIZED_COMMENT_ACCESS);
+      throw new CustomException(ErrorCode.UNAUTHORIZED_COMMENT_ACCESS, "삭제 권한이 없습니다.");
     }
 
+    // 댓글 삭제
     commentRepository.delete(comment);
   }
 
-  // Comment 엔티티를 DTO로 변환하는 유틸리티 메서드
-  private CommentDto toDto(Comment comment) {
-    return new CommentDto(
-        comment.getId(),
-        comment.getPostType(),
-        comment.getPostId(),
-        comment.getIsSecret(),
-        comment.getContent(),
-        comment.getCreatedAt() != null ? comment.getCreatedAt().toString() : null,
-        comment.getUpdatedAt() != null ? comment.getUpdatedAt().toString() : null,
-        comment.getUser() != null ? comment.getUser().getId() : null
-    );
-  }
+
+
 }
