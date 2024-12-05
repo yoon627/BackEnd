@@ -30,21 +30,23 @@ public class SocialAuthService {
 
   private SocialAuthProviderService getProvider(String providerName) {
     return providers.stream()
-        .filter(p -> p.getLoginType().name().equalsIgnoreCase(providerName))
+        .filter(provider -> provider.getLoginType().name().equalsIgnoreCase(providerName))
         .findFirst()
-        .orElseThrow(() -> new CustomException(ErrorCode.BAD_REQUEST, "지원하지 않는 소셜 로그인 제공자입니다."));
+        .orElseThrow(
+            () -> new CustomException(ErrorCode.BAD_REQUEST, "지원하지 않는 소셜 로그인 제공자입니다.")
+        );
   }
 
   private SignInResponse processUser(SocialAuthProviderService provider, String accessToken) {
     Map<String, Object> userInfo = provider.getUserInfo(accessToken);
 
-    String email = (String) userInfo.get("email");
     String nickname = provider.getLoginType().name().toLowerCase() + "_" + userInfo.get("id");
+    String email = (String) userInfo.get("email");
 
     User user = userRepository.findByEmail(email).orElseGet(() -> userRepository.save(
         User.builder()
-            .email(email)
             .nickname(nickname)
+            .email(email)
             .password(passwordEncoder.encode(UUID.randomUUID().toString()))
             .loginType(provider.getLoginType())
             .isActive(true)
