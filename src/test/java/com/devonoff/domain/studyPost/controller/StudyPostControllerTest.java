@@ -2,18 +2,29 @@ package com.devonoff.domain.studyPost.controller;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
+import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
 import com.devonoff.domain.studyPost.service.StudyPostService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
+import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySubject;
 import com.devonoff.util.JwtProvider;
 import java.time.LocalDate;
@@ -73,7 +84,7 @@ class StudyPostControllerTest {
     studyPostDto.setMaxParticipants(5);
     studyPostDto.setUserId(11L);
 
-    Mockito.when(studyPostService.getStudyPostDetail(studyPostId)).thenReturn(studyPostDto);
+    when(studyPostService.getStudyPostDetail(studyPostId)).thenReturn(studyPostDto);
 
     mockMvc.perform(get("/api/study-posts/{studyPostId}", studyPostId)
             .contentType(MediaType.APPLICATION_JSON))
@@ -97,13 +108,13 @@ class StudyPostControllerTest {
         .andExpect(jsonPath("$.userId").value(11L));
   }
 
-  @DisplayName("스터디 모집글 상세 조회 실패")
+  @DisplayName("스터디 모집글 상세 조회 실패 - 모집글 없음")
   @Test
   void getStudyPostDetail_NotFound() throws Exception {
     // Given
     Long studyPostId = 123L;
 
-    Mockito.when(studyPostService.getStudyPostDetail(studyPostId))
+    when(studyPostService.getStudyPostDetail(studyPostId))
         .thenThrow(new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
     // When & Then
@@ -137,9 +148,9 @@ class StudyPostControllerTest {
 
     Page<StudyPostDto> mockPage = new PageImpl<>(List.of(studyPostDto), PageRequest.of(0, 20), 1);
 
-    Mockito.when(studyPostService.searchStudyPosts(
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+    when(studyPostService.searchStudyPosts(
+            any(), any(), any(), any(),
+            Mockito.anyInt(), any(), any(), any(), any()))
         .thenReturn(mockPage);
 
     // When & Then
@@ -205,7 +216,7 @@ class StudyPostControllerTest {
         .thumbnailImgUrl("mock_thumbnail_url")
         .build();
 
-    Mockito.when(studyPostService.createStudyPost(Mockito.any(StudyPostCreateRequest.class)))
+    when(studyPostService.createStudyPost(any(StudyPostCreateRequest.class)))
         .thenReturn(response);
 
     // When & Then
@@ -244,5 +255,129 @@ class StudyPostControllerTest {
         .andExpect(jsonPath("$.maxParticipants").value(5))
         .andExpect(jsonPath("$.userId").value(1L))
         .andExpect(jsonPath("$.thumbnailImgUrl").value("mock_thumbnail_url"));
+  }
+
+  @DisplayName("스터디 모집글 수정 성공")
+  @Test
+  void updateStudyPost_Success() throws Exception {
+    // Given
+    Long studyPostId = 1L;
+
+    StudyPostUpdateRequest updateRequest = StudyPostUpdateRequest.builder()
+        .title("Updated Title")
+        .studyName("Updated Study")
+        .subject(StudySubject.JOB_PREPARATION)
+        .difficulty(StudyDifficulty.HIGH)
+        .dayType(List.of("월", "화"))
+        .startDate(LocalDate.of(2024, 12, 10))
+        .endDate(LocalDate.of(2024, 12, 20))
+        .startTime(LocalTime.of(18, 0))
+        .endTime(LocalTime.of(20, 0))
+        .meetingType(StudyMeetingType.ONLINE)
+        .recruitmentPeriod(LocalDate.of(2024, 12, 5))
+        .description("Updated Description")
+        .latitude(37.5665)
+        .longitude(126.9780)
+        .status(StudyPostStatus.RECRUITING)
+        .thumbnailImgUrl("updated_thumbnail_url")
+        .maxParticipants(10)
+        .build();
+
+    StudyPostDto updatedResponse = StudyPostDto.builder()
+        .id(studyPostId)
+        .title(updateRequest.getTitle())
+        .studyName(updateRequest.getStudyName())
+        .subject(updateRequest.getSubject())
+        .difficulty(updateRequest.getDifficulty())
+        .dayType(updateRequest.getDayType())
+        .startDate(updateRequest.getStartDate())
+        .endDate(updateRequest.getEndDate())
+        .startTime(updateRequest.getStartTime())
+        .endTime(updateRequest.getEndTime())
+        .meetingType(updateRequest.getMeetingType())
+        .recruitmentPeriod(updateRequest.getRecruitmentPeriod())
+        .description(updateRequest.getDescription())
+        .latitude(updateRequest.getLatitude())
+        .longitude(updateRequest.getLongitude())
+        .status(updateRequest.getStatus())
+        .thumbnailImgUrl(updateRequest.getThumbnailImgUrl())
+        .maxParticipants(updateRequest.getMaxParticipants())
+        .build();
+
+    when(studyPostService.updateStudyPost(eq(studyPostId), any(StudyPostUpdateRequest.class)))
+        .thenReturn(updatedResponse);
+
+    // When & Then
+    mockMvc.perform(put("/api/study-posts/{studyPostId}", studyPostId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                    {
+                      "title": "Updated Title",
+                      "studyName": "Updated Study",
+                      "subject": "JOB_PREPARATION",
+                      "difficulty": "HIGH",
+                      "dayType": ["월", "화"],
+                      "startDate": "2024-12-10",
+                      "endDate": "2024-12-20",
+                      "startTime": "18:00:00",
+                      "endTime": "20:00:00",
+                      "meetingType": "ONLINE",
+                      "recruitmentPeriod": "2024-12-05",
+                      "description": "Updated Description",
+                      "latitude": 37.5665,
+                      "longitude": 126.9780,
+                      "status": "RECRUITING",
+                      "thumbnailImgUrl": "updated_thumbnail_url",
+                      "maxParticipants": 10
+                    }
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(studyPostId))
+        .andExpect(jsonPath("$.title").value("Updated Title"))
+        .andExpect(jsonPath("$.studyName").value("Updated Study"))
+        .andExpect(jsonPath("$.subject").value("JOB_PREPARATION"))
+        .andExpect(jsonPath("$.difficulty").value("HIGH"))
+        .andExpect(jsonPath("$.dayType[0]").value("월"))
+        .andExpect(jsonPath("$.dayType[1]").value("화"))
+        .andExpect(jsonPath("$.startDate").value("2024-12-10"))
+        .andExpect(jsonPath("$.endDate").value("2024-12-20"))
+        .andExpect(jsonPath("$.startTime").value("18:00:00"))
+        .andExpect(jsonPath("$.endTime").value("20:00:00"))
+        .andExpect(jsonPath("$.meetingType").value("ONLINE"))
+        .andExpect(jsonPath("$.recruitmentPeriod").value("2024-12-05"))
+        .andExpect(jsonPath("$.description").value("Updated Description"))
+        .andExpect(jsonPath("$.latitude").value(37.5665))
+        .andExpect(jsonPath("$.longitude").value(126.9780))
+        .andExpect(jsonPath("$.status").value("RECRUITING"))
+        .andExpect(jsonPath("$.thumbnailImgUrl").value("updated_thumbnail_url"))
+        .andExpect(jsonPath("$.maxParticipants").value(10))
+        .andDo(print());
+
+    verify(studyPostService, times(1)).updateStudyPost(eq(studyPostId), any(StudyPostUpdateRequest.class));
+  }
+
+  @DisplayName("스터디 모집글 수정 실패 - 모집글 없음")
+  @Test
+  void updateStudyPost_NotFound() throws Exception {
+    // Given
+    Long studyPostId = 999L;
+
+    doThrow(new CustomException(ErrorCode.STUDY_POST_NOT_FOUND))
+        .when(studyPostService)
+        .updateStudyPost(eq(studyPostId), any(StudyPostUpdateRequest.class));
+
+    // When & Then
+    mockMvc.perform(put("/api/study-posts/{studyPostId}", studyPostId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                    {
+                      "title": "Non-existent Title"
+                    }
+                    """))
+        .andExpect(status().isNotFound())
+        .andExpect(content().string("스터디 모집글을 찾을 수 없습니다."))
+        .andDo(print());
+
+    verify(studyPostService, times(1)).updateStudyPost(eq(studyPostId), any(StudyPostUpdateRequest.class));
   }
 }

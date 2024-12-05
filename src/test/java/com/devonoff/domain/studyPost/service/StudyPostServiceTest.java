@@ -3,13 +3,17 @@ package com.devonoff.domain.studyPost.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.devonoff.domain.photo.service.PhotoService;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
+import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
 import com.devonoff.domain.user.entity.User;
@@ -112,7 +116,7 @@ class StudyPostServiceTest {
     assertEquals(11L, result.getUserId());
   }
 
-  @DisplayName("스터디 모집글 상세 조회 실패")
+  @DisplayName("스터디 모집글 상세 조회 실패 - 모집글 없음")
   @Test
   void getStudyPostDetail_NotFound() {
     // Given
@@ -231,7 +235,7 @@ class StudyPostServiceTest {
 
     Mockito.when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     Mockito.when(photoService.save(mockFile)).thenReturn("mock_thumbnail_url");
-    Mockito.when(studyPostRepository.save(Mockito.any(StudyPost.class))).thenReturn(studyPost);
+    Mockito.when(studyPostRepository.save(any(StudyPost.class))).thenReturn(studyPost);
 
     // When
     StudyPostDto result = studyPostService.createStudyPost(request);
@@ -253,9 +257,93 @@ class StudyPostServiceTest {
     Assertions.assertEquals(userId, result.getUserId());
     Assertions.assertEquals("mock_thumbnail_url", result.getThumbnailImgUrl());
 
-    Mockito.verify(authService, times(1)).getLoginUserId();
-    Mockito.verify(userRepository, times(1)).findById(userId);
-    Mockito.verify(photoService, times(1)).save(mockFile);
-    Mockito.verify(studyPostRepository, times(1)).save(Mockito.any(StudyPost.class));
+    verify(authService, times(1)).getLoginUserId();
+    verify(userRepository, times(1)).findById(userId);
+    verify(photoService, times(1)).save(mockFile);
+    verify(studyPostRepository, times(1)).save(any(StudyPost.class));
+  }
+
+  @DisplayName("스터디 모집글 수정 성공")
+  @Test
+  void updateStudyPost_Success() {
+    // Given
+    Long studyPostId = 1L;
+    Long loggedInUserId = 1L;
+
+    User user = new User();
+    user.setId(loggedInUserId);
+
+    StudyPost studyPost = new StudyPost();
+    studyPost.setId(studyPostId);
+    studyPost.setUser(user);
+
+    StudyPostUpdateRequest updateRequest = StudyPostUpdateRequest.builder()
+        .title("Updated Title")
+        .studyName("Updated Study")
+        .subject(StudySubject.JOB_PREPARATION)
+        .difficulty(StudyDifficulty.HIGH)
+        .dayType(List.of("월", "화"))
+        .startDate(LocalDate.of(2024, 12, 10))
+        .endDate(LocalDate.of(2024, 12, 20))
+        .startTime(LocalTime.of(18, 0))
+        .endTime(LocalTime.of(20, 0))
+        .meetingType(StudyMeetingType.ONLINE)
+        .recruitmentPeriod(LocalDate.of(2024, 12, 5))
+        .description("Updated Description")
+        .latitude(37.5665)
+        .longitude(126.9780)
+        .status(StudyPostStatus.RECRUITING)
+        .thumbnailImgUrl("updated_thumbnail_url")
+        .maxParticipants(10)
+        .build();
+
+    when(authService.getLoginUserId()).thenReturn(loggedInUserId);
+    when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
+    when(studyPostRepository.save(any(StudyPost.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    // When
+    StudyPostDto result = studyPostService.updateStudyPost(studyPostId, updateRequest);
+
+    // Then
+    assertNotNull(result);
+    assertEquals(updateRequest.getTitle(), result.getTitle());
+    assertEquals(updateRequest.getStudyName(), result.getStudyName());
+    assertEquals(updateRequest.getSubject(), result.getSubject());
+    assertEquals(updateRequest.getDifficulty(), result.getDifficulty());
+    assertEquals(updateRequest.getDayType(), result.getDayType());
+    assertEquals(updateRequest.getStartDate(), result.getStartDate());
+    assertEquals(updateRequest.getEndDate(), result.getEndDate());
+    assertEquals(updateRequest.getStartTime(), result.getStartTime());
+    assertEquals(updateRequest.getEndTime(), result.getEndTime());
+    assertEquals(updateRequest.getMeetingType(), result.getMeetingType());
+    assertEquals(updateRequest.getRecruitmentPeriod(), result.getRecruitmentPeriod());
+    assertEquals(updateRequest.getDescription(), result.getDescription());
+    assertEquals(updateRequest.getLatitude(), result.getLatitude());
+    assertEquals(updateRequest.getLongitude(), result.getLongitude());
+    assertEquals(updateRequest.getStatus(), result.getStatus());
+    assertEquals(updateRequest.getThumbnailImgUrl(), result.getThumbnailImgUrl());
+    assertEquals(updateRequest.getMaxParticipants(), result.getMaxParticipants());
+
+    verify(authService, times(1)).getLoginUserId();
+    verify(studyPostRepository, times(1)).findById(studyPostId);
+    verify(studyPostRepository, times(1)).save(any(StudyPost.class));
+  }
+
+  @DisplayName("스터디 모집글 수정 실패 - 모집글 없음")
+  @Test
+  void updateStudyPost_NotFound() {
+    // Given
+    Long studyPostId = 1L;
+    StudyPostUpdateRequest updateRequest = new StudyPostUpdateRequest();
+
+    when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.empty());
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class,
+        () -> studyPostService.updateStudyPost(studyPostId, updateRequest));
+
+    assertEquals(ErrorCode.STUDY_POST_NOT_FOUND, exception.getErrorCode());
+    verify(studyPostRepository, times(1)).findById(studyPostId);
+    verify(studyPostRepository, never()).save(any(StudyPost.class));
   }
 }
