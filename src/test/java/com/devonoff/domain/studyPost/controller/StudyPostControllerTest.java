@@ -567,4 +567,60 @@ class StudyPostControllerTest {
     verify(studyPostService, times(1)).closeStudyPost(studyPostId);
   }
 
+  @DisplayName("스터디 모집글 모집 마감 실패 - 모집글 없음")
+  @Test
+  void closeStudyPost_Fail_StudyPostNotFound() throws Exception {
+    // Given
+    Long studyPostId = 999L;
+
+    doThrow(new CustomException(ErrorCode.STUDY_POST_NOT_FOUND))
+        .when(studyPostService).closeStudyPost(studyPostId);
+
+    // When & Then
+    mockMvc.perform(patch("/api/study-posts/{studyPostId}/close", studyPostId)
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isNotFound()) // HTTP 404 상태 확인
+        .andExpect(content().string("스터디 모집글을 찾을 수 없습니다."))
+        .andDo(print());
+
+    verify(studyPostService, times(1)).closeStudyPost(studyPostId);
+  }
+
+  @DisplayName("스터디 모집글 모집 마감 실패 - 모집 상태가 모집 중이 아님")
+  @Test
+  void closeStudyPost_Fail_InvalidStudyStatus() throws Exception {
+    // Given
+    Long studyPostId = 1L;
+
+    doThrow(new CustomException(ErrorCode.INVALID_STUDY_STATUS))
+        .when(studyPostService).closeStudyPost(studyPostId);
+
+    // When & Then
+    mockMvc.perform(patch("/api/study-posts/{studyPostId}/close", studyPostId)
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest()) // 400
+        .andExpect(content().string("잘못된 스터디 상태값입니다."))
+        .andDo(print());
+
+    verify(studyPostService, times(1)).closeStudyPost(studyPostId);
+  }
+
+  @DisplayName("스터디 모집글 마감 실패 - 승인된 신청자가 없음")
+  @Test
+  void closeStudyPost_Fail_NoApprovedSignups() throws Exception {
+    // Given
+    Long studyPostId = 1L;
+
+    doThrow(new CustomException(ErrorCode.NO_APPROVED_SIGNUPS))
+        .when(studyPostService).closeStudyPost(studyPostId);
+
+    // When & Then
+    mockMvc.perform(patch("/api/study-posts/{studyPostId}/close", studyPostId)
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isBadRequest()) // 400
+        .andExpect(content().string("승인된 신청자가 없습니다."))
+        .andDo(print());
+
+    verify(studyPostService, times(1)).closeStudyPost(studyPostId);
+  }
 }

@@ -522,4 +522,73 @@ class StudyPostServiceTest {
     verify(studentRepository, times(1)).saveAll(anyList());
     verify(studyService, times(1)).createStudyFromClosedPost(studyPostId);
   }
+
+  @DisplayName("스터디 모집글 모집 마감 실패 - 모집글 없음")
+  @Test
+  void closeStudyPost_Fail_StudyPostNotFound() {
+    // Given
+    Long studyPostId = 1L;
+
+    when(studyPostRepository.findById(studyPostId))
+        .thenReturn(Optional.empty());
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class,
+        () -> studyPostService.closeStudyPost(studyPostId));
+
+    assertEquals(ErrorCode.STUDY_POST_NOT_FOUND, exception.getErrorCode());
+    assertEquals("스터디 모집글을 찾을 수 없습니다.", exception.getErrorMessage());
+  }
+
+  @DisplayName("스터디 모집글 모집 마감 실패 - 모집 상태가 모집중이 아님")
+  @Test
+  void closeStudyPost_Fail_InvalidStudyStatus() {
+    // Given
+    Long studyPostId = 1L;
+    Long leaderId = 1L;
+
+    StudyPost studyPost = StudyPost.builder()
+        .id(studyPostId)
+        .status(StudyPostStatus.CLOSED) // 이미 모집이 마감된 상태
+        .user(User.builder().id(leaderId).build())
+        .build();
+
+    when(studyPostRepository.findById(studyPostId))
+        .thenReturn(Optional.of(studyPost));
+    when(authService.getLoginUserId()).thenReturn(leaderId);
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class,
+        () -> studyPostService.closeStudyPost(studyPostId));
+
+    assertEquals(ErrorCode.INVALID_STUDY_STATUS, exception.getErrorCode());
+    assertEquals("잘못된 스터디 상태값입니다.", exception.getErrorMessage());
+  }
+
+  @DisplayName("스터디 모집글 모집 마감 실패 - 승인된 신청자가 없음")
+  @Test
+  void closeStudyPost_Fail_NoApprovedSignups() {
+    // Given
+    Long studyPostId = 1L;
+    Long leaderId = 1L;
+
+    StudyPost studyPost = StudyPost.builder()
+        .id(studyPostId)
+        .status(StudyPostStatus.RECRUITING)
+        .user(User.builder().id(leaderId).build())
+        .build();
+
+    when(studyPostRepository.findById(studyPostId))
+        .thenReturn(Optional.of(studyPost));
+    when(authService.getLoginUserId()).thenReturn(leaderId);
+    when(studySignupRepository.findByStudyPostAndStatus(studyPost, StudySignupStatus.APPROVED))
+        .thenReturn(List.of()); // 승인된 신청자가 없음
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class,
+        () -> studyPostService.closeStudyPost(studyPostId));
+
+    assertEquals(ErrorCode.NO_APPROVED_SIGNUPS, exception.getErrorCode());
+    assertEquals("승인된 신청자가 없습니다.", exception.getErrorMessage());
+  }
 }
