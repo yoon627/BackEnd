@@ -1,5 +1,7 @@
 package com.devonoff.domain.studyPost.service;
 
+import static org.mockito.Mockito.when;
+
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
@@ -8,6 +10,7 @@ import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
+import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySubject;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -21,6 +24,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 class StudyPostServiceTest {
@@ -59,8 +66,7 @@ class StudyPostServiceTest {
     studyPost.setMaxParticipants(5);
     studyPost.setUser(user);
 
-    Mockito.when(studyPostRepository.findById(studyPostId))
-        .thenReturn(Optional.of(studyPost));
+    when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
 
     // When
     StudyPostDto result = studyPostService.getStudyPostDetail(studyPostId);
@@ -93,13 +99,60 @@ class StudyPostServiceTest {
     Long studyPostId = 123L;
 
     // Optional.empty()를 반환하도록 설정
-    Mockito.when(studyPostRepository.findById(studyPostId))
-        .thenReturn(Optional.empty());
+    when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.empty());
 
     // When & Then
     CustomException exception = Assertions.assertThrows(CustomException.class,
         () -> studyPostService.getStudyPostDetail(studyPostId));
 
     Assertions.assertEquals(ErrorCode.STUDY_POST_NOT_FOUND, exception.getErrorCode());
+  }
+
+  @DisplayName("스터디 모집글 검색 성공")
+  @Test
+  void searchStudyPosts_Success() {
+    // Given
+    StudyMeetingType meetingType = StudyMeetingType.ONLINE;
+    String title = "코테";
+    StudySubject subject = StudySubject.JOB_PREPARATION;
+    StudyDifficulty difficulty = StudyDifficulty.MEDIUM;
+    int dayType = 3; // 월, 화
+    StudyPostStatus status = StudyPostStatus.RECRUITING;
+    Double latitude = 37.5665;
+    Double longitude = 126.9780;
+    Pageable pageable = PageRequest.of(0, 20);
+
+    // 데이터 생성
+    StudyPostDto studyPostDto = new StudyPostDto();
+    studyPostDto.setId(1L);
+    studyPostDto.setTitle("코딩 테스트 준비");
+    studyPostDto.setStudyName("코테");
+    studyPostDto.setSubject(StudySubject.JOB_PREPARATION);
+    studyPostDto.setDifficulty(StudyDifficulty.MEDIUM);
+
+    Page<StudyPostDto> mockPage = new PageImpl<>(List.of(studyPostDto), pageable, 1);
+
+    // When
+    Mockito.when(
+            studyPostRepository.findStudyPostsByFilters(Mockito.eq(meetingType), Mockito.eq(title),
+                Mockito.eq(subject), Mockito.eq(difficulty), Mockito.eq(dayType), Mockito.eq(status),
+                Mockito.eq(latitude), Mockito.eq(longitude), Mockito.eq(pageable)))
+        .thenReturn(mockPage);
+
+    // When
+    Page<StudyPostDto> result = studyPostService.searchStudyPosts(meetingType, title, subject,
+        difficulty, dayType, status, latitude, longitude, pageable);
+
+    // Then
+    Assertions.assertNotNull(result, "Result should not be null");
+    Assertions.assertEquals(1, result.getTotalElements(), "Total elements should match");
+    Assertions.assertEquals("코딩 테스트 준비", result.getContent().get(0).getTitle(),
+        "Title should match");
+    Assertions.assertEquals("코테", result.getContent().get(0).getStudyName(),
+        "Study name should match");
+    Assertions.assertEquals(StudySubject.JOB_PREPARATION, result.getContent().get(0).getSubject(),
+        "Subject should match");
+    Assertions.assertEquals(StudyDifficulty.MEDIUM, result.getContent().get(0).getDifficulty(),
+        "Difficulty should match");
   }
 }

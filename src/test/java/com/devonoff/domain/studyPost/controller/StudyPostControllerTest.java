@@ -1,6 +1,7 @@
 package com.devonoff.domain.studyPost.controller;
 
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -25,6 +26,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -103,5 +107,68 @@ class StudyPostControllerTest {
     mockMvc.perform(get("/api/study-posts/{studyPostId}", studyPostId)
             .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isNotFound());
+  }
+
+  @DisplayName("스터디 모집글 검색 성공")
+  @Test
+  void searchStudyPosts_Success() throws Exception {
+    // Given
+    StudyPostDto studyPostDto = new StudyPostDto();
+    studyPostDto.setId(1L);
+    studyPostDto.setTitle("코딩 테스트 준비");
+    studyPostDto.setStudyName("코테");
+    studyPostDto.setSubject(StudySubject.JOB_PREPARATION);
+    studyPostDto.setDifficulty(StudyDifficulty.MEDIUM);
+    studyPostDto.setDayType(List.of("월", "화"));
+    studyPostDto.setStartDate(LocalDate.parse("2024-12-04"));
+    studyPostDto.setEndDate(LocalDate.parse("2024-12-22"));
+    studyPostDto.setStartTime(LocalTime.parse("19:00"));
+    studyPostDto.setEndTime(LocalTime.parse("21:00"));
+    studyPostDto.setMeetingType(StudyMeetingType.ONLINE);
+    studyPostDto.setRecruitmentPeriod(LocalDate.parse("2024-11-30"));
+    studyPostDto.setDescription("코테 공부할사람 모여");
+    studyPostDto.setLatitude(37.5665);
+    studyPostDto.setLongitude(126.9780);
+    studyPostDto.setMaxParticipants(5);
+    studyPostDto.setUserId(11L);
+
+    Page<StudyPostDto> mockPage = new PageImpl<>(List.of(studyPostDto), PageRequest.of(0, 20), 1);
+
+    Mockito.when(studyPostService.searchStudyPosts(
+            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+            Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+        .thenReturn(mockPage);
+
+    // When & Then
+    mockMvc.perform(get("/api/study-posts/search")
+            .param("meetingType", "ONLINE")
+            .param("title", "코테")
+            .param("subject", "JOB_PREPARATION")
+            .param("difficulty", "MEDIUM")
+            .param("dayType", "3")
+            .param("status", "RECRUITING")
+            .param("latitude", "37.5665")
+            .param("longitude", "126.9780")
+            .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content", hasSize(1)))
+        .andExpect(jsonPath("$.content[0].id").value(1L))
+        .andExpect(jsonPath("$.content[0].title").value("코딩 테스트 준비"))
+        .andExpect(jsonPath("$.content[0].studyName").value("코테"))
+        .andExpect(jsonPath("$.content[0].subject").value("JOB_PREPARATION"))
+        .andExpect(jsonPath("$.content[0].difficulty").value("MEDIUM"))
+        .andExpect(jsonPath("$.content[0].dayType[0]").value("월"))
+        .andExpect(jsonPath("$.content[0].dayType[1]").value("화"))
+        .andExpect(jsonPath("$.content[0].startDate").value("2024-12-04"))
+        .andExpect(jsonPath("$.content[0].endDate").value("2024-12-22"))
+        .andExpect(jsonPath("$.content[0].startTime").value("19:00:00"))
+        .andExpect(jsonPath("$.content[0].endTime").value("21:00:00"))
+        .andExpect(jsonPath("$.content[0].meetingType").value("ONLINE"))
+        .andExpect(jsonPath("$.content[0].recruitmentPeriod").value("2024-11-30"))
+        .andExpect(jsonPath("$.content[0].description").value("코테 공부할사람 모여"))
+        .andExpect(jsonPath("$.content[0].latitude").value(37.5665))
+        .andExpect(jsonPath("$.content[0].longitude").value(126.9780))
+        .andExpect(jsonPath("$.content[0].maxParticipants").value(5))
+        .andExpect(jsonPath("$.content[0].userId").value(11L));
   }
 }
