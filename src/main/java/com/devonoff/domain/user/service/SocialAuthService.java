@@ -50,7 +50,7 @@ public class SocialAuthService {
    * @param code
    * @return SignInResponse
    */
-  public SignInResponse kakaoSignUp(String code) {
+  public SignInResponse kakaoSignIn(String code) {
     String tokenUrl = "https://kauth.kakao.com/oauth/token";
 
     HttpHeaders headers = new HttpHeaders();
@@ -119,7 +119,7 @@ public class SocialAuthService {
    * @param code
    * @return SignInResponse
    */
-  public SignInResponse naverSignUp(String code) {
+  public SignInResponse naverSignIn(String code) {
     String tokenUrl = "https://nid.naver.com/oauth2.0/token";
 
     HttpHeaders headers = new HttpHeaders();
