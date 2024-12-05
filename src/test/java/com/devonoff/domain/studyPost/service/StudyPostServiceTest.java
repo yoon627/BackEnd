@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -176,9 +177,9 @@ class StudyPostServiceTest {
 
     // When
     Mockito.when(
-            studyPostRepository.findStudyPostsByFilters(Mockito.eq(meetingType), Mockito.eq(title),
-                Mockito.eq(subject), Mockito.eq(difficulty), Mockito.eq(dayType), Mockito.eq(status),
-                Mockito.eq(latitude), Mockito.eq(longitude), Mockito.eq(pageable)))
+            studyPostRepository.findStudyPostsByFilters(eq(meetingType), eq(title),
+                eq(subject), eq(difficulty), eq(dayType), eq(status),
+                eq(latitude), eq(longitude), eq(pageable)))
         .thenReturn(mockPage);
 
     // When
@@ -669,4 +670,36 @@ class StudyPostServiceTest {
     verifyNoMoreInteractions(studyPostRepository);
   }
 
+  @DisplayName("모집 기한이 지난 스터디 모집글 자동 취소 성공")
+  @Test
+  void cancelStudyPostIfExpired_Success() {
+    // Given
+    List<StudyPost> expiredPosts = List.of(
+        StudyPost.builder()
+            .id(1L)
+            .status(StudyPostStatus.RECRUITING)
+            .recruitmentPeriod(LocalDate.now().minusDays(1))
+            .build(),
+        StudyPost.builder()
+            .id(2L)
+            .status(StudyPostStatus.RECRUITING)
+            .recruitmentPeriod(LocalDate.now().minusDays(2))
+            .build()
+    );
+
+    when(studyPostRepository.findAllByRecruitmentPeriodBeforeAndStatus(
+        any(LocalDate.class), eq(StudyPostStatus.RECRUITING)))
+        .thenReturn(expiredPosts);
+
+    // When
+    studyPostService.cancelStudyPostIfExpired();
+
+    // Then
+    assertEquals(StudyPostStatus.CANCELED, expiredPosts.get(0).getStatus());
+    assertEquals(StudyPostStatus.CANCELED, expiredPosts.get(1).getStatus());
+
+    verify(studyPostRepository, times(1))
+        .findAllByRecruitmentPeriodBeforeAndStatus(any(LocalDate.class), eq(StudyPostStatus.RECRUITING));
+    verifyNoMoreInteractions(studyPostRepository);
+  }
 }
