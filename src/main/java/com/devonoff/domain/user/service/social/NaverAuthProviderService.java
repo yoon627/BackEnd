@@ -50,7 +50,7 @@ public class NaverAuthProviderService implements SocialAuthProviderService {
 
       return response.getBody().get("access_token").toString();
     } catch (Exception e) {
-      throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "Naver 로그인에 실패했습니다.");
+      throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "Naver AccessToken 요청에 실패했습니다.");
     }
   }
 
@@ -61,10 +61,14 @@ public class NaverAuthProviderService implements SocialAuthProviderService {
     HttpHeaders headers = new HttpHeaders();
     headers.setBearerAuth(accessToken);
 
-    HttpEntity<Void> request = new HttpEntity<>(headers);
-    ResponseEntity<Map> response = restTemplate.exchange(userInfoUrl, HttpMethod.GET, request, Map.class);
+    try {
+      HttpEntity<Void> request = new HttpEntity<>(headers);
+      ResponseEntity<Map> response = restTemplate.exchange(userInfoUrl, HttpMethod.GET, request, Map.class);
 
-    return (Map<String, Object>) response.getBody().get("response");
+      return (Map<String, Object>) response.getBody().get("response");
+    } catch(Exception e) {
+      throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "Naver 유저정보 요청에 실패했습니다.");
+    }
   }
 
   @Override

@@ -120,7 +120,7 @@ public class AuthController {
    * @return ResponseEntity<SignInResponse>
    */
   @PostMapping("/sign-in/{provider}")
-  public ResponseEntity<SignInResponse> signInKakao(
+  public ResponseEntity<SignInResponse> signInSocial(
       @PathVariable String provider,
       @RequestBody @Valid SocialAuthRequest socialAuthRequest
   ) {
