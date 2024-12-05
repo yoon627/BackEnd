@@ -6,6 +6,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -18,6 +19,7 @@ import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudySignupStatus;
 import com.devonoff.util.JwtProvider;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -208,5 +210,63 @@ class StudySignupControllerTest {
             .param("newStatus", newStatus.name()))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$").value("이미 확정된 신청 상태입니다."));
+  }
+
+  @Test
+  @DisplayName("신청 목록 조회 성공")
+  void getSignupList_Success() throws Exception {
+    // Given
+    Long studyPostId = 1L;
+    StudySignupStatus filterStatus = StudySignupStatus.PENDING;
+
+    List<StudySignupDto> studySignupList = List.of(
+        StudySignupDto.builder()
+            .signupId(10L)
+            .userId(101L)
+            .nickName("참가자1")
+            .status(StudySignupStatus.PENDING)
+            .build(),
+        StudySignupDto.builder()
+            .signupId(11L)
+            .userId(102L)
+            .nickName("참가자2")
+            .status(StudySignupStatus.PENDING)
+            .build()
+    );
+
+    when(studySignupService.getSignupList(studyPostId, filterStatus)).thenReturn(studySignupList);
+
+    // When & Then
+    mockMvc.perform(get("/api/study-signup")
+            .param("studyPostId", studyPostId.toString())
+            .param("status", filterStatus.name()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.size()").value(2))
+        .andExpect(jsonPath("$[0].signupId").value(10L))
+        .andExpect(jsonPath("$[0].nickName").value("참가자1"))
+        .andExpect(jsonPath("$[1].signupId").value(11L))
+        .andExpect(jsonPath("$[1].nickName").value("참가자2"));
+
+    verify(studySignupService).getSignupList(studyPostId, filterStatus);
+  }
+
+  @Test
+  @DisplayName("신청 목록 조회 실패 - 모집글 없음")
+  void getSignupList_Fail_StudyPostNotFound() throws Exception {
+    // Given
+    Long studyPostId = 1L;
+    StudySignupStatus filterStatus = StudySignupStatus.PENDING;
+
+    doThrow(new CustomException(ErrorCode.STUDY_POST_NOT_FOUND))
+        .when(studySignupService).getSignupList(anyLong(), any(StudySignupStatus.class));
+
+    // When & Then
+    mockMvc.perform(get("/api/study-signup")
+            .param("studyPostId", studyPostId.toString())
+            .param("status", filterStatus.name()))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$").value("스터디 모집글을 찾을 수 없습니다."));
+
+    verify(studySignupService).getSignupList(studyPostId, filterStatus);
   }
 }
