@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import com.devonoff.domain.study.entity.Study;
 import com.devonoff.domain.study.repository.StudyRepository;
 import com.devonoff.type.StudyStatus;
+import com.devonoff.util.TimeProvider;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
