@@ -112,18 +112,30 @@ public class AuthController {
     return ResponseEntity.ok(authService.signIn(signInRequest));
   }
 
+  /**
+   * 카카오 로그인
+   *
+   * @param socialAuthRequest
+   * @return ResponseEntity<SignInResponse>
+   */
   @PostMapping("/sign-in/kakao")
   public ResponseEntity<SignInResponse> signInKakao(
       @RequestBody @Valid SocialAuthRequest socialAuthRequest
   ) {
-    return ResponseEntity.ok(socialAuthService.kakaoSignUp(socialAuthRequest.getCode()));
+    return ResponseEntity.ok(socialAuthService.kakaoSignIn(socialAuthRequest.getCode()));
   }
 
+  /**
+   * 네이버 로그인
+   *
+   * @param socialAuthRequest
+   * @return ResponseEntity<SignInResponse>
+   */
   @PostMapping("/sign-in/naver")
   public ResponseEntity<SignInResponse> signInNaver(
       @RequestBody @Valid SocialAuthRequest socialAuthRequest
   ) {
-    return ResponseEntity.ok(socialAuthService.naverSignUp(socialAuthRequest.getCode()));
+    return ResponseEntity.ok(socialAuthService.naverSignIn(socialAuthRequest.getCode()));
   }
 
   /**
