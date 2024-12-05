@@ -2,6 +2,7 @@ package com.devonoff.domain.study.controller;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -9,9 +10,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.devonoff.domain.student.dto.StudentDto;
 import com.devonoff.domain.study.dto.StudyDto;
 import com.devonoff.domain.study.service.StudyService;
-import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.type.StudyStatus;
 import com.devonoff.util.JwtProvider;
 import java.util.List;
@@ -74,5 +75,39 @@ class StudyControllerTest {
         .andExpect(jsonPath("$.totalElements").value(2));
 
     verify(studyService, times(1)).getStudyList(any(Pageable.class));
+  }
+
+  @Test
+  @DisplayName("스터디 참가자 목록 조회 성공")
+  void getParticipants_Success() throws Exception {
+    // Given
+    Long studyId = 1L;
+
+    StudentDto student1 = StudentDto.builder()
+        .studentId(1L)
+        .userId(2L)
+        .nickname("참가자1")
+        .isLeader(false)
+        .build();
+
+    StudentDto student2 = StudentDto.builder()
+        .studentId(2L)
+        .userId(3L)
+        .nickname("참가자2")
+        .isLeader(false)
+        .build();
+
+    List<StudentDto> participants = List.of(student1, student2);
+
+    when(studyService.getParticipants(anyLong())).thenReturn(participants);
+
+    // When & Then
+    mockMvc.perform(get("/api/study/{studyId}/participants", studyId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(2)))
+        .andExpect(jsonPath("$[0].nickname").value("참가자1"))
+        .andExpect(jsonPath("$[1].nickname").value("참가자2"));
+
+    verify(studyService, times(1)).getParticipants(studyId);
   }
 }

@@ -8,6 +8,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.devonoff.domain.student.dto.StudentDto;
+import com.devonoff.domain.student.entity.Student;
+import com.devonoff.domain.student.repository.StudentRepository;
 import com.devonoff.domain.study.dto.StudyDto;
 import com.devonoff.domain.study.entity.Study;
 import com.devonoff.domain.study.repository.StudyRepository;
@@ -51,6 +54,9 @@ class StudyServiceTest {
 
   @Mock
   private TotalStudyTimeRepository totalStudyTimeRepository;
+
+  @Mock
+  private StudentRepository studentRepository;
 
   @Mock
   private TimeProvider timeProvider; // Mock TimeProvider
@@ -182,6 +188,72 @@ class StudyServiceTest {
     verify(authService, times(1)).getLoginUserId();
     verify(studyRepository, times(1))
         .findByStudentsUserIdOrderByCreatedAtDesc(loggedInUserId, pageable);
+  }
+
+  @Test
+  @DisplayName("스터디 참가자 목록 조회 성공")
+  void getParticipants_Success() {
+    // Given
+    Long studyId = 1L;
+
+    User leader = User.builder()
+        .id(1L)
+        .nickname("스터디장")
+        .build();
+
+    Study study = Study.builder()
+        .id(studyId)
+        .studyName("테스트 스터디")
+        .studyLeader(leader)
+        .subject(StudySubject.JOB_PREPARATION)
+        .difficulty(StudyDifficulty.MEDIUM)
+        .dayType(3)
+        .startDate(LocalDate.of(2024, 12, 10))
+        .endDate(LocalDate.of(2024, 12, 20))
+        .startTime(LocalTime.of(18, 0))
+        .endTime(LocalTime.of(20, 0))
+        .meetingType(StudyMeetingType.ONLINE)
+        .status(StudyStatus.IN_PROGRESS)
+        .totalParticipants(5)
+        .build();
+
+    User user1 = User.builder()
+        .id(2L)
+        .nickname("참가자1")
+        .build();
+
+    User user2 = User.builder()
+        .id(3L)
+        .nickname("참가자2")
+        .build();
+
+    Student student1 = Student.builder()
+        .id(1L)
+        .user(user1)
+        .study(study)
+        .isLeader(false)
+        .build();
+
+    Student student2 = Student.builder()
+        .id(2L)
+        .user(user2)
+        .study(study)
+        .isLeader(false)
+        .build();
+
+    List<Student> students = List.of(student1, student2);
+
+    when(studyRepository.findById(studyId)).thenReturn(Optional.of(study));
+    when(studentRepository.findByStudy(study)).thenReturn(students);
+
+    // When
+    List<StudentDto> result = studyService.getParticipants(studyId);
+
+    // Then
+    assertNotNull(result);
+    assertEquals(2, result.size());
+    assertEquals("참가자1", result.get(0).getNickname());
+    assertEquals("참가자2", result.get(1).getNickname());
   }
 
   @Test
