@@ -1,6 +1,9 @@
 package com.devonoff.domain.user.service;
 
 import com.devonoff.domain.redis.repository.AuthRedisRepository;
+import com.devonoff.domain.student.entity.Student;
+import com.devonoff.domain.student.repository.StudentRepository;
+import com.devonoff.domain.student.service.StudentService;
 import com.devonoff.domain.user.dto.auth.CertificationRequest;
 import com.devonoff.domain.user.dto.auth.EmailRequest;
 import com.devonoff.domain.user.dto.auth.NickNameCheckRequest;
@@ -17,6 +20,7 @@ import com.devonoff.type.LoginType;
 import com.devonoff.util.CertificationNumber;
 import com.devonoff.util.EmailProvider;
 import com.devonoff.util.JwtProvider;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -36,6 +40,8 @@ public class AuthService {
   private final EmailProvider emailProvider;
   private final JwtProvider jwtProvider;
   private final PasswordEncoder passwordEncoder;
+  private final StudentRepository studentRepository;
+  private final StudentService studentService;
 
   /**
    * 사용자 Nickname 중복 체크
@@ -209,6 +215,12 @@ public class AuthService {
     Long loginUserId = getLoginUserId();
     User user = userRepository.findById(loginUserId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+    // 사용자가 속한 모든 스터디에서 제거
+    List<Student> userStudents = studentRepository.findByUser(user);
+    for (Student student : userStudents) {
+      studentService.removeStudent(student.getId());
+    }
 
     authRedisRepository.deleteData(user.getEmail() + "-refreshToken");
 
