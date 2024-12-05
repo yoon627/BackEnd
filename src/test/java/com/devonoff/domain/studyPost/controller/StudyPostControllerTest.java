@@ -3,9 +3,11 @@ package com.devonoff.domain.studyPost.controller;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.service.StudyPostService;
 import com.devonoff.exception.CustomException;
@@ -30,6 +32,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = StudyPostController.class)
@@ -170,5 +173,76 @@ class StudyPostControllerTest {
         .andExpect(jsonPath("$.content[0].longitude").value(126.9780))
         .andExpect(jsonPath("$.content[0].maxParticipants").value(5))
         .andExpect(jsonPath("$.content[0].userId").value(11L));
+  }
+
+  @DisplayName("스터디 모집글 생성 성공")
+  @Test
+  void createStudyPost_Success() throws Exception {
+    // Given
+    MockMultipartFile file = new MockMultipartFile(
+        "file",
+        "test-image.jpg",
+        MediaType.IMAGE_JPEG_VALUE,
+        "Test Image Content".getBytes()
+    );
+
+    StudyPostDto response = StudyPostDto.builder()
+        .id(1L)
+        .title("코딩 테스트 준비")
+        .studyName("코테")
+        .subject(StudySubject.JOB_PREPARATION)
+        .difficulty(StudyDifficulty.MEDIUM)
+        .dayType(List.of("월", "화"))
+        .startDate(LocalDate.of(2024, 12, 10))
+        .endDate(LocalDate.of(2024, 12, 20))
+        .startTime(LocalTime.of(18, 0))
+        .endTime(LocalTime.of(20, 0))
+        .meetingType(StudyMeetingType.ONLINE)
+        .recruitmentPeriod(LocalDate.of(2024, 12, 5))
+        .description("코딩 테스트 스터디 모집")
+        .maxParticipants(5)
+        .userId(1L)
+        .thumbnailImgUrl("mock_thumbnail_url")
+        .build();
+
+    Mockito.when(studyPostService.createStudyPost(Mockito.any(StudyPostCreateRequest.class)))
+        .thenReturn(response);
+
+    // When & Then
+    mockMvc.perform(multipart("/api/study-posts")
+            .file(file)
+            .param("title", "코딩 테스트 준비")
+            .param("studyName", "코테")
+            .param("subject", "JOB_PREPARATION")
+            .param("difficulty", "MEDIUM")
+            .param("dayType", "월", "화")
+            .param("startDate", "2024-12-10")
+            .param("endDate", "2024-12-20")
+            .param("startTime", "18:00")
+            .param("endTime", "20:00")
+            .param("meetingType", "ONLINE")
+            .param("recruitmentPeriod", "2024-12-05")
+            .param("description", "코딩 테스트 스터디 모집")
+            .param("maxParticipants", "5")
+            .param("userId", "1")
+            .contentType(MediaType.MULTIPART_FORM_DATA))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(1L))
+        .andExpect(jsonPath("$.title").value("코딩 테스트 준비"))
+        .andExpect(jsonPath("$.studyName").value("코테"))
+        .andExpect(jsonPath("$.subject").value("JOB_PREPARATION"))
+        .andExpect(jsonPath("$.difficulty").value("MEDIUM"))
+        .andExpect(jsonPath("$.dayType[0]").value("월"))
+        .andExpect(jsonPath("$.dayType[1]").value("화"))
+        .andExpect(jsonPath("$.startDate").value("2024-12-10"))
+        .andExpect(jsonPath("$.endDate").value("2024-12-20"))
+        .andExpect(jsonPath("$.startTime").value("18:00:00"))
+        .andExpect(jsonPath("$.endTime").value("20:00:00"))
+        .andExpect(jsonPath("$.meetingType").value("ONLINE"))
+        .andExpect(jsonPath("$.recruitmentPeriod").value("2024-12-05"))
+        .andExpect(jsonPath("$.description").value("코딩 테스트 스터디 모집"))
+        .andExpect(jsonPath("$.maxParticipants").value(5))
+        .andExpect(jsonPath("$.userId").value(1L))
+        .andExpect(jsonPath("$.thumbnailImgUrl").value("mock_thumbnail_url"));
   }
 }
