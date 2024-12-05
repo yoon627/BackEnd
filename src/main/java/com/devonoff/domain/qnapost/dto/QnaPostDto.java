@@ -4,7 +4,6 @@ package com.devonoff.domain.qnapost.dto;
 
 import com.devonoff.domain.qnapost.entity.QnaPost;
 import com.devonoff.domain.user.dto.UserDto;
-import com.devonoff.type.PostType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,24 +15,21 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+
 public class QnaPostDto {
 
   private Long id;
+  private UserDto user;
   private String title;
   private String content;
-  private String thumbnailUrl;
-  private UserDto userDto;
-  private PostType postType;
 
 
   public static QnaPostDto fromEntity(QnaPost qnaPost) {
     return QnaPostDto.builder()
         .id(qnaPost.getId())
+        .user(UserDto.fromEntity(qnaPost.getUser())) // 간단한 사용자 정보
         .title(qnaPost.getTitle())
         .content(qnaPost.getContent())
-        .thumbnailUrl(qnaPost.getThumbnailUrl())
-        .userDto(UserDto.fromEntity(qnaPost.getUser()))
-        .postType(qnaPost.getPostType())
         .build();
   }
 }
