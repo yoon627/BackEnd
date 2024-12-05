@@ -2,6 +2,7 @@ package com.devonoff.domain.comment.controller;
 
 import com.devonoff.domain.comment.dto.CommentRequest;
 import com.devonoff.domain.comment.dto.CommentResponse;
+import com.devonoff.domain.comment.dto.CommentUpdateRequest;
 import com.devonoff.domain.comment.service.CommentService;
 import com.devonoff.type.PostType;
 import jakarta.validation.Valid;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -40,17 +42,30 @@ public class CommentController {
   }
 
 
+  @PutMapping("/{commentId}")
+  public ResponseEntity<Void> updateComment(
+      @PathVariable("commentId") Long commentId,
+      @RequestBody CommentUpdateRequest commentUpdateRequest) {
+
+    commentService.updateComment(commentId, commentUpdateRequest);
+    return ResponseEntity.ok().build();
+  }
+
   @GetMapping
   public ResponseEntity<Page<CommentResponse>> getComments(
-      @RequestParam("post_id") Long post_id,
-      @RequestParam(value = "page",defaultValue = "1") Integer page,
-      @RequestParam ("post_type")String post_type) {
+      @RequestParam("post_id") Long postId,
+      @RequestParam(value = "page", defaultValue = "1") Integer page,
+      @RequestParam("post_type") String postType) {
 
     // 페이지 번호를 0부터 시작하도록 변환
     Pageable pageable = PageRequest.of(page - 1, 5, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-    // 댓글 조회
-    Page<CommentResponse> response = commentService.getComments(post_id, PostType.valueOf(post_type.toUpperCase()), pageable);
+    // postType을 PostType enum으로 변환
+    PostType type = PostType.valueOf(postType.toUpperCase());
+
+    // 댓글 조회 로직을 서비스에 위임
+    Page<CommentResponse> response = commentService.getComments(postId, type, pageable);
+
     return ResponseEntity.ok(response);
   }
 
@@ -65,6 +80,6 @@ public class CommentController {
     commentService.deleteComment(commentId);
     return ResponseEntity.ok().build();
   }
-
-
 }
+
+
