@@ -185,7 +185,7 @@ class StudyPostServiceTest {
   void createStudyPost_Success() {
     // Given
     Long loggedInUserId = 1L; // 현재 사용자
-    Long userId = loggedInUserId; // 요청 사용자
+    // 요청 사용자
     MultipartFile mockFile = mock(MultipartFile.class);
 
     StudyPostCreateRequest request = StudyPostCreateRequest.builder()
@@ -204,12 +204,12 @@ class StudyPostServiceTest {
         .latitude(null)
         .longitude(null)
         .maxParticipants(5)
-        .userId(userId)
+        .userId(loggedInUserId)
         .file(mockFile)
         .build();
 
     User user = new User();
-    user.setId(userId);
+    user.setId(loggedInUserId);
 
     StudyPost studyPost = StudyPost.builder()
         .id(1L)
@@ -233,7 +233,7 @@ class StudyPostServiceTest {
 
     Mockito.when(authService.getLoginUserId()).thenReturn(loggedInUserId);
 
-    Mockito.when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    Mockito.when(userRepository.findById(loggedInUserId)).thenReturn(Optional.of(user));
     Mockito.when(photoService.save(mockFile)).thenReturn("mock_thumbnail_url");
     Mockito.when(studyPostRepository.save(any(StudyPost.class))).thenReturn(studyPost);
 
@@ -254,13 +254,119 @@ class StudyPostServiceTest {
     Assertions.assertEquals(request.getMeetingType(), result.getMeetingType());
     Assertions.assertEquals(request.getRecruitmentPeriod(), result.getRecruitmentPeriod());
     Assertions.assertEquals(request.getDescription(), result.getDescription());
-    Assertions.assertEquals(userId, result.getUserId());
+    Assertions.assertEquals(loggedInUserId, result.getUserId());
     Assertions.assertEquals("mock_thumbnail_url", result.getThumbnailImgUrl());
 
     verify(authService, times(1)).getLoginUserId();
-    verify(userRepository, times(1)).findById(userId);
+    verify(userRepository, times(1)).findById(loggedInUserId);
     verify(photoService, times(1)).save(mockFile);
     verify(studyPostRepository, times(1)).save(any(StudyPost.class));
+  }
+
+  @DisplayName("스터디 모집글 생성 실패 - 모집 인원이 잘못된 경우")
+  @Test
+  void createStudyPost_Fail_InvalidMaxParticipants() {
+    // Given
+    Long userId = 1L;
+    MultipartFile mockFile = mock(MultipartFile.class);
+
+    when(authService.getLoginUserId()).thenReturn(userId);
+
+    StudyPostCreateRequest request = StudyPostCreateRequest.builder()
+        .title("코딩 테스트 준비")
+        .studyName("코테")
+        .subject(StudySubject.JOB_PREPARATION)
+        .difficulty(StudyDifficulty.MEDIUM)
+        .dayType(List.of("월", "화"))
+        .startDate(LocalDate.of(2024, 12, 10))
+        .endDate(LocalDate.of(2024, 12, 20))
+        .startTime(LocalTime.of(18, 0))
+        .endTime(LocalTime.of(20, 0))
+        .meetingType(StudyMeetingType.ONLINE)
+        .recruitmentPeriod(LocalDate.of(2024, 12, 5))
+        .description("코딩 테스트 스터디 모집")
+        .maxParticipants(15) // 잘못된 모집 인원
+        .userId(userId)
+        .file(mockFile)
+        .build();
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class,
+        () -> studyPostService.createStudyPost(request));
+
+    assertEquals(ErrorCode.INVALID_MAX_PARTICIPANTS, exception.getErrorCode());
+  }
+
+  @DisplayName("스터디 모집글 생성 실패 - 유저가 없는 경우")
+  @Test
+  void createStudyPost_Fail_UserNotFound() {
+    // Given
+    Long userId = 1L;
+    MultipartFile mockFile = mock(MultipartFile.class);
+
+    when(authService.getLoginUserId()).thenReturn(userId);
+
+    StudyPostCreateRequest request = StudyPostCreateRequest.builder()
+        .title("코딩 테스트 준비")
+        .studyName("코테")
+        .subject(StudySubject.JOB_PREPARATION)
+        .difficulty(StudyDifficulty.MEDIUM)
+        .dayType(List.of("월", "화"))
+        .startDate(LocalDate.of(2024, 12, 10))
+        .endDate(LocalDate.of(2024, 12, 20))
+        .startTime(LocalTime.of(18, 0))
+        .endTime(LocalTime.of(20, 0))
+        .meetingType(StudyMeetingType.ONLINE)
+        .recruitmentPeriod(LocalDate.of(2024, 12, 5))
+        .description("코딩 테스트 스터디 모집")
+        .maxParticipants(5)
+        .userId(userId)
+        .file(mockFile)
+        .build();
+
+    when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class,
+        () -> studyPostService.createStudyPost(request));
+
+    assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+  }
+
+  @DisplayName("스터디 모집글 생성 실패 - 병행 스터디에서 위도/경도 없음")
+  @Test
+  void createStudyPost_Fail_LocationRequiredForHybrid() {
+    // Given
+    Long userId = 1L;
+    MultipartFile mockFile = mock(MultipartFile.class);
+
+    when(authService.getLoginUserId()).thenReturn(userId);
+
+    StudyPostCreateRequest request = StudyPostCreateRequest.builder()
+        .title("코딩 테스트 준비")
+        .studyName("코테")
+        .subject(StudySubject.JOB_PREPARATION)
+        .difficulty(StudyDifficulty.MEDIUM)
+        .dayType(List.of("월", "화"))
+        .startDate(LocalDate.of(2024, 12, 10))
+        .endDate(LocalDate.of(2024, 12, 20))
+        .startTime(LocalTime.of(18, 0))
+        .endTime(LocalTime.of(20, 0))
+        .meetingType(StudyMeetingType.HYBRID) // 병행 스터디
+        .recruitmentPeriod(LocalDate.of(2024, 12, 5))
+        .description("코딩 테스트 스터디 모집")
+        .maxParticipants(5)
+        .userId(userId)
+        .file(mockFile)
+        .build();
+
+    when(userRepository.findById(userId)).thenReturn(Optional.of(new User()));
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class,
+        () -> studyPostService.createStudyPost(request));
+
+    assertEquals(ErrorCode.LOCATION_REQUIRED_FOR_HYBRID, exception.getErrorCode());
   }
 
   @DisplayName("스터디 모집글 수정 성공")
@@ -299,7 +405,8 @@ class StudyPostServiceTest {
 
     when(authService.getLoginUserId()).thenReturn(loggedInUserId);
     when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
-    when(studyPostRepository.save(any(StudyPost.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(studyPostRepository.save(any(StudyPost.class))).thenAnswer(
+        invocation -> invocation.getArgument(0));
 
     // When
     StudyPostDto result = studyPostService.updateStudyPost(studyPostId, updateRequest);
