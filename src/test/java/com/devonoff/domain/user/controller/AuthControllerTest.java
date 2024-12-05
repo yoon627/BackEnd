@@ -20,7 +20,7 @@ import com.devonoff.domain.user.dto.auth.SignInResponse;
 import com.devonoff.domain.user.dto.auth.SignUpRequest;
 import com.devonoff.domain.user.dto.auth.SocialAuthRequest;
 import com.devonoff.domain.user.service.AuthService;
-import com.devonoff.domain.user.service.SocialAuthService;
+import com.devonoff.domain.user.service.social.SocialAuthService;
 import com.devonoff.util.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;

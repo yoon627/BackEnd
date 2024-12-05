@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import com.devonoff.domain.user.dto.auth.SignInResponse;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
+import com.devonoff.domain.user.service.social.SocialAuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.util.JwtProvider;
