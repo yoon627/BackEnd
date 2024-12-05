@@ -2,6 +2,7 @@ package com.devonoff.domain.studySignup.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -154,6 +155,58 @@ class StudySignupControllerTest {
             .param("newStatus", newStatus.name()))
         .andExpect(status().isOk());
 
-    verify(studySignupService, times(1)).updateSignupStatus(anyLong(), any(StudySignupStatus.class));
+    verify(studySignupService, times(1)).updateSignupStatus(anyLong(),
+        any(StudySignupStatus.class));
+  }
+
+  @Test
+  @DisplayName("신청 상태 관리 실패 - 신청 내역 없음")
+  void updateSignupStatus_Fail_SignupNotFound() throws Exception {
+    // Given
+    Long studySignupId = 1L;
+    StudySignupStatus newStatus = StudySignupStatus.APPROVED;
+
+    doThrow(new CustomException(ErrorCode.SIGNUP_NOT_FOUND))
+        .when(studySignupService).updateSignupStatus(anyLong(), any(StudySignupStatus.class));
+
+    // When & Then
+    mockMvc.perform(patch("/api/study-signup/{studySignupId}", studySignupId)
+            .param("newStatus", newStatus.name()))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$").value("스터디 신청 내역을 찾을 수 없습니다."));
+  }
+
+  @Test
+  @DisplayName("신청 상태 관리 실패 - 모집 상태가 모집 중이 아님")
+  void updateSignupStatus_Fail_InvalidStudyStatus() throws Exception {
+    // Given
+    Long studySignupId = 1L;
+    StudySignupStatus newStatus = StudySignupStatus.APPROVED;
+
+    doThrow(new CustomException(ErrorCode.INVALID_STUDY_STATUS))
+        .when(studySignupService).updateSignupStatus(anyLong(), any(StudySignupStatus.class));
+
+    // When & Then
+    mockMvc.perform(patch("/api/study-signup/{studySignupId}", studySignupId)
+            .param("newStatus", newStatus.name()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$").value("잘못된 스터디 상태값입니다."));
+  }
+
+  @Test
+  @DisplayName("신청 상태 관리 실패 - 이미 확정된 상태")
+  void updateSignupStatus_Fail_StatusAlreadyFinalized() throws Exception {
+    // Given
+    Long studySignupId = 1L;
+    StudySignupStatus newStatus = StudySignupStatus.APPROVED;
+
+    doThrow(new CustomException(ErrorCode.SIGNUP_STATUS_ALREADY_FINALIZED))
+        .when(studySignupService).updateSignupStatus(anyLong(), any(StudySignupStatus.class));
+
+    // When & Then
+    mockMvc.perform(patch("/api/study-signup/{studySignupId}", studySignupId)
+            .param("newStatus", newStatus.name()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$").value("이미 확정된 신청 상태입니다."));
   }
 }
