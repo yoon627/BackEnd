@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.devonoff.domain.studyPost.entity.StudyPost;
@@ -20,6 +21,7 @@ import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySignupStatus;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -332,5 +334,72 @@ class StudySignupServiceTest {
     );
 
     assertEquals(ErrorCode.SIGNUP_STATUS_ALREADY_FINALIZED, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("신청 목록 조회 성공")
+  void getSignupList_Success() {
+    // Given
+    Long studyPostId = 1L;
+    Long loggedInUserId = 100L;
+    StudySignupStatus filterStatus = StudySignupStatus.PENDING;
+
+    StudyPost studyPost = StudyPost.builder()
+        .id(studyPostId)
+        .status(StudyPostStatus.RECRUITING)
+        .user(User.builder().id(loggedInUserId).build())
+        .build();
+
+    StudySignup signup1 = StudySignup.builder()
+        .id(10L)
+        .user(User.builder().id(101L).nickname("참가자1").build())
+        .status(StudySignupStatus.PENDING)
+        .studyPost(studyPost)
+        .build();
+
+    StudySignup signup2 = StudySignup.builder()
+        .id(11L)
+        .user(User.builder().id(102L).nickname("참가자2").build())
+        .status(StudySignupStatus.PENDING)
+        .studyPost(studyPost)
+        .build();
+
+    List<StudySignup> studySignups = List.of(signup1, signup2);
+
+    when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
+    when(authService.getLoginUserId()).thenReturn(loggedInUserId);
+    when(studySignupRepository.findByStudyPostAndStatus(studyPost, filterStatus)).thenReturn(
+        studySignups);
+
+    // When
+    List<StudySignupDto> result = studySignupService.getSignupList(studyPostId, filterStatus);
+
+    // Then
+    assertNotNull(result);
+    assertEquals(2, result.size());
+    assertEquals("참가자1", result.get(0).getNickName());
+    assertEquals("참가자2", result.get(1).getNickName());
+    verify(studyPostRepository).findById(studyPostId);
+    verify(authService).getLoginUserId();
+    verify(studySignupRepository).findByStudyPostAndStatus(studyPost, filterStatus);
+  }
+
+  @Test
+  @DisplayName("신청 목록 조회 실패 - 모집글 없음")
+  void getSignupList_Fail_StudyPostNotFound() {
+    // Given
+    Long studyPostId = 1L;
+    StudySignupStatus filterStatus = StudySignupStatus.PENDING;
+
+    when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.empty());
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class, () ->
+        studySignupService.getSignupList(studyPostId, filterStatus)
+    );
+
+    assertEquals(ErrorCode.STUDY_POST_NOT_FOUND, exception.getErrorCode());
+    verify(studyPostRepository).findById(studyPostId);
+    verifyNoInteractions(authService, studySignupRepository);
   }
 }
