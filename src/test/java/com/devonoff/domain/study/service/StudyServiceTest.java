@@ -8,6 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.devonoff.domain.study.dto.StudyDto;
 import com.devonoff.domain.study.entity.Study;
 import com.devonoff.domain.study.repository.StudyRepository;
 import com.devonoff.domain.studyPost.entity.StudyPost;
@@ -15,10 +16,12 @@ import com.devonoff.domain.studyPost.repository.StudyPostRepository;
 import com.devonoff.domain.totalstudytime.entity.TotalStudyTime;
 import com.devonoff.domain.totalstudytime.repository.TotalStudyTimeRepository;
 import com.devonoff.domain.user.entity.User;
+import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
+import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
 import java.time.LocalDate;
@@ -32,6 +35,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 class StudyServiceTest {
@@ -50,6 +57,9 @@ class StudyServiceTest {
 
   @InjectMocks
   private StudyService studyService;
+
+  @Mock
+  private AuthService authService;
 
   @DisplayName("모집글 마감 시 스터디 생성 성공")
   @Test
@@ -112,6 +122,66 @@ class StudyServiceTest {
 
     assertEquals(ErrorCode.STUDY_POST_NOT_FOUND, exception.getErrorCode());
     verify(studyPostRepository, times(1)).findById(studyPostId);
+  }
+
+  @DisplayName("본인이 속한 스터디 목록 조회 성공")
+  @Test
+  void getStudyList_Success() {
+    // Given
+    Long loggedInUserId = 1L;
+    Pageable pageable = PageRequest.of(0, 20);
+
+    StudyPost studyPost1 = StudyPost.builder()
+        .id(1L)
+        .studyName("스터디 1")
+        .status(StudyPostStatus.RECRUITING)
+        .build();
+
+    StudyPost studyPost2 = StudyPost.builder()
+        .id(2L)
+        .studyName("스터디 2")
+        .status(StudyPostStatus.RECRUITING)
+        .build();
+
+    Study study1 = Study.builder()
+        .id(1L)
+        .studyName("스터디 1")
+        .studyPost(studyPost1)
+        .status(StudyStatus.PENDING)
+        .studyLeader(new User())
+        .dayType(3)
+        .build();
+
+    Study study2 = Study.builder()
+        .id(2L)
+        .studyName("스터디 2")
+        .studyPost(studyPost2)
+        .status(StudyStatus.IN_PROGRESS)
+        .studyLeader(new User())
+        .dayType(3)
+        .build();
+
+    List<Study> studies = List.of(study1, study2);
+    Page<Study> studyPage = new PageImpl<>(studies, pageable, studies.size());
+
+    when(authService.getLoginUserId()).thenReturn(loggedInUserId);
+
+    when(studyRepository.findByStudentsUserIdOrderByCreatedAtDesc(loggedInUserId, pageable))
+        .thenReturn(studyPage);
+
+    // When
+    Page<StudyDto> result = studyService.getStudyList(pageable);
+
+    // Then
+    assertNotNull(result, "Result should not be null");
+    assertEquals(2, result.getTotalElements());
+    assertEquals("스터디 1", result.getContent().get(0).getStudyName());
+    assertEquals("스터디 2", result.getContent().get(1).getStudyName());
+    assertEquals(2, result.getContent().size());
+
+    verify(authService, times(1)).getLoginUserId();
+    verify(studyRepository, times(1))
+        .findByStudentsUserIdOrderByCreatedAtDesc(loggedInUserId, pageable);
   }
 
   @Test
