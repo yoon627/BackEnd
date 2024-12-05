@@ -49,7 +49,7 @@ public class KakaoAuthProviderService implements SocialAuthProviderService {
 
       return response.getBody().get("access_token").toString();
     } catch(Exception e) {
-      throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "Kakao 로그인에 실패했습니다.");
+      throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "Kakao AccessToken 요청에 실패했습니다.");
     }
   }
 
@@ -60,15 +60,19 @@ public class KakaoAuthProviderService implements SocialAuthProviderService {
     HttpHeaders headers = new HttpHeaders();
     headers.setBearerAuth(accessToken);
 
-    HttpEntity<Void> request = new HttpEntity<>(headers);
-    ResponseEntity<Map> response = restTemplate.exchange(userInfoUrl, HttpMethod.GET, request, Map.class);
+    try {
+      HttpEntity<Void> request = new HttpEntity<>(headers);
+      ResponseEntity<Map> response = restTemplate.exchange(userInfoUrl, HttpMethod.GET, request, Map.class);
 
-    Map<String, Object> kakaoAccount = (Map<String, Object>) response.getBody().get("kakao_account");
+      Map<String, Object> kakaoAccount = (Map<String, Object>) response.getBody().get("kakao_account");
 
-    return Map.of(
-        "id", response.getBody().get("id"),
-        "email", kakaoAccount.get("email")
-    );
+      return Map.of(
+          "id", response.getBody().get("id"),
+          "email", kakaoAccount.get("email")
+      );
+    } catch(Exception e) {
+      throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "Kakao 유저정보 요청에 실패했습니다.");
+    }
   }
 
   @Override
