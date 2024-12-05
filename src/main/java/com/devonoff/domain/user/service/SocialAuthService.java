@@ -3,6 +3,8 @@ package com.devonoff.domain.user.service;
 import com.devonoff.domain.user.dto.auth.SignInResponse;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
+import com.devonoff.exception.CustomException;
+import com.devonoff.type.ErrorCode;
 import com.devonoff.type.LoginType;
 import com.devonoff.util.JwtProvider;
 import java.util.Map;
@@ -63,11 +65,14 @@ public class SocialAuthService {
     body.add("redirect_uri", kakaoRedirectUri);
     body.add("code", code);
 
-    HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
-    ResponseEntity<Map> response = restTemplate.exchange(tokenUrl, HttpMethod.POST, request,
-        Map.class);
-
-    return getKakaoUserInfo(response.getBody().get("access_token").toString());
+    try {
+      HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
+      ResponseEntity<Map> response = restTemplate.exchange(tokenUrl, HttpMethod.POST, request,
+          Map.class);
+      return getKakaoUserInfo(response.getBody().get("access_token").toString());
+    } catch (Exception e) {
+      throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "KAKAO 로그인에 실패했습니다.");
+    }
   }
 
   /**
@@ -132,11 +137,16 @@ public class SocialAuthService {
     body.add("redirect_uri", naverRedirectUri);
     body.add("code", code);
 
-    HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
-    ResponseEntity<Map> response = restTemplate.exchange(tokenUrl, HttpMethod.POST, request,
-        Map.class);
+    try {
+      HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
+      ResponseEntity<Map> response = restTemplate.exchange(tokenUrl, HttpMethod.POST, request,
+          Map.class);
 
-    return getNaverUserInfo(response.getBody().get("access_token").toString());
+      return getNaverUserInfo(response.getBody().get("access_token").toString());
+    } catch(Exception e) {
+      throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "Naver 로그인에 실패했습니다.");
+    }
+
   }
 
   /**
