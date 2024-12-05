@@ -8,21 +8,26 @@ import com.devonoff.domain.user.dto.auth.ReissueTokenResponse;
 import com.devonoff.domain.user.dto.auth.SignInRequest;
 import com.devonoff.domain.user.dto.auth.SignInResponse;
 import com.devonoff.domain.user.dto.auth.SignUpRequest;
+import com.devonoff.domain.user.dto.auth.SocialAuthRequest;
 import com.devonoff.domain.user.service.AuthService;
+import com.devonoff.domain.user.service.SocialAuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
 public class AuthController {
 
   private final AuthService authService;
+  private final SocialAuthService socialAuthService;
 
   /**
    * 닉네임 중복 확인
@@ -105,6 +110,20 @@ public class AuthController {
       @RequestBody @Valid SignInRequest signInRequest
   ) {
     return ResponseEntity.ok(authService.signIn(signInRequest));
+  }
+
+  @PostMapping("/sign-in/kakao")
+  public ResponseEntity<SignInResponse> signInKakao(
+      @RequestBody @Valid SocialAuthRequest socialAuthRequest
+  ) {
+    return ResponseEntity.ok(socialAuthService.kakaoSignUp(socialAuthRequest.getCode()));
+  }
+
+  @PostMapping("/sign-in/naver")
+  public ResponseEntity<SignInResponse> signInNaver(
+      @RequestBody @Valid SocialAuthRequest socialAuthRequest
+  ) {
+    return ResponseEntity.ok(socialAuthService.naverSignUp(socialAuthRequest.getCode()));
   }
 
   /**
