@@ -699,7 +699,116 @@ class StudyPostServiceTest {
     assertEquals(StudyPostStatus.CANCELED, expiredPosts.get(1).getStatus());
 
     verify(studyPostRepository, times(1))
-        .findAllByRecruitmentPeriodBeforeAndStatus(any(LocalDate.class), eq(StudyPostStatus.RECRUITING));
+        .findAllByRecruitmentPeriodBeforeAndStatus(any(LocalDate.class),
+            eq(StudyPostStatus.RECRUITING));
     verifyNoMoreInteractions(studyPostRepository);
+  }
+
+  @DisplayName("모집 취소된 스터디 모집 기간 연장 - 성공")
+  @Test
+  void extendCanceledStudy_Success() {
+    // Given
+    Long studyPostId = 1L;
+    Long loggedInUserId = 1L;
+    LocalDate originalRecruitmentPeriod = LocalDate.of(2024, 12, 5);
+    LocalDate newRecruitmentPeriod = LocalDate.of(2024, 12, 20);
+
+    StudyPost studyPost = StudyPost.builder()
+        .id(studyPostId)
+        .status(StudyPostStatus.CANCELED)
+        .recruitmentPeriod(originalRecruitmentPeriod)
+        .user(User.builder().id(loggedInUserId).build())
+        .build();
+
+    when(authService.getLoginUserId()).thenReturn(loggedInUserId);
+    when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
+    when(studyPostRepository.save(any(StudyPost.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    // When
+    studyPostService.extendCanceledStudy(studyPostId, newRecruitmentPeriod);
+
+    // Then
+    assertEquals(StudyPostStatus.RECRUITING, studyPost.getStatus());
+    assertEquals(newRecruitmentPeriod, studyPost.getRecruitmentPeriod());
+
+    verify(authService, times(1)).getLoginUserId();
+    verify(studyPostRepository, times(1)).findById(studyPostId);
+    verify(studyPostRepository, times(1)).save(studyPost);
+  }
+
+  @DisplayName("모집 취소된 스터디 모집 기간 연장 실패 - 모집글 없음")
+  @Test
+  void extendCanceledStudy_Fail_StudyPostNotFound() {
+    // Given
+    Long studyPostId = 999L;
+    LocalDate newRecruitmentPeriod = LocalDate.of(2024, 12, 20);
+
+    when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.empty());
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class,
+        () -> studyPostService.extendCanceledStudy(studyPostId, newRecruitmentPeriod));
+
+    assertEquals(ErrorCode.STUDY_POST_NOT_FOUND, exception.getErrorCode());
+    verify(studyPostRepository, times(1)).findById(studyPostId);
+    verifyNoMoreInteractions(studyPostRepository);
+  }
+
+  @DisplayName("모집 취소된 스터디 모집 기간 연장 실패 - 취소 상태가 아님")
+  @Test
+  void extendCanceledStudy_Fail_InvalidStudyStatus() {
+    // Given
+    Long studyPostId = 1L;
+    Long loggedInUserId = 1L;
+    LocalDate originalRecruitmentPeriod = LocalDate.of(2024, 12, 5);
+    LocalDate newRecruitmentPeriod = LocalDate.of(2024, 12, 20);
+
+    StudyPost studyPost = StudyPost.builder()
+        .id(studyPostId)
+        .status(StudyPostStatus.RECRUITING)
+        .recruitmentPeriod(originalRecruitmentPeriod)
+        .user(User.builder().id(loggedInUserId).build())
+        .build();
+
+    when(authService.getLoginUserId()).thenReturn(loggedInUserId);
+    when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class,
+        () -> studyPostService.extendCanceledStudy(studyPostId, newRecruitmentPeriod));
+
+    assertEquals(ErrorCode.INVALID_STUDY_STATUS, exception.getErrorCode());
+    verify(authService, times(1)).getLoginUserId();
+    verify(studyPostRepository, times(1)).findById(studyPostId);
+    verify(studyPostRepository, never()).save(any(StudyPost.class));
+  }
+
+  @DisplayName("모집 취소된 스터디 모집 기간 연장 실패 - 모집기간 연장 한달 초과")
+  @Test
+  void extendCanceledStudy_Fail_StudyExtensionFailed() {
+    // Given
+    Long studyPostId = 1L;
+    Long loggedInUserId = 1L;
+    LocalDate originalRecruitmentPeriod = LocalDate.of(2024, 12, 5);
+    LocalDate newRecruitmentPeriod = LocalDate.of(2025, 1, 10);
+
+    StudyPost studyPost = StudyPost.builder()
+        .id(studyPostId)
+        .status(StudyPostStatus.CANCELED)
+        .recruitmentPeriod(originalRecruitmentPeriod)
+        .user(User.builder().id(loggedInUserId).build())
+        .build();
+
+    when(authService.getLoginUserId()).thenReturn(loggedInUserId);
+    when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class,
+        () -> studyPostService.extendCanceledStudy(studyPostId, newRecruitmentPeriod));
+
+    assertEquals(ErrorCode.STUDY_EXTENSION_FAILED, exception.getErrorCode());
+    verify(authService, times(1)).getLoginUserId();
+    verify(studyPostRepository, times(1)).findById(studyPostId);
+    verify(studyPostRepository, never()).save(any(StudyPost.class));
   }
 }
