@@ -2,10 +2,12 @@ package com.devonoff.domain.studySignup.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -268,5 +270,37 @@ class StudySignupControllerTest {
         .andExpect(jsonPath("$").value("스터디 모집글을 찾을 수 없습니다."));
 
     verify(studySignupService).getSignupList(studyPostId, filterStatus);
+  }
+
+  @Test
+  @DisplayName("신청 취소 성공")
+  void cancelSignup_Success() throws Exception {
+    // Given
+    Long studySignupId = 1L;
+
+    doNothing().when(studySignupService).cancelSignup(studySignupId);
+
+    // When & Then
+    mockMvc.perform(delete("/api/study-signup/{studySignupId}", studySignupId))
+        .andExpect(status().isOk());
+
+    verify(studySignupService).cancelSignup(studySignupId);
+  }
+
+  @Test
+  @DisplayName("신청 취소 실패 - 신청 내역 없음")
+  void cancelSignup_Fail_SignupNotFound() throws Exception {
+    // Given
+    Long studySignupId = 1L;
+
+    doThrow(new CustomException(ErrorCode.SIGNUP_NOT_FOUND))
+        .when(studySignupService).cancelSignup(studySignupId);
+
+    // When & Then
+    mockMvc.perform(delete("/api/study-signup/{studySignupId}", studySignupId))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$").value("스터디 신청 내역을 찾을 수 없습니다."));
+
+    verify(studySignupService).cancelSignup(studySignupId);
   }
 }

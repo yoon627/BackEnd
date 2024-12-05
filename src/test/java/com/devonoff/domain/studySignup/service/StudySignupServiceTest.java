@@ -402,4 +402,56 @@ class StudySignupServiceTest {
     verify(studyPostRepository).findById(studyPostId);
     verifyNoInteractions(authService, studySignupRepository);
   }
+
+  @Test
+  @DisplayName("신청 취소 성공")
+  void cancelSignup_Success() {
+    // Given
+    Long studySignupId = 1L;
+    Long loggedInUserId = 100L;
+
+    StudyPost studyPost = StudyPost.builder()
+        .id(10L)
+        .currentParticipants(3)
+        .maxParticipants(5)
+        .build();
+
+    StudySignup studySignup = StudySignup.builder()
+        .id(studySignupId)
+        .user(User.builder().id(loggedInUserId).build())
+        .status(StudySignupStatus.APPROVED)
+        .studyPost(studyPost)
+        .build();
+
+    when(studySignupRepository.findById(studySignupId)).thenReturn(Optional.of(studySignup));
+    when(authService.getLoginUserId()).thenReturn(loggedInUserId);
+
+    // When
+    studySignupService.cancelSignup(studySignupId);
+
+    // Then
+    assertEquals(2, studyPost.getCurrentParticipants());
+    verify(studySignupRepository).findById(studySignupId);
+    verify(authService).getLoginUserId();
+    verify(studySignupRepository).delete(studySignup);
+    verify(studyPostRepository).save(studyPost);
+  }
+
+  @Test
+  @DisplayName("신청 취소 실패 - 신청 내역 없음")
+  void cancelSignup_Fail_SignupNotFound() {
+    // Given
+    Long studySignupId = 1L;
+
+    when(studySignupRepository.findById(studySignupId)).thenReturn(Optional.empty());
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class, () ->
+        studySignupService.cancelSignup(studySignupId)
+    );
+
+    assertEquals(ErrorCode.SIGNUP_NOT_FOUND, exception.getErrorCode());
+    verify(studySignupRepository).findById(studySignupId);
+    verifyNoInteractions(authService, studyPostRepository);
+  }
 }
