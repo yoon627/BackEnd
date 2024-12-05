@@ -18,7 +18,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
+import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @Setter
@@ -65,16 +65,15 @@ public class StudyPostCreateRequest {
   @NotBlank(message = "본문 내용은 필수입니다.")
   private String description;
 
-  @Nullable
   private Double latitude;
 
-  @Nullable
   private Double longitude;
 
-  private StudyPostStatus status = StudyPostStatus.RECRUITING; // 기본값: 모집 중
+  private StudyPostStatus status;
 
-  @Nullable
   private String thumbnailImgUrl; // 썸네일 이미지
+
+  private MultipartFile file;
 
   @NotNull(message = "최대 모집 인원은 필수입니다.")
   @Min(value = 2, message = "최소 모집 인원은 2명입니다.")

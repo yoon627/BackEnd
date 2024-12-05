@@ -8,16 +8,15 @@ import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySubject;
 import com.devonoff.util.DayTypeUtils;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -43,6 +42,8 @@ public class StudyPostDto {
   private Integer maxParticipants;
   private Integer currentParticipants;
   private Long userId;
+  private LocalDateTime createdAt;
+  private LocalDateTime updatedAt;
 
   public static StudyPostDto fromEntity(StudyPost studyPost) {
     return StudyPostDto.builder()
@@ -66,6 +67,8 @@ public class StudyPostDto {
         .maxParticipants(studyPost.getMaxParticipants())
         .currentParticipants(studyPost.getCurrentParticipants())
         .userId(studyPost.getUser().getId())
+        .createdAt(studyPost.getCreatedAt())
+        .updatedAt(studyPost.getUpdatedAt())
         .build();
   }
 }

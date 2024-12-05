@@ -1,14 +1,12 @@
 package com.devonoff.domain.studySignup.controller;
 
 import com.devonoff.domain.studySignup.dto.StudySignupCreateRequest;
-import com.devonoff.domain.studySignup.dto.StudySignupCreateResponse;
 import com.devonoff.domain.studySignup.dto.StudySignupDto;
 import com.devonoff.domain.studySignup.service.StudySignupService;
 import com.devonoff.type.StudySignupStatus;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,10 +27,10 @@ public class StudySignupController {
 
   // 스터디 신청
   @PostMapping
-  public ResponseEntity<StudySignupCreateResponse> createStudySignup(
+  public ResponseEntity<StudySignupDto> createStudySignup(
       @RequestBody @Valid StudySignupCreateRequest request) {
-    StudySignupCreateResponse response = studySignupService.createStudySignup(request);
-    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    StudySignupDto response = studySignupService.createStudySignup(request);
+    return ResponseEntity.ok(response);
   }
 
   // 신청 상태 관리(승인/거절)
@@ -40,7 +38,7 @@ public class StudySignupController {
   public ResponseEntity<Void> updateSignupStatus(
       @PathVariable Long studySignupId, @RequestParam StudySignupStatus newStatus) {
     studySignupService.updateSignupStatus(studySignupId, newStatus);
-    return ResponseEntity.noContent().build();
+    return ResponseEntity.ok().build();
   }
 
   // 상태별 신청 목록 조회
@@ -54,10 +52,8 @@ public class StudySignupController {
 
   // 신청 취소
   @DeleteMapping("/{studySignupId}")
-  public ResponseEntity<Void> cancelSignup(
-      @PathVariable Long studySignupId,
-      @RequestParam Long userId) {
-    studySignupService.cancelSignup(studySignupId, userId);
-    return ResponseEntity.noContent().build();
+  public ResponseEntity<Void> cancelSignup(@PathVariable Long studySignupId) {
+    studySignupService.cancelSignup(studySignupId);
+    return ResponseEntity.ok().build();
   }
 }

@@ -14,7 +14,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -36,4 +35,5 @@ public class StudyPostUpdateRequest {
   private Double longitude;
   private StudyPostStatus status;
   private String thumbnailImgUrl;
+  private Integer maxParticipants;
 }

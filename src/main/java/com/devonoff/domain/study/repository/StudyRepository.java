@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface StudyRepository extends JpaRepository<Study, Long> {
 
-  Page<Study> findAllByOrderByCreatedAtDesc(Pageable pageable);
+  Page<Study> findByStudentsUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
   List<Study> findAllByStatusAndStartDateBefore(StudyStatus status, LocalDateTime now);
 

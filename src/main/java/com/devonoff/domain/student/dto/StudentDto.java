@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,12 +16,14 @@ public class StudentDto {
   private Long studentId;
   private Long userId;
   private String nickname;
+  private Boolean isLeader;
 
   public static StudentDto fromEntity(Student student) {
     return StudentDto.builder()
         .studentId(student.getId())
         .userId(student.getUser().getId())
         .nickname(student.getUser().getNickname())
+        .isLeader(student.getIsLeader())
         .build();
   }
 }
