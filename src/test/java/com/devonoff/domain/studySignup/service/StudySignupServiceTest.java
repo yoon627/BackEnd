@@ -255,4 +255,82 @@ class StudySignupServiceTest {
     verify(studySignupRepository).save(studySignup);
     verify(studyPostRepository).save(studyPost);
   }
+
+  @Test
+  @DisplayName("신청 상태 관리 실패 - 신청 내역 없음")
+  void updateSignupStatus_Fail_SignupNotFound() {
+    // Given
+    Long studySignupId = 1L;
+
+    when(studySignupRepository.findById(studySignupId)).thenReturn(Optional.empty());
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class, () ->
+        studySignupService.updateSignupStatus(studySignupId, StudySignupStatus.APPROVED)
+    );
+
+    assertEquals(ErrorCode.SIGNUP_NOT_FOUND, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("신청 상태 관리 실패 - 모집 상태가 모집 중이 아님")
+  void updateSignupStatus_Fail_InvalidStudyStatus() {
+    // Given
+    Long studySignupId = 1L;
+    Long loggedInUserId = 100L;
+
+    StudyPost studyPost = StudyPost.builder()
+        .id(10L)
+        .status(StudyPostStatus.CLOSED)
+        .user(User.builder().id(loggedInUserId).build())
+        .build();
+
+    StudySignup studySignup = StudySignup.builder()
+        .id(studySignupId)
+        .status(StudySignupStatus.PENDING)
+        .studyPost(studyPost)
+        .build();
+
+    when(studySignupRepository.findById(studySignupId)).thenReturn(Optional.of(studySignup));
+    when(authService.getLoginUserId()).thenReturn(loggedInUserId);
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class, () ->
+        studySignupService.updateSignupStatus(studySignupId, StudySignupStatus.APPROVED)
+    );
+
+    assertEquals(ErrorCode.INVALID_STUDY_STATUS, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("신청 상태 관리 실패 - 이미 확정된 상태")
+  void updateSignupStatus_Fail_StatusAlreadyFinalized() {
+    // Given
+    Long studySignupId = 1L;
+    Long loggedInUserId = 100L;
+
+    StudyPost studyPost = StudyPost.builder()
+        .id(10L)
+        .status(StudyPostStatus.RECRUITING)
+        .currentParticipants(3)
+        .maxParticipants(5)
+        .user(User.builder().id(loggedInUserId).build())
+        .build();
+
+    StudySignup studySignup = StudySignup.builder()
+        .id(studySignupId)
+        .status(StudySignupStatus.APPROVED) // 이미 확정된 상태
+        .studyPost(studyPost)
+        .build();
+
+    when(studySignupRepository.findById(studySignupId)).thenReturn(Optional.of(studySignup));
+    when(authService.getLoginUserId()).thenReturn(loggedInUserId);
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class, () ->
+        studySignupService.updateSignupStatus(studySignupId, StudySignupStatus.APPROVED)
+    );
+
+    assertEquals(ErrorCode.SIGNUP_STATUS_ALREADY_FINALIZED, exception.getErrorCode());
+  }
 }
