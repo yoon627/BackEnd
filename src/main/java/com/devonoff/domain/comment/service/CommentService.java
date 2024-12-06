@@ -7,6 +7,7 @@ import com.devonoff.domain.comment.entity.Comment;
 import com.devonoff.domain.comment.repository.CommentRepository;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
+import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.PostType;
@@ -14,8 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,25 +25,14 @@ public class CommentService {
 
   private final CommentRepository commentRepository;
   private final UserRepository userRepository;
+  private final AuthService authService;
 
-  // 시큐리티에서 로그인된 사용자 유저아이디 꺼내기
-  private Long extractUserIdFromPrincipal() {
-    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-    if (principal instanceof String) {
-      return Long.parseLong((String) principal);
-    } else if (principal instanceof UserDetails) {
-      return Long.parseLong(((UserDetails) principal).getUsername());
-    } else {
-      throw new CustomException(ErrorCode.USER_NOT_FOUND, "로그인된 사용자만 접근 가능합니다.");
-    }
-  }
 
   @Transactional
   public CommentResponse createComment(CommentRequest commentRequest) {
 
     // 인증된 사용자 아이디 가져오기
-    Long userId = extractUserIdFromPrincipal();
+    Long userId = authService.getLoginUserId();
 
     // 사용자 정보 조회
     User user = userRepository.findById(userId)
@@ -72,7 +60,7 @@ public class CommentService {
   @Transactional
   public void updateComment(Long commentId, CommentUpdateRequest commentUpdateRequest) {
 
-    Long userId = extractUserIdFromPrincipal();
+    Long userId = authService.getLoginUserId();
 
     // 사용자 조회
     User user = userRepository.findById(userId)
@@ -95,7 +83,7 @@ public class CommentService {
 
   @Transactional
   public void deleteComment(Long commentId) {
-    Long userId = extractUserIdFromPrincipal();
+    Long userId = authService.getLoginUserId();
 
     // 사용자 정보 확인
     User user = userRepository.findById(Long.parseLong(String.valueOf(userId)))
