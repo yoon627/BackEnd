@@ -86,6 +86,9 @@ public class UserService {
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
     photoService.delete(user.getProfileImage());
+
+    //TO DO 추후 기본이미지로 변경후 기본이미지 주소 반환
+    user.setProfileImage(null);
   }
 
   /**
