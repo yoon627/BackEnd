@@ -8,12 +8,16 @@ import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
+  @Value("${cloud.aws.s3.default-profile-image-url}")
+  private String defaultProfileImageUrl;
 
   private final AuthService authService;
   private final PhotoService photoService;
@@ -67,6 +71,10 @@ public class UserService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
+    if (!user.getProfileImage().equals(defaultProfileImageUrl)) {
+      photoService.delete(user.getProfileImage());
+    }
+
     String profileImageUrl = photoService.save(profileImage);
 
     user.setProfileImage(profileImageUrl);
@@ -79,16 +87,19 @@ public class UserService {
    *
    * @param userId
    */
-  public void deleteProfileImage(Long userId) {
+  public UserDto deleteProfileImage(Long userId) {
     checkEqualUser(userId);
 
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-    photoService.delete(user.getProfileImage());
+    if (!user.getProfileImage().equals(defaultProfileImageUrl)) {
+      photoService.delete(user.getProfileImage());
+    }
 
-    //TO DO 추후 기본이미지로 변경후 기본이미지 주소 반환
-    user.setProfileImage(null);
+    // 기본이미지 주소 반환
+    user.setProfileImage(defaultProfileImageUrl);
+    return UserDto.fromEntity(userRepository.save(user));
   }
 
   /**
