@@ -28,7 +28,7 @@ public class PhotoService {
 
   @PostConstruct
   public void init() {
-    urlPrefix = "https://" + bucket + ".s3." + region + ".amazonaws.com";
+    urlPrefix = "https://" + bucket + ".s3." + region + ".amazonaws.com/";
   }
 
   public String save(MultipartFile file) {
