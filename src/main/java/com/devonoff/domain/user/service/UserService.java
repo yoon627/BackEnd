@@ -31,7 +31,7 @@ public class UserService {
    * @return UserDto
    */
   public UserDto getUserDetail(Long userId) {
-    checkEqualUser(userId);
+    validateUserAuthorization(userId);
 
     return UserDto.fromEntity(userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND)));
@@ -44,7 +44,7 @@ public class UserService {
    * @return
    */
   public UserDto updateUserInfo(Long userId, UserUpdateRequest userUpdateRequest) {
-    checkEqualUser(userId);
+    validateUserAuthorization(userId);
 
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -66,7 +66,7 @@ public class UserService {
    * @return
    */
   public UserDto updateProfileImage(Long userId, MultipartFile profileImage) {
-    checkEqualUser(userId);
+    validateUserAuthorization(userId);
 
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -88,7 +88,7 @@ public class UserService {
    * @param userId
    */
   public UserDto deleteProfileImage(Long userId) {
-    checkEqualUser(userId);
+    validateUserAuthorization(userId);
 
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -107,7 +107,7 @@ public class UserService {
    *
    * @param userId
    */
-  private void checkEqualUser(Long userId) {
+  private void validateUserAuthorization(Long userId) {
     Long loginUserId = authService.getLoginUserId();
 
     if (!userId.equals(loginUserId)) {
