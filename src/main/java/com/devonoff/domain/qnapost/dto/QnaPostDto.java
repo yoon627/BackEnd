@@ -22,6 +22,7 @@ public class QnaPostDto {
   private UserDto user;
   private String title;
   private String content;
+  private String thumbnail;
 
 
   public static QnaPostDto fromEntity(QnaPost qnaPost) {
@@ -30,6 +31,7 @@ public class QnaPostDto {
         .user(UserDto.fromEntity(qnaPost.getUser())) // 간단한 사용자 정보
         .title(qnaPost.getTitle())
         .content(qnaPost.getContent())
+        .thumbnail(qnaPost.getThumbnailUrl())
         .build();
   }
 }
