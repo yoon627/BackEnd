@@ -43,7 +43,7 @@ class TotalStudyTimeControllerTest {
 
   @Test
   @DisplayName("특정 스터디 누적 학습시간 조회 성공")
-  void testGetTotalStudyTime() throws Exception {
+  void testGetTotalStudyTime_Success() throws Exception {
     // Given
     Long studyId = 1L;
     TotalStudyTimeDto mockTotalStudyTime = TotalStudyTimeDto.builder()
@@ -70,7 +70,7 @@ class TotalStudyTimeControllerTest {
 
   @Test
   @DisplayName("누적 학습시간 기준 랭킹 조회 성공")
-  void testGetTotalStudyTimeRanking() throws Exception {
+  void testGetTotalStudyTimeRanking_Success() throws Exception {
     // Given
     List<TotalStudyTimeDto> mockRanking = Arrays.asList(
         TotalStudyTimeDto.builder()

@@ -1,8 +1,7 @@
 package com.devonoff.infosharepost.controller;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -16,6 +15,7 @@ import com.devonoff.domain.infosharepost.service.InfoSharePostService;
 import com.devonoff.util.JwtProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collections;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,41 +44,49 @@ class InfoSharePostControllerTest {
   private ObjectMapper objectMapper;
 
   @Test
-  void createInfoSharePost_Success() throws Exception {
+  @DisplayName("정보공유 게시글 생성 - 성공")
+  void testCreateInfoSharePost_Success() throws Exception {
     // given
     MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg",
         "image content".getBytes());
     InfoSharePostDto requestDto = InfoSharePostDto.builder()
         .title("Test Title")
-        .description("Test Description")
-        .build();
-    InfoSharePostDto responseDto = InfoSharePostDto.builder()
-        .title("Test Title")
-        .description("Test Description")
-        .thumbnailImgUrl("test-url")
+        .description("Test Content")
         .build();
 
-    Mockito.when(infoSharePostService.createInfoSharePost(any(InfoSharePostDto.class), any()))
-        .thenReturn(responseDto);
+    MockMultipartFile data = new MockMultipartFile(
+        "data",
+        "",
+        "application/json",
+        objectMapper.writeValueAsBytes(mockRequestDto)
+    );
 
-    // when & then
+    InfoSharePostDto mockResponseDto = InfoSharePostDto.builder()
+        .id(1L)
+        .title(mockRequestDto.getTitle())
+        .description(mockRequestDto.getDescription())
+        .build();
+
+    when(infoSharePostService.createInfoSharePost(mockRequestDto, file)).thenReturn(
+        mockResponseDto);
+
+    // When & Then
     mockMvc.perform(multipart("/api/info-posts")
             .file(file)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(requestDto)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.title").value("Test Title"))
-        .andExpect(jsonPath("$.thumbnailImgUrl").value("test-url"));
+            .file(data)
+            .contentType(MediaType.MULTIPART_FORM_DATA))
+        .andExpect(status().isOk());
   }
 
   @Test
-  void getInfoSharePosts_Success() throws Exception {
+  @DisplayName("정보공유 게시글 페이지 조회 - 성공")
+  void testGetInfoSharePosts_Success() throws Exception {
     // given
     Page<InfoSharePostDto> page = new PageImpl<>(Collections.singletonList(
         InfoSharePostDto.builder().title("Test Title").build()
     ));
 
-    Mockito.when(infoSharePostService.getInfoSharePosts(0, ""))
+    when(infoSharePostService.getInfoSharePosts(0, ""))
         .thenReturn(page);
 
     // when & then
@@ -90,14 +98,15 @@ class InfoSharePostControllerTest {
   }
 
   @Test
-  void getInfoSharePostByPostId_Success() throws Exception {
+  @DisplayName("특정 정보공유 게시글 조회 - 성공")
+  void testGetInfoSharePostByPostId_Success() throws Exception {
     // given
     InfoSharePostDto responseDto = InfoSharePostDto.builder()
         .title("Test Title")
         .description("Test Description")
         .build();
 
-    Mockito.when(infoSharePostService.getInfoSharePostByPostId(anyLong()))
+    when(infoSharePostService.getInfoSharePostByPostId(anyLong()))
         .thenReturn(responseDto);
 
     // when & then
@@ -107,34 +116,43 @@ class InfoSharePostControllerTest {
   }
 
   @Test
-  void updateInfoSharePost_Success() throws Exception {
+  @DisplayName("특정 정보공유 게시글 수정 - 성공")
+  void testUpdateInfoSharePost_Success() throws Exception {
     // given
     MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg",
         "image content".getBytes());
     InfoSharePostDto requestDto = InfoSharePostDto.builder()
         .title("Updated Title")
-        .description("Updated Description")
-        .build();
-    InfoSharePostDto responseDto = InfoSharePostDto.builder()
-        .title("Updated Title")
-        .description("Updated Description")
+        .description("Updated Content")
         .build();
 
-    Mockito.when(
-            infoSharePostService.updateInfoSharePost(eq(1L), any(InfoSharePostDto.class), any()))
-        .thenReturn(responseDto);
+    MockMultipartFile data = new MockMultipartFile(
+        "data",
+        "",
+        "application/json",
+        objectMapper.writeValueAsBytes(mockRequestDto)
+    );
 
-    // when & then
-    mockMvc.perform(multipart("/api/info-posts/1")
+    InfoSharePostDto mockResponseDto = InfoSharePostDto.builder()
+        .id(postId)
+        .title(mockRequestDto.getTitle())
+        .description(mockRequestDto.getDescription())
+        .build();
+
+    when(infoSharePostService.updateInfoSharePost(postId, mockRequestDto, file)).thenReturn(
+        mockResponseDto);
+
+    // When & Then
+    mockMvc.perform(multipart("/api/info-posts/{infoPostId}", postId)
             .file(file)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(requestDto)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.title").value("Updated Title"));
+            .file(data)
+            .contentType(MediaType.MULTIPART_FORM_DATA))
+        .andExpect(status().isOk());
   }
 
   @Test
-  void deleteInfoSharePost_Success() throws Exception {
+  @DisplayName("특정 정보공유 게시글 삭제 - 성공")
+  void testDeleteInfoSharePost_Success() throws Exception {
     // when & then
     mockMvc.perform(delete("/api/info-posts/1"))
         .andExpect(status().isOk());

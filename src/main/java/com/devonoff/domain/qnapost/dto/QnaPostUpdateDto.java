@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Builder
 public class QnaPostUpdateDto {
 
+  private String author;
   private MultipartFile thumbnail;
   private String title;
   private String content;
