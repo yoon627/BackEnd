@@ -45,15 +45,13 @@ public class InfoSharePostService {
         this.infoSharePostRepository.save(InfoSharePostDto.toEntity(infoSharePostDto)));
   }
 
-  public Page<InfoSharePostDto> getInfoSharePosts(Integer page, String search) {
-    Pageable pageable = PageRequest.of(page, 10, Sort.by("createdAt").descending());
+  public Page<InfoSharePostDto> getInfoSharePosts(Pageable pageable, String search) {
     return this.infoSharePostRepository.findAllByTitleContaining(search,
         pageable).map(InfoSharePostDto::fromEntity);
   }
 
-  public Page<InfoSharePostDto> getInfoSharePostsByUserId(Long userId, Integer page,
+  public Page<InfoSharePostDto> getInfoSharePostsByUserId(Long userId, Pageable pageable,
       String search) {
-    Pageable pageable = PageRequest.of(page, 10, Sort.by("createdAt").descending());
     return this.infoSharePostRepository.findAllByUserIdAndTitleContaining(userId, search, pageable)
         .map(InfoSharePostDto::fromEntity);
   }

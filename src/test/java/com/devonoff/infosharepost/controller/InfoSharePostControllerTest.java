@@ -25,6 +25,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
@@ -86,12 +88,14 @@ class InfoSharePostControllerTest {
         InfoSharePostDto.builder().title("Test Title").build()
     ));
 
-    when(infoSharePostService.getInfoSharePosts(0, ""))
+    Pageable pageable = PageRequest.of(0, 12);
+    Mockito.when(infoSharePostService.getInfoSharePosts(pageable, ""))
         .thenReturn(page);
 
     // when & then
     mockMvc.perform(get("/api/info-posts")
             .param("page", "0")
+            .param("size", "12")
             .param("search", ""))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content[0].title").value("Test Title"));
