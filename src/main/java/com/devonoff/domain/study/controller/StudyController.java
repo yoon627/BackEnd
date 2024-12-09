@@ -20,7 +20,7 @@ public class StudyController {
 
   private final StudyService studyService;
 
-  // 본인이 속한 스터디 목록 조회
+  // 특정 사용자가 속한 스터디 목록 조회
   @GetMapping("/author/{userId}")
   public ResponseEntity<Page<StudyDto>> getStudyList(
       @PathVariable Long userId,
