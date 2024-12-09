@@ -1,6 +1,7 @@
 package com.devonoff.domain.comment.entity;
 
 import com.devonoff.common.entity.BaseTimeEntity;
+import com.devonoff.domain.reply.entity.Reply;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.type.PostType;
 import jakarta.persistence.Column;
@@ -13,6 +14,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -37,7 +40,7 @@ public class Comment extends BaseTimeEntity {
   private PostType postType; // 게시글 유형
 
 
-  @JoinColumn(name ="")
+  @Column(nullable = false)
   private Long postId; // 게시글 ID
 
   @Column(nullable = false)
@@ -51,5 +54,7 @@ public class Comment extends BaseTimeEntity {
   @JoinColumn(name = "user_id", nullable = false)
   private User user; // 댓글 작성자와 연결
 
+  @OneToMany(mappedBy = "comment", fetch = FetchType.LAZY)
+  private List<Reply> replies; // 댓글에 달린 대댓글들
 
 }

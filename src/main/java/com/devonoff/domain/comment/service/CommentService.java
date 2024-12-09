@@ -5,11 +5,17 @@ import com.devonoff.domain.comment.dto.CommentResponse;
 import com.devonoff.domain.comment.dto.CommentUpdateRequest;
 import com.devonoff.domain.comment.entity.Comment;
 import com.devonoff.domain.comment.repository.CommentRepository;
+import com.devonoff.domain.infosharepost.repository.InfoSharePostRepository;
+import com.devonoff.domain.qnapost.repository.QnaPostRepository;
+import com.devonoff.domain.studyPost.repository.StudyPostRepository;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.PostType;
+import java.util.HashMap;
+import java.util.Map;
+import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -26,29 +32,64 @@ public class CommentService {
 
   private final CommentRepository commentRepository;
   private final UserRepository userRepository;
- // 시큐리티에서 로그인된 사용자 유저아이디 꺼내기
-  private String extractEmailFromPrincipal() {
+
+  private final StudyPostRepository studyPostRepository;
+  private final QnaPostRepository qnaPostRepository;
+  private final InfoSharePostRepository infoSharePostRepository;
+  private final Map<PostType, Object> repositoryMap = new HashMap<>();
+
+  // PostType에 따른 repository를 관리하는 Map
+  @PostConstruct
+  public void initRepositoryMap() {
+    repositoryMap.put(PostType.STUDY, studyPostRepository);
+    repositoryMap.put(PostType.QNA, qnaPostRepository);
+    repositoryMap.put(PostType.INFO, infoSharePostRepository);
+  }
+
+  // 로그인된 사용자 ID 가져오기
+  private Long extractUserIdFromPrincipal() {
     Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-    if (principal instanceof String) {
-      return (String) principal;
-    } else if (principal instanceof UserDetails) {
-      return ((UserDetails) principal).getUsername();
-    } else {
-      throw new CustomException(ErrorCode.USER_NOT_FOUND, "로그인된 사용자만 접근 가능합니다.");
+    if (principal instanceof UserDetails userDetails) {
+      return Long.parseLong(userDetails.getUsername());
+    } else if (principal instanceof String username && !username.equals("anonymousUser")) {
+      return Long.parseLong(username);
+    }
+    throw new CustomException(ErrorCode.USER_NOT_FOUND, "로그인이 필요합니다.");
+  }
+
+  // 게시글 존재 여부 확인
+  public void validatePostExists(PostType postType, Long postId) {
+    Object repository = repositoryMap.get(postType);
+    if (repository == null) {
+      throw new CustomException(ErrorCode.BAD_REQUEST, "잘못된 게시글 타입입니다.");
+    }
+
+    boolean exists = false;
+    if (repository instanceof StudyPostRepository) {
+      exists = ((StudyPostRepository) repository).findById(postId).isPresent();
+    } else if (repository instanceof QnaPostRepository) {
+      exists = ((QnaPostRepository) repository).findById(postId).isPresent();
+    } else if (repository instanceof InfoSharePostRepository) {
+      exists = ((InfoSharePostRepository) repository).findById(postId).isPresent();
+    }
+
+    if (!exists) {
+      throw new CustomException(ErrorCode.POST_NOT_FOUND, "게시글이 존재하지 않습니다.");
     }
   }
 
   @Transactional
   public CommentResponse createComment(CommentRequest commentRequest) {
+    // 게시글 존재 여부 검증
+    validatePostExists(commentRequest.getPostType(), commentRequest.getPostId());
 
-    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    // 인증된 사용자 아이디 가져오기
+    Long userId = extractUserIdFromPrincipal();
 
-    if (!(principal instanceof User)) {
-      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS, "잘못된 사용자 인증 정보입니다.");
-    }
-
-    User user = (User) principal;
+    // 사용자 정보 조회
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
     // Comment 엔티티 생성 및 저장
     Comment comment = commentRequest.toEntity(user);
@@ -67,24 +108,15 @@ public class CommentService {
     return comments.map(CommentResponse::fromEntity);
   }
 
-
   @Transactional
   public void updateComment(Long commentId, CommentUpdateRequest commentUpdateRequest) {
+    // 인증된 사용자 아이디 가져오기
+    Long userId = extractUserIdFromPrincipal();
 
-    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    String userId;
-
-    if (principal instanceof String) {
-      userId = (String) principal;
-    } else if (principal instanceof UserDetails) {
-      userId = ((UserDetails) principal).getUsername();
-    } else {
-      throw new CustomException(ErrorCode.USER_NOT_FOUND, "로그인된 사용자만 접근 가능합니다.");
-    }
-
-// 사용자 ID를 이용해 이메일 가져오기
-    User user = userRepository.findById(Long.parseLong(userId))
+    // 사용자 조회
+    User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
     // 댓글 조회
     Comment comment = commentRepository.findById(commentId)
         .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND, "댓글을 찾을 수 없습니다."));
@@ -93,6 +125,7 @@ public class CommentService {
     if (!comment.getUser().getId().equals(user.getId())) {
       throw new CustomException(ErrorCode.UNAUTHORIZED_COMMENT_ACCESS);
     }
+
     // 수정
     comment.setContent(commentUpdateRequest.getContent());
     comment.setIsSecret(commentUpdateRequest.getIsSecret());
@@ -101,11 +134,10 @@ public class CommentService {
 
   @Transactional
   public void deleteComment(Long commentId) {
-    // JWT 토큰에서 userId 추출
-    String userId = extractEmailFromPrincipal();
+    Long userId = extractUserIdFromPrincipal();
 
     // 사용자 정보 확인
-    User user = userRepository.findById(Long.parseLong(userId))
+    User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
     // 댓글 조회
@@ -120,7 +152,4 @@ public class CommentService {
     // 댓글 삭제
     commentRepository.delete(comment);
   }
-
-
-
 }
