@@ -4,6 +4,7 @@ import com.devonoff.domain.infosharepost.dto.InfoSharePostDto;
 import com.devonoff.domain.infosharepost.service.InfoSharePostService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,17 +33,19 @@ public class InfoSharePostController {
 
   @GetMapping
   public ResponseEntity<Page<InfoSharePostDto>> getInfoSharePosts(
-      @RequestParam(required = false, defaultValue = "0") Integer page,
+      Pageable pageable,
       @RequestParam(required = false, defaultValue = "") String search) {
-    var result = this.infoSharePostService.getInfoSharePosts(page, search);
+    var result = this.infoSharePostService.getInfoSharePosts(pageable, search);
     return ResponseEntity.ok(result);
   }
 
   //TODO userId -> nickname으로 변경해야함, InfoSharePost 테이블에 nickname추가?
   @GetMapping("/author/{userId}")
-  public ResponseEntity<Page<InfoSharePostDto>> getInfoSharePostsByUserId(@PathVariable Long userId,
-      @RequestParam Integer page, @RequestParam String search) {
-    var result = this.infoSharePostService.getInfoSharePostsByUserId(userId, page, search);
+  public ResponseEntity<Page<InfoSharePostDto>> getInfoSharePostsByUserId(
+      @PathVariable Long userId,
+      Pageable pageable,
+      @RequestParam(required = false, defaultValue = "") String search) {
+    var result = this.infoSharePostService.getInfoSharePostsByUserId(userId, pageable, search);
     return ResponseEntity.ok(result);
   }
 
