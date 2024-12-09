@@ -25,6 +25,7 @@ public enum ErrorCode {
   INVALID_PROFILE_IMAGE_FORMAT(HttpStatus.BAD_REQUEST.value(), "유효하지 않은 프로필 이미지 형식입니다."), // 400
   PROFILE_IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR.value(),
       "프로필 이미지를 업로드하는 데 실패했습니다."), // 500
+  UNAUTHORIZED_USER(HttpStatus.UNAUTHORIZED.value(), "로그인 된 사용자와 일치하지 않습니다."),
   // 스터디 관련
   STUDY_POST_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 모집글을 찾을 수 없습니다."), // 404
   STUDY_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디를 찾을 수 없습니다."), // 404
