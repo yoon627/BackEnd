@@ -3,6 +3,7 @@ package com.devonoff.domain.user.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -11,6 +12,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.devonoff.domain.redis.repository.AuthRedisRepository;
+import com.devonoff.domain.student.entity.Student;
+import com.devonoff.domain.student.repository.StudentRepository;
+import com.devonoff.domain.student.service.StudentService;
 import com.devonoff.domain.user.dto.auth.CertificationRequest;
 import com.devonoff.domain.user.dto.auth.EmailRequest;
 import com.devonoff.domain.user.dto.auth.NickNameCheckRequest;
@@ -26,6 +30,7 @@ import com.devonoff.type.ErrorCode;
 import com.devonoff.type.LoginType;
 import com.devonoff.util.EmailProvider;
 import com.devonoff.util.JwtProvider;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,6 +56,12 @@ class AuthServiceTest {
 
   @Mock
   private AuthRedisRepository authRedisRepository;
+
+  @Mock
+  private StudentRepository studentRepository;
+
+  @Mock
+  private StudentService studentService;
 
   @Mock
   private EmailProvider emailProvider;
@@ -756,7 +767,15 @@ class AuthServiceTest {
         .loginType(LoginType.GENERAL)
         .build();
 
+    List<Student> userStudents = List.of(
+        Student.builder().id(1L).user(user).build(),
+        Student.builder().id(2L).user(user).build()
+    );
+
     given(userRepository.findById(eq(userId))).willReturn(Optional.of(user));
+    given(studentRepository.findByUser(eq(user))).willReturn(userStudents);
+
+    willDoNothing().given(studentService).removeStudent(anyLong());
     willDoNothing().given(authRedisRepository)
         .deleteData(eq(user.getEmail() + "-refreshToken"));
 
@@ -765,6 +784,8 @@ class AuthServiceTest {
 
     // then
     verify(userRepository, times(1)).findById(eq(userId));
+    verify(studentRepository, times(1)).findByUser(eq(user));
+    verify(studentService, times(2)).removeStudent(anyLong());
     verify(authRedisRepository, times(1))
         .deleteData(eq(user.getEmail() + "-refreshToken"));
     verify(userRepository, times(1)).save(eq(user));
