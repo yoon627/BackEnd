@@ -1,4 +1,4 @@
-package com.devonoff.domain.study.service;
+package com.devonoff.util;
 
 import java.time.LocalDateTime;
 import org.springframework.stereotype.Component;

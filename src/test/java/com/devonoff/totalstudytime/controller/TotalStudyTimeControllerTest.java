@@ -27,7 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(TotalStudyTimeController.class)
 @Import(SecurityConfig.class) // SecurityConfig를 명시적으로 포함 (Optional)
 @AutoConfigureMockMvc(addFilters = false)
-class TotalStudyTimelineControllerTest {
+class TotalStudyTimeControllerTest {
 
   @Autowired
   private MockMvc mockMvc;
@@ -49,7 +49,9 @@ class TotalStudyTimelineControllerTest {
     TotalStudyTimeDto mockTotalStudyTime = TotalStudyTimeDto.builder()
         .studyId(studyId)
         .studyName("Java Study Group")
-        .totalStudyTime(7200L) // 2 hours in seconds
+        .totalStudyTime("2시간") // 총 학습 시간을 문자열로 변경
+        .ranking(1L)
+        .percent(100.0)
         .build();
 
     when(totalStudyTimeService.getTotalStudyTime(studyId)).thenReturn(mockTotalStudyTime);
@@ -61,7 +63,9 @@ class TotalStudyTimelineControllerTest {
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.studyId").value(studyId))
         .andExpect(jsonPath("$.studyName").value("Java Study Group"))
-        .andExpect(jsonPath("$.totalStudyTime").value(7200L));
+        .andExpect(jsonPath("$.totalStudyTime").value("2시간")) // 문자열 값 확인
+        .andExpect(jsonPath("$.ranking").value(1L))
+        .andExpect(jsonPath("$.percent").value(100.0));
   }
 
   @Test
@@ -72,12 +76,16 @@ class TotalStudyTimelineControllerTest {
         TotalStudyTimeDto.builder()
             .studyId(1L)
             .studyName("Java Study Group")
-            .totalStudyTime(7200L) // 2 hours in seconds
+            .totalStudyTime("2시간")
+            .ranking(1L)
+            .percent(50.0)
             .build(),
         TotalStudyTimeDto.builder()
             .studyId(2L)
             .studyName("Python Study Group")
-            .totalStudyTime(5400L) // 1.5 hours in seconds
+            .totalStudyTime("1시간 30분")
+            .ranking(2L)
+            .percent(100.0)
             .build()
     );
 
@@ -91,9 +99,13 @@ class TotalStudyTimelineControllerTest {
         .andExpect(jsonPath("$.length()").value(2))
         .andExpect(jsonPath("$[0].studyId").value(1L))
         .andExpect(jsonPath("$[0].studyName").value("Java Study Group"))
-        .andExpect(jsonPath("$[0].totalStudyTime").value(7200L))
+        .andExpect(jsonPath("$[0].totalStudyTime").value("2시간")) // 문자열 값 확인
+        .andExpect(jsonPath("$[0].ranking").value(1L))
+        .andExpect(jsonPath("$[0].percent").value(50.0))
         .andExpect(jsonPath("$[1].studyId").value(2L))
         .andExpect(jsonPath("$[1].studyName").value("Python Study Group"))
-        .andExpect(jsonPath("$[1].totalStudyTime").value(5400L));
+        .andExpect(jsonPath("$[1].totalStudyTime").value("1시간 30분")) // 문자열 값 확인
+        .andExpect(jsonPath("$[1].ranking").value(2L))
+        .andExpect(jsonPath("$[1].percent").value(100.0));
   }
 }

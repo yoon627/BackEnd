@@ -79,7 +79,7 @@ public class QnaPostService {
   public Page<QnaPostDto> getQnaPostList(Pageable pageable, String search) {
 
     // 검색 조건에 따라 전체 게시물 또는 검색 결과 반환
-    if (search == null || search.isBlank()) {
+    if (search == null || search.isBlank() || search.equals("")) {
       return qnaPostRepository.findAll(pageable)
           .map(QnaPostDto::fromEntity);
     }

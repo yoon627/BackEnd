@@ -1,6 +1,7 @@
 package com.devonoff.domain.user.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.Mockito.doNothing;
@@ -17,7 +18,9 @@ import com.devonoff.domain.user.dto.auth.ReissueTokenResponse;
 import com.devonoff.domain.user.dto.auth.SignInRequest;
 import com.devonoff.domain.user.dto.auth.SignInResponse;
 import com.devonoff.domain.user.dto.auth.SignUpRequest;
+import com.devonoff.domain.user.dto.auth.SocialAuthRequest;
 import com.devonoff.domain.user.service.AuthService;
+import com.devonoff.domain.user.service.social.SocialAuthService;
 import com.devonoff.util.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
@@ -32,7 +35,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(AuthController.class)
@@ -48,6 +50,9 @@ class AuthControllerTest {
 
   @MockBean
   private AuthService authService;
+
+  @MockBean
+  private SocialAuthService socialAuthService;
 
   @MockBean
   private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -255,6 +260,43 @@ class AuthControllerTest {
   }
 
   @Test
+  @DisplayName("소셜 로그인 (카카오) - 성공")
+  void testSocialSignInKakao_Success() throws Exception {
+    // given
+    SocialAuthRequest socialAuthRequest = SocialAuthRequest.builder()
+        .code("Authentication-Code")
+        .build();
+
+    SignInResponse signInResponse = SignInResponse.builder()
+        .accessToken("AccessToken")
+        .refreshToken("RefreshToken")
+        .build();
+
+    given(socialAuthService.socialSignIn(anyString(), anyString())).willReturn(signInResponse);
+
+    // when, then
+    mockMvc.perform(post("/api/auth/sign-in/kakao")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(socialAuthRequest)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.accessToken").value("AccessToken"))
+        .andExpect(jsonPath("$.refreshToken").value("RefreshToken"));
+  }
+
+  @Test
+  @DisplayName("소셜 로그인 - 실패 (유효성 검증 실패)")
+  void testSocialSignIn_Fail_ValidationFailed() throws Exception {
+    // given
+    SocialAuthRequest socialAuthRequest = SocialAuthRequest.builder().build();
+
+    // when, then
+    mockMvc.perform(post("/api/auth/sign-in/kakao")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(socialAuthRequest)))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
   @DisplayName("로그아웃 - 성공")
   void testSignOut_Success() throws Exception {
     // given
@@ -290,7 +332,7 @@ class AuthControllerTest {
   }
 
   @Test
-  @DisplayName("Access Token 재발급 - 실패")
+  @DisplayName("Access Token 재발급 - 실패 (유효성 검증 실패)")
   void testReissueToken_Fail_ValidationFail() throws Exception {
     // given
     ReissueTokenRequest reissueTokenRequest = ReissueTokenRequest.builder()

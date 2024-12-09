@@ -15,12 +15,15 @@ import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InfoSharePostService {
@@ -79,6 +82,13 @@ public class InfoSharePostService {
         .orElseThrow(() -> new CustomException(POST_NOT_FOUND));
     if (!Objects.equals(authService.getLoginUserId(), infoSharePost.getUser().getId())) {
       throw new CustomException(UNAUTHORIZED_ACCESS);
+    }
+    if (infoSharePost.getThumbnailImgUrl() != null) {
+      try {
+        photoService.delete(infoSharePost.getThumbnailImgUrl());
+      } catch (Exception e) {
+        log.info("존재하지 않는 사진입니다.");
+      }
     }
     this.infoSharePostRepository.deleteById(infoPostId);
   }

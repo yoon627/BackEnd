@@ -23,6 +23,7 @@ import com.devonoff.util.JwtProvider;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -32,6 +33,9 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
+  @Value("${cloud.aws.s3.default-profile-image-url}")
+  private String defaultProfileImageUrl;
 
   private final UserRepository userRepository;
 
@@ -132,6 +136,7 @@ public class AuthService {
             .password(encodedPassword)
             .isActive(true)
             .loginType(LoginType.GENERAL)
+            .profileImage(defaultProfileImageUrl)
             .build()
     );
   }
