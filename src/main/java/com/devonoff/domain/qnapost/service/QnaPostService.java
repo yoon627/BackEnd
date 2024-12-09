@@ -1,7 +1,6 @@
 package com.devonoff.domain.qnapost.service;
 
 import com.devonoff.domain.photo.service.PhotoService;
-import com.devonoff.domain.qnapost.dto.PublicQnaPostDto;
 import com.devonoff.domain.qnapost.dto.QnaPostDto;
 import com.devonoff.domain.qnapost.dto.QnaPostRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostUpdateDto;
@@ -12,15 +11,17 @@ import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.PostType;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Collections;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,158 +34,179 @@ public class QnaPostService {
 
   private final QnaPostRepository qnaPostRepository;
   private final UserRepository userRepository;
-
   private final PhotoService photoService;
 
   /**
    * 질의 응답 게시글 생성
    *
+   * @param email
    * @param qnaPostRequest
-   * @return Map<String, String>
    */
   @Transactional
-  public Map<String, String> createQnaPost(
-      QnaPostRequest qnaPostRequest, User user) {
-    // 입력값 검증
-    if (qnaPostRequest.getTitle() == null || qnaPostRequest.getTitle().isBlank()) {
-      throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+  public ResponseEntity<Void> createQnaPost(QnaPostRequest qnaPostRequest, String email) {
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
+    // 썸네일 저장
+    String uploadedThumbnailUrl = null;
+    if (qnaPostRequest.getThumbnail() != null && !qnaPostRequest.getThumbnail().isEmpty()) {
+      uploadedThumbnailUrl = photoService.save(qnaPostRequest.getThumbnail());
     }
-    if (qnaPostRequest.getContent() == null || qnaPostRequest.getContent().isBlank()) {
-      throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
-    }
-    user = userRepository.findByEmail(user.getEmail())
-        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-    String uploadedThumbnailUrl = photoService.save(qnaPostRequest.getThumbnail());
+    // QnaPost 저장
+    QnaPost qnaPost = QnaPost.builder()
+        .title(qnaPostRequest.getTitle())
+        .content(qnaPostRequest.getContent())
+        .thumbnailUrl(uploadedThumbnailUrl)
+        .postType(PostType.QNA)
+        .user(user)
+        .build();
 
-    qnaPostRepository.save(
-        QnaPost.builder()
-            .title(qnaPostRequest.getTitle())
-            .content(qnaPostRequest.getContent())
-            .thumbnailUrl(uploadedThumbnailUrl)
-            .postType(PostType.QNA_POST) //타입설정
-            .user(user)
-            .build()
-    );
+    qnaPostRepository.save(qnaPost);
 
-    Map<String, String> responseMap = new HashMap<>();
-    responseMap.put("message", "게시글 작성이 완료되었습니다.");
-
-    return responseMap;
+    // 상태 코드만 반환
+    return ResponseEntity.ok().build(); // HTTP 200
   }
 
   /**
    * 질의 응답 게시글 전체 목록 조회 (최신순)
+   * 토큰 X
    *
-   * @param page
-   * @param search
+   * @param page   조회할 페이지 번호 (1부터 시작)
+   * @param search 검색 키워드 (optional)
    * @return Page<QnaPostDto>
    */
-  public Page<PublicQnaPostDto> getQnaPostList(Integer page, String search) {
+  public Page<QnaPostDto> getQnaPostList(Integer page, String search) {
 
-    Sort sort = Sort.by(Direction.DESC, "createdAt");
+    // 페이지 번호 유효성 검사
+    if (page == null || page < 1) {
+      throw new CustomException(ErrorCode.BAD_REQUEST, "잘못된 요청입니다.");
+    }
 
-    Pageable pageable = PageRequest.of(page - 1, QNA_PAGE_SIZE, sort);
+    // 페이지네이션 및 정렬 설정
+    Pageable pageable = PageRequest.of(page - 1, 5, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-    // search가 비어있는 경우 전체 게시물 조회
+    // 검색 조건에 따라 전체 게시물 또는 검색 결과 반환
     if (search == null || search.isBlank()) {
       return qnaPostRepository.findAll(pageable)
-          .map(PublicQnaPostDto::fromEntity);
+          .map(QnaPostDto::fromEntity);
     }
-    return qnaPostRepository.findByTitleContaining(search, pageable)
-        .map(PublicQnaPostDto::fromEntity);
-  }
 
+    return qnaPostRepository.findByTitleContaining(search.trim(), pageable)
+        .map(QnaPostDto::fromEntity);
+  }
   /**
    * 특정 사용자의 질의 응답 게시글 목록 조회 (최신순)
-   *
+   * 토큰O
    * @param userId
    * @param page
    * @param search
    * @return Page<QnaPostDto>
    */
-  public Page<PublicQnaPostDto> getQnaPostByUserIdList(Long userId, Integer page, String search) {
+  public Page<QnaPostDto> getQnaPostByUserIdList(Long userId, Integer page, String search) {
     User user = userRepository.findById(userId)
-        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
     Sort sort = Sort.by(Direction.DESC, "createdAt");
+    Pageable pageable = PageRequest.of(page - 1, 5, sort);
 
-    Pageable pageable = PageRequest.of(page - 1, QNA_PAGE_SIZE, sort);
+    // 검색어가 없을 경우와 있을 경우 구분
+    Page<QnaPost> posts = (search != null && !search.isBlank())
+        ? qnaPostRepository.findByUserAndTitleContaining(user, search, pageable)
+        : qnaPostRepository.findByUser(user, pageable);
 
-    return qnaPostRepository.findByUserAndTitleContaining(user, search, pageable)
-        .map(PublicQnaPostDto::fromEntity);
+    // posts가 null인 경우 처리
+    if (posts == null) {
+      posts = new PageImpl<>(Collections.emptyList());
+    }
+
+    return posts.map(QnaPostDto::fromEntity);
   }
 
   /**
    * 특정 질의 응답 게시글 상세 조회
-   *
+   * 토큰 X
    * @param qnaPostId
    * @return QnaPostDto
    */
-  public com.devonoff.domain.qnapost.dto.QnaPostDto getQnaPost(Long qnaPostId) {
-    return QnaPostDto.fromEntity(
-        qnaPostRepository.findById(qnaPostId).orElseThrow(() -> new CustomException(
-            ErrorCode.POST_NOT_FOUND)));
+  public QnaPostDto getQnaPost(Long qnaPostId) {
+    QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
+        .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+    return QnaPostDto.fromEntity(qnaPost);
   }
 
   /**
    * 특정 질의 응답 게시글 수정
    *
    * @param qnaPostId
-   * @param user
    * @param qnaPostUpdateDto
    * @return QnaPostDto
    */
   @Transactional
   public QnaPostDto updateQnaPost(Long qnaPostId,
-      QnaPostUpdateDto qnaPostUpdateDto, User user) {
+      QnaPostUpdateDto qnaPostUpdateDto) {
 
-    // TO DO 토큰에서 유저 확인 후 수정 작업
+    // 작성자 이메일을 DTO에서 가져오기
+    String email = qnaPostUpdateDto.getAuthor();
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
+    // 게시글 가져오기 및 작성자 확인
     QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
-        .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
-
-    // 작성자 확인
+        .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND, "게시글을 찾을 수 없습니다."));
     if (!qnaPost.getUser().getId().equals(user.getId())) {
-      throw new CustomException(ErrorCode.USER_NOT_FOUND);
+      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS, "작성자만 게시글을 수정할 수 있습니다.");
     }
-    photoService.delete(qnaPost.getThumbnailUrl());
-    String uploadedThumbnailUrl = photoService.save(qnaPostUpdateDto.getThumbnail());
 
-    qnaPost.setThumbnailUrl(uploadedThumbnailUrl);
+    // 썸네일 업데이트 로직
+    String updatedThumbnailUrl = qnaPost.getThumbnailUrl();
+    if (qnaPostUpdateDto.getThumbnail() != null && !qnaPostUpdateDto.getThumbnail().isEmpty()) {
+      if (qnaPost.getThumbnailUrl() != null) {
+        photoService.delete(qnaPost.getThumbnailUrl());
+      }
+      updatedThumbnailUrl = photoService.save(qnaPostUpdateDto.getThumbnail());
+    }
+
+    // 게시글 업데이트
     qnaPost.setTitle(qnaPostUpdateDto.getTitle());
     qnaPost.setContent(qnaPostUpdateDto.getContent());
+    qnaPost.setThumbnailUrl(updatedThumbnailUrl);
 
-    return QnaPostDto.fromEntity(qnaPost);
+    QnaPost updatedQnaPost = qnaPostRepository.save(qnaPost);
+
+    return QnaPostDto.fromEntity(updatedQnaPost);
   }
 
   /**
    * 특정 질의 응답 게시글 삭제
    *
    * @param qnaPostId
-   * @param user
    * @return QnaPostDto
    */
   @Transactional
-  public Map<String, String> deleteQnaPost(Long qnaPostId, User user) {
+  public void deleteQnaPost(Long qnaPostId) {
+    // SecurityContext에서 인증된 사용자 ID 가져오기
+    Long userId = Long.parseLong(SecurityContextHolder.getContext().getAuthentication().getName());
 
+    // 사용자 조회
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
+    // 게시글 조회 및 작성자 확인
     QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
-        .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
-
-    // 게시글 작성자 확인
+        .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND, "게시글을 찾을 수 없습니다."));
     if (!qnaPost.getUser().getId().equals(user.getId())) {
-      throw new CustomException(ErrorCode.USER_NOT_FOUND);
+      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS, "작성자만 게시글을 삭제할 수 있습니다.");
     }
+
+    // 썸네일 파일 삭제
     if (qnaPost.getThumbnailUrl() != null) {
       photoService.delete(qnaPost.getThumbnailUrl());
-
     }
+
+    // 게시글 삭제
     qnaPostRepository.delete(qnaPost);
-
-    Map<String, String> responseMap = new HashMap<>();
-    responseMap.put("message", "정상적으로 삭제 되었습니다.");
-
-    return responseMap;
-
   }
 }
 

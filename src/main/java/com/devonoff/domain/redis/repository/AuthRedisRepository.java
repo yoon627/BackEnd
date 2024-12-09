@@ -12,9 +12,9 @@ import org.springframework.stereotype.Repository;
 @Slf4j
 @Repository
 @RequiredArgsConstructor
-public class RedisRepository {
+public class AuthRedisRepository {
 
-  private final RedisTemplate<String, Object> redisTemplate;
+  private final RedisTemplate<String, String> redisTemplate;
 
   /**
    * Redis 에 key, value 데이터 저장시 유효 시간 설정해서 저장
@@ -24,7 +24,7 @@ public class RedisRepository {
    * @param timeout
    * @param unit
    */
-  public void setData(String key, Object value, long timeout, TimeUnit unit) {
+  public void setData(String key, String value, long timeout, TimeUnit unit) {
     try {
 
       redisTemplate.opsForValue().set(key, value, timeout, unit);
@@ -41,7 +41,7 @@ public class RedisRepository {
    * @param key
    * @return Object
    */
-  public Object getData(String key) {
+  public String getData(String key) {
     try {
 
       return redisTemplate.opsForValue().get(key);

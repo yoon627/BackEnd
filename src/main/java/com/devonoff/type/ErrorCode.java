@@ -13,9 +13,9 @@ public enum ErrorCode {
   INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED.value(), "이메일 또는 비밀번호가 잘못되었습니다."), // 401
   SOCIAL_LOGIN_FAILED(HttpStatus.UNAUTHORIZED.value(), "소셜 로그인에 실패했습니다."), // 401
   ACCOUNT_PENDING_DELETION(HttpStatus.FORBIDDEN.value(), "해당 계정은 탈퇴 예정 상태입니다."), // 403 -> 필요한가?
-  EMAIL_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST.value(),
+  EMAIL_CERTIFICATION_FAILED(HttpStatus.BAD_REQUEST.value(),
       "이메일 인증에 실패했습니다."), // 400 -> 이거쓸지 아래 두개 쓸지 고려
-  EMAIL_VERIFICATION_UNCOMPLETED(HttpStatus.BAD_REQUEST.value(),
+  EMAIL_CERTIFICATION_UNCOMPLETED(HttpStatus.BAD_REQUEST.value(),
       "이메일 인증이 완료되지 않았습니다."),
   INVALID_EMAIL_CODE(HttpStatus.BAD_REQUEST.value(), "이메일 인증 코드가 유효하지 않습니다."), // 400
   EXPIRED_EMAIL_CODE(HttpStatus.BAD_REQUEST.value(), "이메일 인증 코드가 만료되었습니다."), // 400
@@ -33,6 +33,8 @@ public enum ErrorCode {
   SIGNUP_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 신청 내역을 찾을 수 없습니다."), // 404
   SIGNUP_STATUS_ALREADY_FINALIZED(HttpStatus.BAD_REQUEST.value(), "이미 확정된 신청 상태입니다."), // 400
   NO_APPROVED_SIGNUPS(HttpStatus.BAD_REQUEST.value(), "승인된 신청자가 없습니다."), // 400
+  STUDY_POST_FULL(HttpStatus.BAD_REQUEST.value(), "스터디 모집 인원이 가득 찼습니다."), // 400
+  INVALID_MAX_PARTICIPANTS(HttpStatus.BAD_REQUEST.value(), "모집 인원은 최소 2명, 최대 10명까지 설정할 수 있습니다."), // 400
   APPLICATION_PERIOD_CLOSED(HttpStatus.BAD_REQUEST.value(), "스터디 신청 기간이 종료되었습니다."), // 400
   STUDY_EXTENSION_FAILED(HttpStatus.BAD_REQUEST.value(), "스터디 모집 기한 연장은 최대 1개월입니다."), // 400
   INVALID_STUDY_STATUS(HttpStatus.BAD_REQUEST.value(), "잘못된 스터디 상태값입니다."), // 400
