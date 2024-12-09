@@ -8,6 +8,7 @@ import com.devonoff.domain.qnapost.service.QnaPostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -60,31 +61,31 @@ public class QnaPostController {
   /**
    * 질의 응답 게시글 목록 조회
    *
-   * @param page   페이지 번호
+   * @param pageable   페이지 번호
    * @param search 검색어
    * @return 페이징된 게시글 목록
    */
   @GetMapping
   public ResponseEntity<Page<QnaPostDto>> getQnaPostList(
-      @RequestParam(name = "page",defaultValue = "1") Integer page,
+      Pageable pageable,
       @RequestParam(name = "search",required = false) String search) {
-    return ResponseEntity.ok(qnaPostService.getQnaPostList(page, search));
+    return ResponseEntity.ok(qnaPostService.getQnaPostList(pageable, search));
   }
 
   /**
    * 특정 사용자의 질의 응답 게시글 목록 조회
    *  토큰O
    * @param userId 사용자 ID
-   * @param page   페이지 번호
+   * @param pageable   페이지 번호
    * @param search 검색어
    * @return 페이징된 게시글 목록
    */
   @GetMapping("/author/{userId}")
   public ResponseEntity<Page<QnaPostDto>> getQnaPostByUserIdList(
       @PathVariable("userId") Long userId,
-      @RequestParam(name = "page",defaultValue = "1") Integer page,
+      Pageable pageable,
       @RequestParam(name = "search",required = false) String search) {
-    Page<QnaPostDto> response = qnaPostService.getQnaPostByUserIdList(userId, page, search);
+    Page<QnaPostDto> response = qnaPostService.getQnaPostByUserIdList(userId, pageable, search);
     return ResponseEntity.ok(response);
   }
 
