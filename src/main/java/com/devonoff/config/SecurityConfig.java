@@ -27,8 +27,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
-//  private final DefaultOAuth2UserService oAuth2UserService;
-//  private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
   /**
    * Security Filter Chain 설정
@@ -57,7 +55,7 @@ public class SecurityConfig {
                 "/api/auth/email-send",
                 "/api/auth/email-certification",
                 "/api/auth/sign-up",
-                "/api/auth/sign-in",
+                "/api/auth/sign-in/**",
                 "/api/auth/token-reissue",
                 "/api/qna-posts/**",
                 "/api/comments/**",
@@ -66,12 +64,6 @@ public class SecurityConfig {
             .permitAll()
             .anyRequest().authenticated()
         )
-//        .oauth2Login(oauth2 -> oauth2
-//            .authorizationEndpoint(endpoint -> endpoint.baseUri("/api/v1/auth/oauth2"))
-//            .redirectionEndpoint(endpoint -> endpoint.baseUri("/oauth2/callback/*"))
-//            .userInfoEndpoint(endpoint -> endpoint.userService(oAuth2UserService))
-//            .successHandler(oAuth2SuccessHandler)
-//        )
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return httpSecurity.build();
@@ -92,7 +84,7 @@ public class SecurityConfig {
     corsConfigurationV1.addAllowedHeader("*");
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/api/v1/**", corsConfigurationV1);
+    source.registerCorsConfiguration("/api/**", corsConfigurationV1);
 
     return source;
   }
