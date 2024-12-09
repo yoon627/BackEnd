@@ -14,6 +14,7 @@ import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyStatus;
+import com.devonoff.util.TimeProvider;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;

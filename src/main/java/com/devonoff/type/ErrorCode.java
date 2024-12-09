@@ -25,6 +25,7 @@ public enum ErrorCode {
   INVALID_PROFILE_IMAGE_FORMAT(HttpStatus.BAD_REQUEST.value(), "유효하지 않은 프로필 이미지 형식입니다."), // 400
   PROFILE_IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR.value(),
       "프로필 이미지를 업로드하는 데 실패했습니다."), // 500
+  UNAUTHORIZED_USER(HttpStatus.UNAUTHORIZED.value(), "로그인 된 사용자와 일치하지 않습니다."),
   // 스터디 관련
   STUDY_POST_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 모집글을 찾을 수 없습니다."), // 404
   STUDY_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디를 찾을 수 없습니다."), // 404
@@ -51,8 +52,9 @@ public enum ErrorCode {
   UNAUTHORIZED_SHARED_POST_ACCESS(HttpStatus.FORBIDDEN.value(), "정보 공유 게시글에 접근할 권한이 없습니다."), // 403
   // 댓글
   INVALID_COMMENT_CONTENT(HttpStatus.BAD_REQUEST.value(), "댓글 내용이 유효하지 않습니다"),
-  COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "댓글을 찾을 수 없습니다."), // 404
   UNAUTHORIZED_COMMENT_ACCESS(HttpStatus.FORBIDDEN.value(), "댓글에 접근할 권한이 없습니다."), // 403
+  COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "댓글을 찾을 수 없습니다."), // 404
+
   // 채팅
   CHAT_MESSAGE_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR.value(), "채팅 메시지 송신에 실패했습니다."), // 500
   CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "채팅방을 찾을 수 없습니다."), // 404
