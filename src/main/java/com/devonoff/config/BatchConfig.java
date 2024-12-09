@@ -20,7 +20,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
 @RequiredArgsConstructor
-public class BatchConfig extends DefaultBatchConfiguration {
+public class BatchConfig {
 
   private final StudyPostRepository studyPostRepository;
   private final StudyPostService studyPostService;
