@@ -21,9 +21,11 @@ public class StudyController {
   private final StudyService studyService;
 
   // 본인이 속한 스터디 목록 조회
-  @GetMapping
-  public ResponseEntity<Page<StudyDto>> getStudyList(Pageable pageable) {
-    Page<StudyDto> studyList = studyService.getStudyList(pageable);
+  @GetMapping("/author/{userId}")
+  public ResponseEntity<Page<StudyDto>> getStudyList(
+      @PathVariable Long userId,
+      Pageable pageable) {
+    Page<StudyDto> studyList = studyService.getStudyList(userId, pageable);
     return ResponseEntity.ok(studyList);
   }
 

@@ -79,9 +79,8 @@ public class StudyService {
   }
 
   // 본인이 속한 스터디 목록 조회
-  public Page<StudyDto> getStudyList(Pageable pageable) {
-    Long loggedInUserId = authService.getLoginUserId();
-    return studyRepository.findByStudentsUserIdOrderByCreatedAtDesc(loggedInUserId, pageable)
+  public Page<StudyDto> getStudyList(Long userId, Pageable pageable) {
+    return studyRepository.findByStudentsUserIdOrderByCreatedAtDesc(userId, pageable)
         .map(StudyDto::fromEntity);
   }
 
