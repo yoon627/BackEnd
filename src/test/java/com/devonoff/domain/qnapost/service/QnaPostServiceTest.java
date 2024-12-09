@@ -8,6 +8,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.devonoff.domain.photo.service.PhotoService;
@@ -115,7 +116,7 @@ class QnaPostServiceTest {
     when(qnaPostRepository.findAll(pageable)).thenReturn(emptyPage);
 
     // When
-    Page<QnaPostDto> result = qnaPostService.getQnaPostList(1, null);
+    Page<QnaPostDto> result = qnaPostService.getQnaPostList(pageable, "");
 
     // Then
     assertThat(result.getContent()).isEmpty(); // 결과가 빈 리스트인지 확인
@@ -140,7 +141,7 @@ class QnaPostServiceTest {
     when(qnaPostRepository.findByUser(user, pageable)).thenReturn(Page.empty());
 
     // When
-    Page<QnaPostDto> result = qnaPostService.getQnaPostByUserIdList(userId, 1, null);
+    Page<QnaPostDto> result = qnaPostService.getQnaPostByUserIdList(userId, pageable, null);
 
     // Then
     assertNotNull(result);
@@ -152,17 +153,19 @@ class QnaPostServiceTest {
   void getQnaPostByUserIdList_Failure_UserNotFound() {
     // Given
     Long userId = 1L;
+    Pageable pageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAt")); // 페이지 설정
 
     when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
     // When
     CustomException exception = assertThrows(CustomException.class, () ->
-        qnaPostService.getQnaPostByUserIdList(userId, 1, null)
+        qnaPostService.getQnaPostByUserIdList(userId, pageable, null)
     );
 
     // Then
     assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
     verify(userRepository, times(1)).findById(userId);
+    verifyNoInteractions(qnaPostRepository);
   }
 
   // =======================================================================

@@ -3,6 +3,7 @@ package com.devonoff.domain.study.controller;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,10 +43,11 @@ class StudyControllerTest {
   private JwtProvider jwtProvider;
 
   @Test
-  @DisplayName("본인이 속한 스터디 목록 조회 성공")
+  @DisplayName("특정 사용자가 속한 스터디 목록 조회 성공")
   void getStudyList_Success() throws Exception {
     // Given
-    Pageable pageable = PageRequest.of(0, 20);
+    Long userId = 1L;
+    Pageable pageable = PageRequest.of(0, 12);
 
     StudyDto studyDto1 = StudyDto.builder()
         .id(1L)
@@ -62,19 +64,19 @@ class StudyControllerTest {
     List<StudyDto> studyDtos = List.of(studyDto1, studyDto2);
     Page<StudyDto> studyDtoPage = new PageImpl<>(studyDtos, pageable, studyDtos.size());
 
-    when(studyService.getStudyList(any(Pageable.class))).thenReturn(studyDtoPage);
+    when(studyService.getStudyList(eq(userId), any(Pageable.class))).thenReturn(studyDtoPage);
 
     // When & Then
-    mockMvc.perform(get("/api/study")
+    mockMvc.perform(get("/api/study/author/{userId}", userId)
             .param("page", "0")
-            .param("size", "20"))
+            .param("size", "12"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content", hasSize(2)))
         .andExpect(jsonPath("$.content[0].studyName").value("스터디 1"))
         .andExpect(jsonPath("$.content[1].studyName").value("스터디 2"))
         .andExpect(jsonPath("$.totalElements").value(2));
 
-    verify(studyService, times(1)).getStudyList(any(Pageable.class));
+    verify(studyService, times(1)).getStudyList(eq(userId), any(Pageable.class));
   }
 
   @Test
