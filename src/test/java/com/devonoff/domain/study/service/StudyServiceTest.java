@@ -130,12 +130,12 @@ class StudyServiceTest {
     verify(studyPostRepository, times(1)).findById(studyPostId);
   }
 
-  @DisplayName("본인이 속한 스터디 목록 조회 성공")
+  @DisplayName("특정 사용자가 속한 스터디 목록 조회 성공")
   @Test
   void getStudyList_Success() {
     // Given
-    Long loggedInUserId = 1L;
-    Pageable pageable = PageRequest.of(0, 20);
+    Long userId = 1L;
+    Pageable pageable = PageRequest.of(0, 12);
 
     StudyPost studyPost1 = StudyPost.builder()
         .id(1L)
@@ -170,13 +170,11 @@ class StudyServiceTest {
     List<Study> studies = List.of(study1, study2);
     Page<Study> studyPage = new PageImpl<>(studies, pageable, studies.size());
 
-    when(authService.getLoginUserId()).thenReturn(loggedInUserId);
-
-    when(studyRepository.findByStudentsUserIdOrderByCreatedAtDesc(loggedInUserId, pageable))
+    when(studyRepository.findByStudentsUserIdOrderByCreatedAtDesc(userId, pageable))
         .thenReturn(studyPage);
 
     // When
-    Page<StudyDto> result = studyService.getStudyList(pageable);
+    Page<StudyDto> result = studyService.getStudyList(userId, pageable);
 
     // Then
     assertNotNull(result, "Result should not be null");
@@ -185,9 +183,8 @@ class StudyServiceTest {
     assertEquals("스터디 2", result.getContent().get(1).getStudyName());
     assertEquals(2, result.getContent().size());
 
-    verify(authService, times(1)).getLoginUserId();
     verify(studyRepository, times(1))
-        .findByStudentsUserIdOrderByCreatedAtDesc(loggedInUserId, pageable);
+        .findByStudentsUserIdOrderByCreatedAtDesc(userId, pageable);
   }
 
   @Test
