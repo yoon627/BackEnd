@@ -16,6 +16,10 @@ spring:
     hibernate:
       ddl-auto: validate
 
+  batch:
+    jdbc:
+      initialize-schema: never # 개발 환경에서는 always로 설정, 운영 환경에서는 never로 설정
+
   jwt:
     secret: ${JWT_SECRET_KEY}
   #
