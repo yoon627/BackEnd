@@ -26,7 +26,6 @@ public class ReplyService {
   private final ReplyRepository replyRepository;
   private final CommentRepository commentRepository;
   private final UserRepository userRepository;
-  private final CommentService commentService;
 
   // 로그인된 사용자 ID 가져오기
   private Long extractUserIdFromPrincipal() {
@@ -81,7 +80,7 @@ public class ReplyService {
 
     // 대댓글 내용 및 비밀 여부 수정
     reply.setContent(replyRequest.getContent());
-    reply.setIsSecret(replyRequest.isSecret());
+    reply.setIsSecret(replyRequest.getIsSecret());
 
     // 수정된 대댓글 저장 및 반환
     Reply updatedReply = replyRepository.save(reply);
@@ -105,10 +104,5 @@ public class ReplyService {
     // 대댓글 삭제
     replyRepository.delete(reply);
   }
-
-
-
-
-
 
 }

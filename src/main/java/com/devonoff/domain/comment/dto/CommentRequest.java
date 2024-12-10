@@ -18,8 +18,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class CommentRequest {
 
-  private String author;
-
   @JsonProperty("is_secret")
   private Boolean isSecret;
 
