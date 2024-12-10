@@ -15,6 +15,9 @@ import com.devonoff.domain.redis.repository.AuthRedisRepository;
 import com.devonoff.domain.student.entity.Student;
 import com.devonoff.domain.student.repository.StudentRepository;
 import com.devonoff.domain.student.service.StudentService;
+import com.devonoff.domain.studyPost.entity.StudyPost;
+import com.devonoff.domain.studyPost.repository.StudyPostRepository;
+import com.devonoff.domain.studySignup.repository.StudySignupRepository;
 import com.devonoff.domain.user.dto.auth.CertificationRequest;
 import com.devonoff.domain.user.dto.auth.EmailRequest;
 import com.devonoff.domain.user.dto.auth.NickNameCheckRequest;
@@ -62,6 +65,12 @@ class AuthServiceTest {
 
   @Mock
   private StudentService studentService;
+
+  @Mock
+  private StudySignupRepository studySignupRepository;
+
+  @Mock
+  private StudyPostRepository studyPostRepository;
 
   @Mock
   private EmailProvider emailProvider;
@@ -761,7 +770,7 @@ class AuthServiceTest {
 
     User user = User.builder()
         .nickname("testNickname")
-        .email("test@email.com")
+        .email("test@email.com") // 기존 이메일
         .password("encodedPassword")
         .isActive(true)
         .loginType(LoginType.GENERAL)
@@ -772,12 +781,19 @@ class AuthServiceTest {
         Student.builder().id(2L).user(user).build()
     );
 
+    List<StudyPost> studyPosts = List.of(
+        StudyPost.builder().id(1L).user(user).build(),
+        StudyPost.builder().id(2L).user(user).build()
+    );
+
     given(userRepository.findById(eq(userId))).willReturn(Optional.of(user));
     given(studentRepository.findByUser(eq(user))).willReturn(userStudents);
 
     willDoNothing().given(studentService).removeStudent(anyLong());
+    willDoNothing().given(studySignupRepository).deleteAllByUser(user);
+    given(studyPostRepository.findAllByUser(eq(user))).willReturn(studyPosts);
     willDoNothing().given(authRedisRepository)
-        .deleteData(eq(user.getEmail() + "-refreshToken"));
+        .deleteData(eq(user.getEmail() + "-refreshToken")); // 기존 이메일
 
     // when
     authService.withdrawalUser();
@@ -786,10 +802,14 @@ class AuthServiceTest {
     verify(userRepository, times(1)).findById(eq(userId));
     verify(studentRepository, times(1)).findByUser(eq(user));
     verify(studentService, times(2)).removeStudent(anyLong());
+    verify(studySignupRepository, times(1)).deleteAllByUser(eq(user));
+    verify(studyPostRepository, times(1)).findAllByUser(eq(user));
     verify(authRedisRepository, times(1))
-        .deleteData(eq(user.getEmail() + "-refreshToken"));
+        .deleteData(eq("test@email.com-refreshToken")); // 기존 이메일 검증
     verify(userRepository, times(1)).save(eq(user));
 
+    assertThat(user.getNickname()).isEqualTo("탈퇴한 유저");
+    assertThat(user.getEmail()).isEqualTo("deleted@email.com");
     assertThat(user.getIsActive()).isFalse();
   }
 
