@@ -382,19 +382,32 @@ class UserServiceTest {
         .isActive(true)
         .loginType(LoginType.GENERAL)
         .build();
+
+    User deleteImageUser = User.builder()
+        .id(1L)
+        .nickname("updateNickname")
+        .email("test@email.com")
+        .password("encodedPassword")
+        .profileImage("defaultProfileImageUrl")
+        .isActive(true)
+        .loginType(LoginType.GENERAL)
+        .build();
+
     String deleteProfileImageUrl = user.getProfileImage();
 
     given(authService.getLoginUserId()).willReturn(1L);
     given(userRepository.findById(eq(userId))).willReturn(Optional.of(user));
     willDoNothing().given(photoService).delete(eq(deleteProfileImageUrl));
+    given(userRepository.save(eq(user))).willReturn(deleteImageUser);
 
     // when
-    userService.deleteProfileImage(userId);
+    UserDto userDto = userService.deleteProfileImage(userId);
 
     // then
     verify(authService, times(1)).getLoginUserId();
     verify(userRepository, times(1)).findById(eq(userId));
     verify(photoService, times(1)).delete(eq(deleteProfileImageUrl));
+    verify(userRepository, times(1)).save(eq(user));
   }
 
   @Test
