@@ -191,7 +191,7 @@ class AuthControllerTest {
     SignUpRequest signUpRequest = SignUpRequest.builder()
         .nickname("testNickname")
         .email("test@email.com")
-        .password("testPassword")
+        .password("testPassword123!!")
         .build();
 
     willDoNothing().given(authService).signUp(signUpRequest);
