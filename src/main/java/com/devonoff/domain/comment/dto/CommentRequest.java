@@ -4,14 +4,18 @@ import com.devonoff.domain.comment.entity.Comment;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.type.PostType;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
  // 요청값
 
 @Getter
 @Setter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class CommentRequest {
 
   private String author;
