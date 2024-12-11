@@ -1,6 +1,7 @@
 package com.devonoff.domain.studyPost.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -150,6 +151,70 @@ class StudyPostServiceTest {
 
     assertEquals(ErrorCode.STUDY_POST_NOT_FOUND, exception.getErrorCode());
   }
+
+  @DisplayName("스터디 모집글 상세 조회(userId) 성공")
+  @Test
+  void getStudyPostsByUserId_Success() {
+    // Given
+    Long userId = 11L;
+    Pageable pageable = PageRequest.of(0, 10);
+
+    User user = new User();
+    user.setId(userId);
+
+    StudyPost studyPost1 = new StudyPost();
+    studyPost1.setId(1L);
+    studyPost1.setTitle("스터디 모집글 1");
+    studyPost1.setDayType(3); // 월, 화
+    studyPost1.setUser(user);
+
+    StudyPost studyPost2 = new StudyPost();
+    studyPost2.setId(2L);
+    studyPost2.setTitle("스터디 모집글 2");
+    studyPost2.setDayType(2); // 화, 수
+    studyPost2.setUser(user);
+
+    Page<StudyPost> studyPostPage = new PageImpl<>(List.of(studyPost1, studyPost2), pageable, 2);
+
+    when(userRepository.existsById(userId)).thenReturn(true);
+    when(studyPostRepository.findByUserId(userId, pageable)).thenReturn(studyPostPage);
+
+    // When
+    Page<StudyPostDto> result = studyPostService.getStudyPostsByUserId(userId, pageable);
+
+    // Then
+    assertNotNull(result);
+    assertEquals(2, result.getTotalElements());
+    assertEquals(2, result.getContent().size());
+    assertEquals("스터디 모집글 1", result.getContent().get(0).getTitle());
+    assertIterableEquals(List.of("월", "화"), result.getContent().get(0).getDayType());
+    assertEquals("스터디 모집글 2", result.getContent().get(1).getTitle());
+    assertIterableEquals(List.of("화"), result.getContent().get(1).getDayType());
+
+    verify(userRepository, times(1)).existsById(userId);
+    verify(studyPostRepository, times(1)).findByUserId(userId, pageable);
+  }
+
+  @DisplayName("스터디 모집글 상세 조회(userId) 실패 - 유저 없음")
+  @Test
+  void getStudyPostsByUserId_Fail_UserNotFound() {
+    // Given
+    Long userId = 99L;
+    Pageable pageable = PageRequest.of(0, 12);
+
+    when(userRepository.existsById(userId)).thenReturn(false);
+
+    // When & Then
+    CustomException exception = assertThrows(CustomException.class,
+        () -> studyPostService.getStudyPostsByUserId(userId, pageable));
+
+    // Assertions
+    assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+
+    verify(userRepository, times(1)).existsById(userId);
+    verify(studyPostRepository, never()).findByUserId(any(), any());
+  }
+
 
   @DisplayName("스터디 모집글 검색 성공")
   @Test
@@ -722,7 +787,8 @@ class StudyPostServiceTest {
 
     when(authService.getLoginUserId()).thenReturn(loggedInUserId);
     when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
-    when(studyPostRepository.save(any(StudyPost.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(studyPostRepository.save(any(StudyPost.class))).thenAnswer(
+        invocation -> invocation.getArgument(0));
 
     // When
     studyPostService.extendCanceledStudy(studyPostId, newRecruitmentPeriod);

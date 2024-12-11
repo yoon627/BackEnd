@@ -51,6 +51,17 @@ public class StudyPostService {
     return StudyPostDto.fromEntity(studyPost);
   }
 
+  // 상세 조회(userId)
+  public Page<StudyPostDto> getStudyPostsByUserId(Long userId, Pageable pageable) {
+    if (!userRepository.existsById(userId)) {
+      throw new CustomException(ErrorCode.USER_NOT_FOUND);
+    }
+
+    Page<StudyPost> studyPosts = studyPostRepository.findByUserId(userId, pageable);
+
+    return studyPosts.map(StudyPostDto::fromEntity);
+  }
+
   // 조회 (검색리스트)
   public Page<StudyPostDto> searchStudyPosts(StudyMeetingType meetingType, String title,
       StudySubject subject, StudyDifficulty difficulty, int dayType, StudyPostStatus status,
