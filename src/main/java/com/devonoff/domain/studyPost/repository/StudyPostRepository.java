@@ -1,6 +1,7 @@
 package com.devonoff.domain.studyPost.repository;
 
 import com.devonoff.domain.studyPost.entity.StudyPost;
+import com.devonoff.domain.user.entity.User;
 import com.devonoff.type.StudyPostStatus;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -16,4 +17,6 @@ public interface StudyPostRepository extends JpaRepository<StudyPost, Long>,
 
   List<StudyPost> findAllByRecruitmentPeriodBeforeAndStatus(LocalDate recruitmentPeriod,
       StudyPostStatus status);
+
+  List<StudyPost> findAllByUser(User user);
 }

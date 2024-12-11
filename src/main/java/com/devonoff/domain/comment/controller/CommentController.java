@@ -55,16 +55,13 @@ public class CommentController {
   public ResponseEntity<Page<CommentResponse>> getComments(
       @RequestParam("post_id") Long postId,
       @RequestParam(value = "page", defaultValue = "1") Integer page,
-      @RequestParam("post_type") String postType) {
+      @RequestParam("post_type") PostType postType) {
 
     // 페이지 번호를 0부터 시작하도록 변환
     Pageable pageable = PageRequest.of(page - 1, 5, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-    // postType을 PostType enum으로 변환
-    PostType type = PostType.valueOf(postType.toUpperCase());
-
     // 댓글 조회 로직을 서비스에 위임
-    Page<CommentResponse> response = commentService.getComments(postId, type, pageable);
+    Page<CommentResponse> response = commentService.getComments(postId, postType, pageable);
 
     return ResponseEntity.ok(response);
   }

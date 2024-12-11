@@ -18,15 +18,14 @@ import lombok.Setter;
 @Builder
 public class ReplyRequest {
 
-  private String author;
-  private boolean isSecret;
+  @JsonProperty("is_secret")
+  private Boolean isSecret;
   @JsonProperty("post_id")
   private Long postId;  // 게시글 ID
 
   @JsonProperty("post_type")
   private String postType;
   private String content;  // 댓글 내용
-
 
   // Reply 엔티티로 변환
   public Reply toEntity(User user, Comment comment) {
@@ -40,10 +39,4 @@ public class ReplyRequest {
         .build();
   }
 
-
-  // 간단한 생성자 추가 (테스트용)
-  public ReplyRequest(String content, boolean isSecret) {
-    this.content = content;
-    this.isSecret = isSecret;
-  }
 }

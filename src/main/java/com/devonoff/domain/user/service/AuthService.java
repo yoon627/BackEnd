@@ -4,6 +4,9 @@ import com.devonoff.domain.redis.repository.AuthRedisRepository;
 import com.devonoff.domain.student.entity.Student;
 import com.devonoff.domain.student.repository.StudentRepository;
 import com.devonoff.domain.student.service.StudentService;
+import com.devonoff.domain.studyPost.entity.StudyPost;
+import com.devonoff.domain.studyPost.repository.StudyPostRepository;
+import com.devonoff.domain.studySignup.repository.StudySignupRepository;
 import com.devonoff.domain.user.dto.auth.CertificationRequest;
 import com.devonoff.domain.user.dto.auth.EmailRequest;
 import com.devonoff.domain.user.dto.auth.NickNameCheckRequest;
@@ -17,10 +20,13 @@ import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.LoginType;
+import com.devonoff.type.StudyPostStatus;
 import com.devonoff.util.CertificationNumber;
 import com.devonoff.util.EmailProvider;
 import com.devonoff.util.JwtProvider;
+import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +52,8 @@ public class AuthService {
   private final PasswordEncoder passwordEncoder;
   private final StudentRepository studentRepository;
   private final StudentService studentService;
+  private final StudySignupRepository studySignupRepository;
+  private final StudyPostRepository studyPostRepository;
 
   /**
    * 사용자 Nickname 중복 체크
@@ -216,20 +224,36 @@ public class AuthService {
   /**
    * 회원 탈퇴
    */
+  @Transactional
   public void withdrawalUser() {
     Long loginUserId = getLoginUserId();
     User user = userRepository.findById(loginUserId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-    // 사용자가 속한 모든 스터디에서 제거
+    // 탈퇴한 사용자가 속한 모든 스터디에서 스터디 참가자 제거
     List<Student> userStudents = studentRepository.findByUser(user);
     for (Student student : userStudents) {
       studentService.removeStudent(student.getId());
     }
 
+    // 탈퇴한 회원의 스터디 신청 내역을 삭제
+    studySignupRepository.deleteAllByUser(user);
+
+    // 탈퇴한 회원의 스터디 모집 게시글을 모집 취소로 변경
+    List<StudyPost> studyPosts = studyPostRepository.findAllByUser(user);
+    for (StudyPost studyPost : studyPosts) {
+      studyPost.setStatus(StudyPostStatus.CANCELED);
+    }
+
     authRedisRepository.deleteData(user.getEmail() + "-refreshToken");
 
+    // 삭제 하지 않고 탈퇴한유저 처리
+    user.setNickname("탈퇴한 유저");
+    user.setEmail("deleted@email.com");
+    user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+    user.setProfileImage(defaultProfileImageUrl);
     user.setIsActive(false);
+
     userRepository.save(user);
   }
 
