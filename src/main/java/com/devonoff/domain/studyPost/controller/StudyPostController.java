@@ -40,7 +40,7 @@ public class StudyPostController {
   }
 
   // 스터디 모집글 상세 조회(userId)
-  @GetMapping("/user/{userId}")
+  @GetMapping("/author/{userId}")
   public ResponseEntity<Page<StudyPostDto>> getStudyPostsByUserId(
       @PathVariable Long userId, Pageable pageable) {
     Page<StudyPostDto> studyPosts = studyPostService.getStudyPostsByUserId(userId, pageable);
