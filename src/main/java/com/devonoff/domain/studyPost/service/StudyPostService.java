@@ -25,11 +25,14 @@ import com.devonoff.type.StudySubject;
 import com.devonoff.util.DayTypeUtils;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +45,8 @@ public class StudyPostService {
   private final StudyService studyService;
   private final AuthService authService;
   private final PhotoService photoService;
+  @Value("${cloud.aws.s3.default-thumbnail-image-url}")
+  private String defaultThumbnailImageUrl;
 
   // 상세 조회
   public StudyPostDto getStudyPostDetail(Long studyPostId) {
@@ -75,9 +80,13 @@ public class StudyPostService {
         || request.getLongitude() == null)) {
       throw new CustomException(ErrorCode.LOCATION_REQUIRED_FOR_HYBRID);
     }
-
-    String save = photoService.save(request.getFile());
-    request.setThumbnailImgUrl(save);
+    MultipartFile file = request.getFile();
+    if (file != null && !file.isEmpty()) {
+      String savedImgUrl = photoService.save(file);
+      request.setThumbnailImgUrl(savedImgUrl);
+    } else {
+      request.setThumbnailImgUrl(defaultThumbnailImageUrl);
+    }
 
     StudyPost studyPost = buildStudyPost(request, user);
     studyPostRepository.save(studyPost);
@@ -91,6 +100,10 @@ public class StudyPostService {
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
     validateStudyPostOwnership(studyPost.getUser().getId());
+
+    MultipartFile file = request.getFile();
+    String originImgUrl = studyPost.getThumbnailImgUrl();
+    String requestImgUrl = request.getThumbnailImgUrl();
 
     studyPost.setTitle(request.getTitle());
     studyPost.setStudyName(request.getStudyName());
@@ -107,7 +120,21 @@ public class StudyPostService {
     studyPost.setLatitude(request.getLatitude());
     studyPost.setLongitude(request.getLongitude());
     studyPost.setStatus(request.getStatus());
-    studyPost.setThumbnailImgUrl(request.getThumbnailImgUrl());
+    if (file != null && !file.isEmpty()) {
+      if (originImgUrl != null && !originImgUrl.isEmpty() && !Objects.equals(originImgUrl,
+          defaultThumbnailImageUrl)) {
+        photoService.delete(originImgUrl);
+      }
+      String savedImgUrl = photoService.save(file);
+      System.out.println(savedImgUrl);
+      studyPost.setThumbnailImgUrl(savedImgUrl);
+    } else {
+      if (requestImgUrl != null && !requestImgUrl.isEmpty() && requestImgUrl.equals(
+          defaultThumbnailImageUrl)) {
+        studyPost.setThumbnailImgUrl(defaultThumbnailImageUrl);
+      }
+    }
+
     studyPost.setMaxParticipants(request.getMaxParticipants());
 
     studyPostRepository.save(studyPost);
@@ -207,6 +234,8 @@ public class StudyPostService {
   // 생성 요청 사용자 검증
   private void validateUserRequestOwnership(Long requestUserId) {
     Long loggedInUserId = authService.getLoginUserId();
+    System.out.println("requestUserId: " + requestUserId);
+    System.out.println("loggedInUserId: " + loggedInUserId);
     if (!requestUserId.equals(loggedInUserId)) {
       throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
     }
