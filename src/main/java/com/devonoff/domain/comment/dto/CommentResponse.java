@@ -3,9 +3,8 @@ package com.devonoff.domain.comment.dto;
 import com.devonoff.domain.comment.entity.Comment;
 import com.devonoff.domain.reply.dto.ReplyResponse;
 import com.devonoff.domain.user.dto.UserDto;
+import com.devonoff.type.PostType;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,12 +19,11 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 // 응답값
 public class CommentResponse {
 
   private Long id;
-  private String postType;
+  private PostType postType;
   private Long postId;
   private Boolean isSecret;
   private String content;
@@ -48,7 +46,7 @@ public class CommentResponse {
   public static CommentResponse fromEntity(Comment comment) {
     return CommentResponse.builder()
         .id(comment.getId())
-        .postType(comment.getPostType().toString())
+        .postType(comment.getPostType())
         .postId(comment.getPostId())
         .isSecret(comment.getIsSecret())
         .content(comment.getContent())
