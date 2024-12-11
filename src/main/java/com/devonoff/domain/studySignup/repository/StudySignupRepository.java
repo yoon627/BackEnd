@@ -16,4 +16,6 @@ public interface StudySignupRepository extends JpaRepository<StudySignup, Long> 
   List<StudySignup> findByStudyPost(StudyPost studyPost);
 
   List<StudySignup> findByStudyPostAndStatus(StudyPost studyPost, StudySignupStatus status);
+
+  void deleteAllByUser(User user);
 }

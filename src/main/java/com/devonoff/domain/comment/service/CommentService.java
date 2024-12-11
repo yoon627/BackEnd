@@ -5,6 +5,7 @@ import com.devonoff.domain.comment.dto.CommentResponse;
 import com.devonoff.domain.comment.dto.CommentUpdateRequest;
 import com.devonoff.domain.comment.entity.Comment;
 import com.devonoff.domain.comment.repository.CommentRepository;
+import com.devonoff.domain.reply.Repository.ReplyRepository;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.domain.user.service.AuthService;
@@ -27,7 +28,7 @@ public class CommentService {
   private final UserRepository userRepository;
   private final PostValidationService postValidationService;
   private final AuthService authService;
-
+  private final ReplyRepository replyRepository;
 
   /**
    * 댓글 생성 메서드
@@ -106,6 +107,8 @@ public class CommentService {
 
     // 댓글 사용자 검증
     validateCommentOwner(comment, user);
+
+    replyRepository.deleteAllByComment(comment);
 
     // 댓글삭제
     commentRepository.delete(comment);

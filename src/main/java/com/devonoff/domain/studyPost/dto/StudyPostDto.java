@@ -39,6 +39,7 @@ public class StudyPostDto {
   private String description;
   private Double latitude;
   private Double longitude;
+  private String address;
   private StudyPostStatus status;
   private String thumbnailImgUrl;
   private Integer maxParticipants;
@@ -64,6 +65,7 @@ public class StudyPostDto {
         .description(studyPost.getDescription())
         .latitude(studyPost.getLatitude())
         .longitude(studyPost.getLongitude())
+        .address(studyPost.getAddress())
         .status(studyPost.getStatus())
         .thumbnailImgUrl(studyPost.getThumbnailImgUrl())
         .maxParticipants(studyPost.getMaxParticipants())
