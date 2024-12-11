@@ -41,7 +41,7 @@ public class UserService {
    * 유저 정보 수정
    *
    * @param userId
-   * @return
+   * @return UserDto
    */
   public UserDto updateUserInfo(Long userId, UserUpdateRequest userUpdateRequest) {
     validateUserAuthorization(userId);
@@ -63,7 +63,7 @@ public class UserService {
    * 프로필 이미지 수정
    *
    * @param userId
-   * @return
+   * @return UserDto
    */
   public UserDto updateProfileImage(Long userId, MultipartFile profileImage) {
     validateUserAuthorization(userId);

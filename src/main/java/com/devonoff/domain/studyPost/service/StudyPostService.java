@@ -56,6 +56,17 @@ public class StudyPostService {
     return StudyPostDto.fromEntity(studyPost);
   }
 
+  // 상세 조회(userId)
+  public Page<StudyPostDto> getStudyPostsByUserId(Long userId, Pageable pageable) {
+    if (!userRepository.existsById(userId)) {
+      throw new CustomException(ErrorCode.USER_NOT_FOUND);
+    }
+
+    Page<StudyPost> studyPosts = studyPostRepository.findByUserId(userId, pageable);
+
+    return studyPosts.map(StudyPostDto::fromEntity);
+  }
+
   // 조회 (검색리스트)
   public Page<StudyPostDto> searchStudyPosts(StudyMeetingType meetingType, String title,
       StudySubject subject, StudyDifficulty difficulty, int dayType, StudyPostStatus status,
@@ -78,7 +89,7 @@ public class StudyPostService {
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
     if (request.getMeetingType() == StudyMeetingType.HYBRID && (request.getLatitude() == null
-        || request.getLongitude() == null)) {
+        || request.getLongitude() == null || request.getAddress() == null)) {
       throw new CustomException(ErrorCode.LOCATION_REQUIRED_FOR_HYBRID);
     }
     MultipartFile file = request.getFile();
@@ -261,6 +272,7 @@ public class StudyPostService {
         .description(request.getDescription())
         .latitude(request.getLatitude())
         .longitude(request.getLongitude())
+        .address(request.getAddress())
         .status(StudyPostStatus.RECRUITING) // 기본값 설정
         .thumbnailImgUrl(request.getThumbnailImgUrl())
         .maxParticipants(request.getMaxParticipants())

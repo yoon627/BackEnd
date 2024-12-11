@@ -1,4 +1,4 @@
-package com.devonoff.infosharepost.service;
+package com.devonoff.domain.infosharepost.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -11,7 +11,6 @@ import static org.mockito.Mockito.when;
 import com.devonoff.domain.infosharepost.dto.InfoSharePostDto;
 import com.devonoff.domain.infosharepost.entity.InfoSharePost;
 import com.devonoff.domain.infosharepost.repository.InfoSharePostRepository;
-import com.devonoff.domain.infosharepost.service.InfoSharePostService;
 import com.devonoff.domain.photo.service.PhotoService;
 import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.entity.User;

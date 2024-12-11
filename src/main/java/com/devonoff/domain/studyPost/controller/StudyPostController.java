@@ -37,6 +37,14 @@ public class StudyPostController {
     return ResponseEntity.ok(studyPostDto);
   }
 
+  // 스터디 모집글 상세 조회(userId)
+  @GetMapping("/author/{userId}")
+  public ResponseEntity<Page<StudyPostDto>> getStudyPostsByUserId(
+      @PathVariable Long userId, Pageable pageable) {
+    Page<StudyPostDto> studyPosts = studyPostService.getStudyPostsByUserId(userId, pageable);
+    return ResponseEntity.ok(studyPosts);
+  }
+
   // 스터디 모집글 검색
   @GetMapping("/search")
   public ResponseEntity<Page<StudyPostDto>> searchStudyPosts(

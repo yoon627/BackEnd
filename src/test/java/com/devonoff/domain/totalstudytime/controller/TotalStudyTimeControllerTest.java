@@ -1,4 +1,4 @@
-package com.devonoff.totalstudytime.controller;
+package com.devonoff.domain.totalstudytime.controller;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -7,7 +7,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.devonoff.config.SecurityConfig;
-import com.devonoff.domain.totalstudytime.controller.TotalStudyTimeController;
 import com.devonoff.domain.totalstudytime.dto.TotalStudyTimeDto;
 import com.devonoff.domain.totalstudytime.service.TotalStudyTimeService;
 import com.devonoff.util.JwtProvider;

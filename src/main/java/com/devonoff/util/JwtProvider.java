@@ -24,7 +24,7 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class JwtProvider {
 
-  private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60; // 1 hour
+  private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 15; // 1 hour
   private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000L * 60 * 60 * 24 * 3; // 3 Days
 
   private final UserRepository userRepository;

@@ -70,6 +70,8 @@ public class StudyPostCreateRequest {
 
   private Double longitude;
 
+  private String address;
+
   private StudyPostStatus status;
 
   private String thumbnailImgUrl; // 썸네일 이미지

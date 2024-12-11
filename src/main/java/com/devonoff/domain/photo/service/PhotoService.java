@@ -43,7 +43,8 @@ public class PhotoService {
       metadata.setContentType(file.getContentType());
       metadata.setContentLength(file.getSize());
       if (amazonS3Client.doesObjectExist(bucket, userId + "/" + fileName)) {
-        throw new ResponseStatusException(HttpStatus.CONFLICT, "File already exists");
+        return urlPrefix + userId + "/" + fileName;
+//        throw new ResponseStatusException(HttpStatus.CONFLICT, "File already exists");
       }
       this.amazonS3Client.putObject(bucket, userId + "/" + fileName,
           file.getInputStream(),

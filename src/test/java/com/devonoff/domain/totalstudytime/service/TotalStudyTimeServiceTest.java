@@ -1,4 +1,4 @@
-package com.devonoff.totalstudytime.service;
+package com.devonoff.domain.totalstudytime.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -14,7 +14,6 @@ import com.devonoff.domain.study.repository.StudyRepository;
 import com.devonoff.domain.totalstudytime.dto.TotalStudyTimeDto;
 import com.devonoff.domain.totalstudytime.entity.TotalStudyTime;
 import com.devonoff.domain.totalstudytime.repository.TotalStudyTimeRepository;
-import com.devonoff.domain.totalstudytime.service.TotalStudyTimeService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.devonoff.infosharepost.controller;
+package com.devonoff.domain.controller;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
@@ -25,8 +25,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
@@ -51,7 +49,7 @@ class InfoSharePostControllerTest {
     // given
     MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg",
         "image content".getBytes());
-    InfoSharePostDto requestDto = InfoSharePostDto.builder()
+    InfoSharePostDto mockRequestDto = InfoSharePostDto.builder()
         .title("Test Title")
         .description("Test Content")
         .build();
@@ -88,14 +86,12 @@ class InfoSharePostControllerTest {
         InfoSharePostDto.builder().title("Test Title").build()
     ));
 
-    Pageable pageable = PageRequest.of(0, 12);
-    Mockito.when(infoSharePostService.getInfoSharePosts(pageable, ""))
+    when(infoSharePostService.getInfoSharePosts(0, ""))
         .thenReturn(page);
 
     // when & then
     mockMvc.perform(get("/api/info-posts")
             .param("page", "0")
-            .param("size", "12")
             .param("search", ""))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content[0].title").value("Test Title"));
@@ -125,10 +121,11 @@ class InfoSharePostControllerTest {
     // given
     MockMultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg",
         "image content".getBytes());
-    InfoSharePostDto requestDto = InfoSharePostDto.builder()
+    InfoSharePostDto mockRequestDto = InfoSharePostDto.builder()
         .title("Updated Title")
         .description("Updated Content")
         .build();
+    Long postId = 1L;
 
     MockMultipartFile data = new MockMultipartFile(
         "data",

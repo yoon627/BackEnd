@@ -8,6 +8,7 @@ import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -36,10 +37,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       FilterChain filterChain) throws ServletException, IOException {
 
     String token = this.resolveTokenFromRequest(request);
+    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    System.out.println("token: " + token);
+    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 
     if (StringUtils.hasText(token) && jwtProvider.validateToken(token)) {
       Authentication auth = jwtProvider.getAuthentication(token);
       SecurityContextHolder.getContext().setAuthentication(auth);
+      UserDetails userDetails = (UserDetails) auth.getPrincipal();
+      System.out.println("userDetails: " + userDetails.getUsername());
     }
 
     filterChain.doFilter(request, response);

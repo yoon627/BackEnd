@@ -45,6 +45,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
@@ -127,6 +128,60 @@ class StudyPostControllerTest {
     mockMvc.perform(get("/api/study-posts/{studyPostId}", studyPostId)
             .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isNotFound());
+  }
+
+  @DisplayName("스터디 모집글 상세 조회(userId) 성공")
+  @Test
+  void getStudyPostsByUserId_Success() throws Exception {
+    // Given
+    Long userId = 11L;
+
+    StudyPostDto studyPost1 = StudyPostDto.builder()
+        .id(1L)
+        .title("스터디 모집글 1")
+        .dayType(List.of("월", "화"))
+        .build();
+
+    StudyPostDto studyPost2 = StudyPostDto.builder()
+        .id(2L)
+        .title("스터디 모집글 2")
+        .dayType(List.of("화", "수"))
+        .build();
+
+    Page<StudyPostDto> mockPage = new PageImpl<>(List.of(studyPost1, studyPost2));
+
+    when(studyPostService.getStudyPostsByUserId(eq(userId), any(Pageable.class))).thenReturn(mockPage);
+
+    // When & Then
+    mockMvc.perform(get("/api/study-posts/author/{userId}", userId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalElements").value(2))
+        .andExpect(jsonPath("$.content[0].title").value("스터디 모집글 1"))
+        .andExpect(jsonPath("$.content[0].dayType").isArray())
+        .andExpect(jsonPath("$.content[0].dayType[0]").value("월"))
+        .andExpect(jsonPath("$.content[0].dayType[1]").value("화"))
+        .andExpect(jsonPath("$.content[1].title").value("스터디 모집글 2"))
+        .andExpect(jsonPath("$.content[1].dayType[0]").value("화"))
+        .andExpect(jsonPath("$.content[1].dayType[1]").value("수"));
+
+    verify(studyPostService, times(1)).getStudyPostsByUserId(eq(userId), any(Pageable.class));
+  }
+
+  @DisplayName("스터디 모집글 상세 조회(userId) 실패 - 유저 없음")
+  @Test
+  void getStudyPostsByUserId_Fail_UserNotFound() throws Exception {
+    // Given
+    Long userId = 99L;
+
+    when(studyPostService.getStudyPostsByUserId(eq(userId), any(Pageable.class)))
+        .thenThrow(new CustomException(ErrorCode.USER_NOT_FOUND, "유저를 찾을 수 없습니다."));
+
+    // When & Then
+    mockMvc.perform(get("/api/study-posts/author/{userId}", userId))
+        .andExpect(status().isNotFound())
+        .andExpect(content().string("유저를 찾을 수 없습니다."));
+
+    verify(studyPostService, times(1)).getStudyPostsByUserId(eq(userId), any(Pageable.class));
   }
 
   @DisplayName("스터디 모집글 검색 성공")
