@@ -95,6 +95,9 @@ public class InfoSharePostService {
     } else {
       if (requestImgUrl != null && !requestImgUrl.isEmpty() && requestImgUrl.equals(
           defaultThumbnailImageUrl)) {
+        if (!originImgUrl.equals(defaultThumbnailImageUrl)) {
+          photoService.delete(originImgUrl);
+        }
         infoSharePost.setThumbnailImgUrl(defaultThumbnailImageUrl);
       }
     }
