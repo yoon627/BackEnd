@@ -283,7 +283,6 @@ class AuthControllerTest {
   void testReissueToken_Success() throws Exception {
     // given
     ReissueTokenRequest reissueTokenRequest = ReissueTokenRequest.builder()
-        .email("test@email.com")
         .refreshToken("RefreshToken")
         .build();
 
@@ -307,7 +306,6 @@ class AuthControllerTest {
   void testReissueToken_Fail_ValidationFail() throws Exception {
     // given
     ReissueTokenRequest reissueTokenRequest = ReissueTokenRequest.builder()
-        .refreshToken("RefreshToken")
         .build();
 
     // when, then

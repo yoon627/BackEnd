@@ -602,11 +602,11 @@ class AuthServiceTest {
     String refreshToken = "RefreshToken";
 
     ReissueTokenRequest reissueTokenRequest = ReissueTokenRequest.builder()
-        .email(email)
         .refreshToken(refreshToken)
         .build();
 
     User user = User.builder()
+        .id(1L)
         .nickname("testNickname")
         .email(email)
         .password("encodedPassword")
@@ -614,7 +614,8 @@ class AuthServiceTest {
         .loginType(LoginType.GENERAL)
         .build();
 
-    given(userRepository.findByEmail(eq(email))).willReturn(Optional.of(user));
+    given(jwtProvider.getUserId(eq(refreshToken))).willReturn(1L);
+    given(userRepository.findById(eq(1L))).willReturn(Optional.of(user));
     given(authRedisRepository.getData(eq(email + "-refreshToken"))).willReturn(refreshToken);
     given(jwtProvider.createAccessToken(eq(user.getId()))).willReturn("AccessToken");
 
@@ -622,7 +623,8 @@ class AuthServiceTest {
     ReissueTokenResponse reissueTokenResponse = authService.reissueToken(reissueTokenRequest);
 
     // then
-    verify(userRepository, times(1)).findByEmail(eq(email));
+    verify(jwtProvider, times(1)).getUserId(eq(refreshToken));
+    verify(userRepository, times(1)).findById(eq(1L));
     verify(authRedisRepository, times(1))
         .getData(eq(email + "-refreshToken"));
     verify(jwtProvider, times(1)).createAccessToken(eq(user.getId()));
@@ -634,22 +636,22 @@ class AuthServiceTest {
   @DisplayName("AccessToken 재발급 - 실패 (존재하지 않는 유저)")
   void testReissueToken_Fail_UserNotFound() {
     // given
-    String email = "test@email.com";
     String refreshToken = "RefreshToken";
 
     ReissueTokenRequest reissueTokenRequest = ReissueTokenRequest.builder()
-        .email(email)
         .refreshToken(refreshToken)
         .build();
 
-    given(userRepository.findByEmail(eq(email))).willReturn(Optional.empty());
+    given(jwtProvider.getUserId(eq(refreshToken))).willReturn(1L);
+    given(userRepository.findById(eq(1L))).willReturn(Optional.empty());
 
     // when
     CustomException customException = assertThrows(CustomException.class,
         () -> authService.reissueToken(reissueTokenRequest));
 
     // then
-    verify(userRepository, times(1)).findByEmail(eq(email));
+    verify(jwtProvider, times(1)).getUserId(eq(refreshToken));
+    verify(userRepository, times(1)).findById(eq(1L));
 
     assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
   }
@@ -662,11 +664,11 @@ class AuthServiceTest {
     String refreshToken = "RefreshToken";
 
     ReissueTokenRequest reissueTokenRequest = ReissueTokenRequest.builder()
-        .email(email)
         .refreshToken(refreshToken)
         .build();
 
     User user = User.builder()
+        .id(1L)
         .nickname("testNickname")
         .email(email)
         .password("encodedPassword")
@@ -674,7 +676,8 @@ class AuthServiceTest {
         .loginType(LoginType.GENERAL)
         .build();
 
-    given(userRepository.findByEmail(eq(email))).willReturn(Optional.of(user));
+    given(jwtProvider.getUserId(eq(refreshToken))).willReturn(1L);
+    given(userRepository.findById(eq(1L))).willReturn(Optional.of(user));
     given(authRedisRepository.getData(eq(email + "-refreshToken"))).willReturn(null);
 
     // when
@@ -682,7 +685,8 @@ class AuthServiceTest {
         () -> authService.reissueToken(reissueTokenRequest));
 
     // then
-    verify(userRepository, times(1)).findByEmail(eq(email));
+    verify(jwtProvider, times(1)).getUserId(eq(refreshToken));
+    verify(userRepository, times(1)).findById(eq(1L));
     verify(authRedisRepository, times(1))
         .getData(eq(email + "-refreshToken"));
 
@@ -697,11 +701,11 @@ class AuthServiceTest {
     String refreshToken = "RefreshToken";
 
     ReissueTokenRequest reissueTokenRequest = ReissueTokenRequest.builder()
-        .email(email)
         .refreshToken(refreshToken)
         .build();
 
     User user = User.builder()
+        .id(1L)
         .nickname("testNickname")
         .email(email)
         .password("encodedPassword")
@@ -709,7 +713,8 @@ class AuthServiceTest {
         .loginType(LoginType.GENERAL)
         .build();
 
-    given(userRepository.findByEmail(eq(email))).willReturn(Optional.of(user));
+    given(jwtProvider.getUserId(eq(refreshToken))).willReturn(1L);
+    given(userRepository.findById(eq(1L))).willReturn(Optional.of(user));
     given(authRedisRepository.getData(eq(email + "-refreshToken")))
         .willReturn("refresh-token");
 
@@ -718,7 +723,8 @@ class AuthServiceTest {
         () -> authService.reissueToken(reissueTokenRequest));
 
     // then
-    verify(userRepository, times(1)).findByEmail(eq(email));
+    verify(jwtProvider, times(1)).getUserId(eq(refreshToken));
+    verify(userRepository, times(1)).findById(eq(1L));
     verify(authRedisRepository, times(1))
         .getData(eq(email + "-refreshToken"));
 
