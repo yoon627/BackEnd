@@ -66,6 +66,7 @@ public class StudyPostService {
   }
 
   // 생성
+  @Transactional
   public StudyPostDto createStudyPost(StudyPostCreateRequest request) {
     validateUserRequestOwnership(request.getUserId());
 
@@ -95,6 +96,7 @@ public class StudyPostService {
   }
 
   // 수정
+  @Transactional
   public StudyPostDto updateStudyPost(Long studyPostId, StudyPostUpdateRequest request) {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
