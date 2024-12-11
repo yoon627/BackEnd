@@ -153,7 +153,7 @@ class StudyPostControllerTest {
     when(studyPostService.getStudyPostsByUserId(eq(userId), any(Pageable.class))).thenReturn(mockPage);
 
     // When & Then
-    mockMvc.perform(get("/api/study-posts/user/{userId}", userId))
+    mockMvc.perform(get("/api/study-posts/author/{userId}", userId))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalElements").value(2))
         .andExpect(jsonPath("$.content[0].title").value("스터디 모집글 1"))
@@ -177,7 +177,7 @@ class StudyPostControllerTest {
         .thenThrow(new CustomException(ErrorCode.USER_NOT_FOUND, "유저를 찾을 수 없습니다."));
 
     // When & Then
-    mockMvc.perform(get("/api/study-posts/user/{userId}", userId))
+    mockMvc.perform(get("/api/study-posts/author/{userId}", userId))
         .andExpect(status().isNotFound())
         .andExpect(content().string("유저를 찾을 수 없습니다."));
 
