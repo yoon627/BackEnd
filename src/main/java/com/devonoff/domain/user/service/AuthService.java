@@ -65,15 +65,6 @@ public class AuthService {
   }
 
   /**
-   * 사용자 Email 중복 체크
-   *
-   * @param emailRequest
-   */
-  public void emailCheck(EmailRequest emailRequest) {
-    checkExistsEmail(emailRequest.getEmail());
-  }
-
-  /**
    * 이메일 인증번호 전송
    *
    * @param emailSendRequest

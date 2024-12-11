@@ -45,20 +45,6 @@ public class AuthController {
   }
 
   /**
-   * 이메일 중복 확인
-   *
-   * @param emailRequest
-   * @return ResponseEntity<Void>
-   */
-  @PostMapping("/check-email")
-  public ResponseEntity<Void> checkEmail(
-      @RequestBody @Valid EmailRequest emailRequest
-  ) {
-    authService.emailCheck(emailRequest);
-    return ResponseEntity.ok().build();
-  }
-
-  /**
    * 인증번호 이메일 전송
    *
    * @param emailSendRequest

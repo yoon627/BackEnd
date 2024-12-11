@@ -139,43 +139,6 @@ class AuthServiceTest {
   }
 
   @Test
-  @DisplayName("사용자 Email 중복 체크 - 성공")
-  void testEmailCheck_Success() {
-    // given
-    String email = "test@email.com";
-
-    EmailRequest emailRequest = EmailRequest.builder().email(email).build();
-
-    given(userRepository.existsByEmail(eq(email))).willReturn(false);
-
-    // when
-    authService.emailCheck(emailRequest);
-
-    // then
-    verify(userRepository, times(1)).existsByEmail(eq(email));
-  }
-
-  @Test
-  @DisplayName("사용자 Email 중복 체크 - 실패(Email 중복)")
-  void testEmailCheck_Fail_EmailDuplicated() {
-    // given
-    String email = "test@email.com";
-
-    EmailRequest emailRequest = EmailRequest.builder().email(email).build();
-
-    given(userRepository.existsByEmail(eq(email))).willReturn(true);
-
-    // when
-    CustomException customException = assertThrows(CustomException.class,
-        () -> authService.emailCheck(emailRequest));
-
-    // then
-    verify(userRepository, times(1)).existsByEmail(eq(email));
-
-    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.EMAIL_ALREADY_REGISTERED);
-  }
-
-  @Test
   @DisplayName("이메일 인증번호 전송 - 성공")
   void testEmailSend_Success() {
     // given
