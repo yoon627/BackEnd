@@ -3,11 +3,13 @@ package com.devonoff.domain.infosharepost.dto;
 import com.devonoff.domain.infosharepost.entity.InfoSharePost;
 import com.devonoff.domain.user.dto.UserDto;
 import java.time.LocalDateTime;
+import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @Setter
@@ -23,6 +25,9 @@ public class InfoSharePostDto {
   private String description;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
+  private Long userId;
+  @Nullable
+  private MultipartFile file;
 
   public static InfoSharePostDto fromEntity(InfoSharePost post) {
     return InfoSharePostDto.builder()
@@ -33,6 +38,7 @@ public class InfoSharePostDto {
         .description(post.getDescription())
         .createdAt(post.getCreatedAt())
         .updatedAt(post.getUpdatedAt())
+        .userId(post.getUser().getId())
         .build();
   }
 

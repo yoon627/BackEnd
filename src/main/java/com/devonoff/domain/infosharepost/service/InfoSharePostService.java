@@ -16,11 +16,13 @@ import com.devonoff.exception.CustomException;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
@@ -33,25 +35,37 @@ public class InfoSharePostService {
   private final PhotoService photoService;
   private final AuthService authService;
 
-  public InfoSharePostDto createInfoSharePost(InfoSharePostDto infoSharePostDto,
-      MultipartFile file) {
-    if (!file.isEmpty()) {
-      infoSharePostDto.setThumbnailImgUrl(photoService.save(file));
-    }
+  @Value("${spring.data.web.pageable.default-page-size}")
+  private Integer defaultPageSize;
+
+  @Value("${cloud.aws.s3.default-thumbnail-image-url}")
+  private String defaultThumbnailImageUrl;
+
+  @Transactional
+  public InfoSharePostDto createInfoSharePost(InfoSharePostDto infoSharePostDto) {
     User user = this.userRepository.findById(authService.getLoginUserId())
         .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
     infoSharePostDto.setUserDto(UserDto.fromEntity(user));
+    MultipartFile file = infoSharePostDto.getFile();
+    if (file != null && !file.isEmpty()) {
+      infoSharePostDto.setThumbnailImgUrl(photoService.save(file));
+    } else {
+      infoSharePostDto.setThumbnailImgUrl(defaultThumbnailImageUrl);
+    }
+
     return InfoSharePostDto.fromEntity(
         this.infoSharePostRepository.save(InfoSharePostDto.toEntity(infoSharePostDto)));
   }
 
-  public Page<InfoSharePostDto> getInfoSharePosts(Pageable pageable, String search) {
+  public Page<InfoSharePostDto> getInfoSharePosts(Integer page, String search) {
+    Pageable pageable = PageRequest.of(page, defaultPageSize, Sort.by("createdAt").descending());
     return this.infoSharePostRepository.findAllByTitleContaining(search,
         pageable).map(InfoSharePostDto::fromEntity);
   }
 
-  public Page<InfoSharePostDto> getInfoSharePostsByUserId(Long userId, Pageable pageable,
+  public Page<InfoSharePostDto> getInfoSharePostsByUserId(Long userId, Integer page,
       String search) {
+    Pageable pageable = PageRequest.of(page, defaultPageSize, Sort.by("createdAt").descending());
     return this.infoSharePostRepository.findAllByUserIdAndTitleContaining(userId, search, pageable)
         .map(InfoSharePostDto::fromEntity);
   }
@@ -61,17 +75,30 @@ public class InfoSharePostService {
         .orElseThrow(() -> new CustomException(POST_NOT_FOUND)));
   }
 
-  public InfoSharePostDto updateInfoSharePost(Long infoPostId, InfoSharePostDto infoSharePostDto,
-      MultipartFile file) {
-    if (!file.isEmpty()) {
-      infoSharePostDto.setThumbnailImgUrl(photoService.save(file));
-    }
-    if (!Objects.equals(authService.getLoginUserId(), infoSharePostDto.getUserDto().getId())) {
+  public InfoSharePostDto updateInfoSharePost(Long infoPostId, InfoSharePostDto infoSharePostDto) {
+    if (!Objects.equals(authService.getLoginUserId(), infoSharePostDto.getUserId())) {
       throw new CustomException(UNAUTHORIZED_ACCESS);
     }
     InfoSharePost infoSharePost = this.infoSharePostRepository.findById(infoPostId)
         .orElseThrow(() -> new CustomException(POST_NOT_FOUND));
-    infoSharePost.setThumbnailImgUrl(infoSharePostDto.getThumbnailImgUrl());
+
+    MultipartFile file = infoSharePostDto.getFile();
+    String originImgUrl = infoSharePost.getThumbnailImgUrl();
+    String requestImgUrl = infoSharePostDto.getThumbnailImgUrl();
+
+    if (file != null && !file.isEmpty()) {
+      if (originImgUrl != null && !originImgUrl.isEmpty() && !originImgUrl.equals(
+          defaultThumbnailImageUrl)) {
+        photoService.delete(originImgUrl);
+      }
+      infoSharePost.setThumbnailImgUrl(photoService.save(file));
+    } else {
+      if (requestImgUrl != null && !requestImgUrl.isEmpty() && requestImgUrl.equals(
+          defaultThumbnailImageUrl)) {
+        infoSharePost.setThumbnailImgUrl(defaultThumbnailImageUrl);
+      }
+    }
+
     infoSharePost.setTitle(infoSharePostDto.getTitle());
     infoSharePost.setDescription(infoSharePostDto.getDescription());
     return InfoSharePostDto.fromEntity(this.infoSharePostRepository.save(infoSharePost));
