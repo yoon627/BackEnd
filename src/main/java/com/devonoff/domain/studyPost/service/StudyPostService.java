@@ -72,7 +72,7 @@ public class StudyPostService {
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
     if (request.getMeetingType() == StudyMeetingType.HYBRID && (request.getLatitude() == null
-        || request.getLongitude() == null)) {
+        || request.getLongitude() == null || request.getAddress() == null)) {
       throw new CustomException(ErrorCode.LOCATION_REQUIRED_FOR_HYBRID);
     }
 
@@ -230,6 +230,7 @@ public class StudyPostService {
         .description(request.getDescription())
         .latitude(request.getLatitude())
         .longitude(request.getLongitude())
+        .address(request.getAddress())
         .status(StudyPostStatus.RECRUITING) // 기본값 설정
         .thumbnailImgUrl(request.getThumbnailImgUrl())
         .maxParticipants(request.getMaxParticipants())

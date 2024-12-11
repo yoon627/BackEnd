@@ -83,6 +83,9 @@ public class StudyPost extends BaseTimeEntity {
   @Column
   private Double longitude; // 경도
 
+  @Column
+  private String address; // 주소 정보
+
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private StudyPostStatus status; // 모집글 상태
