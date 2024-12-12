@@ -4,7 +4,6 @@ package com.devonoff.domain.reply.service;
 
 import com.devonoff.domain.comment.entity.Comment;
 import com.devonoff.domain.comment.repository.CommentRepository;
-import com.devonoff.domain.comment.service.CommentService;
 import com.devonoff.domain.reply.Repository.ReplyRepository;
 import com.devonoff.domain.reply.dto.ReplyRequest;
 import com.devonoff.domain.reply.dto.ReplyResponse;
