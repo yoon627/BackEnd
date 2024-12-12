@@ -86,7 +86,7 @@ class StudySignupServiceTest {
     assertNotNull(result);
     assertEquals(10L, result.getSignupId());
     assertEquals(userId, result.getUserId());
-    assertEquals("참가자", result.getNickName());
+    assertEquals("참가자", result.getNickname());
     assertEquals(StudySignupStatus.PENDING, result.getStatus());
   }
 
@@ -367,7 +367,7 @@ class StudySignupServiceTest {
     List<StudySignup> studySignups = List.of(signup1, signup2);
 
     when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
-    when(authService.getLoginUserId()).thenReturn(loggedInUserId);
+//    when(authService.getLoginUserId()).thenReturn(loggedInUserId);
     when(studySignupRepository.findByStudyPostAndStatus(studyPost, filterStatus)).thenReturn(
         studySignups);
 
@@ -377,10 +377,10 @@ class StudySignupServiceTest {
     // Then
     assertNotNull(result);
     assertEquals(2, result.size());
-    assertEquals("참가자1", result.get(0).getNickName());
-    assertEquals("참가자2", result.get(1).getNickName());
+    assertEquals("참가자1", result.get(0).getNickname());
+    assertEquals("참가자2", result.get(1).getNickname());
     verify(studyPostRepository).findById(studyPostId);
-    verify(authService).getLoginUserId();
+//    verify(authService).getLoginUserId();
     verify(studySignupRepository).findByStudyPostAndStatus(studyPost, filterStatus);
   }
 

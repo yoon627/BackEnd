@@ -79,8 +79,8 @@ class StudyServiceTest {
         .subject(StudySubject.JOB_PREPARATION)
         .difficulty(StudyDifficulty.MEDIUM)
         .dayType(3)
-        .startDate(LocalDate.of(2024, 12, 10))
-        .endDate(LocalDate.of(2024, 12, 20))
+        .startDate(LocalDate.of(2025, 12, 10))
+        .endDate(LocalDate.of(2025, 12, 20))
         .startTime(LocalTime.of(10, 0))
         .endTime(LocalTime.of(12, 0))
         .meetingType(StudyMeetingType.ONLINE)
@@ -102,8 +102,8 @@ class StudyServiceTest {
     assertEquals(StudySubject.JOB_PREPARATION, result.getSubject());
     assertEquals(StudyDifficulty.MEDIUM, result.getDifficulty());
     assertEquals(3, result.getDayType());
-    assertEquals(LocalDate.of(2024, 12, 10), result.getStartDate());
-    assertEquals(LocalDate.of(2024, 12, 20), result.getEndDate());
+    assertEquals(LocalDate.of(2025, 12, 10), result.getStartDate());
+    assertEquals(LocalDate.of(2025, 12, 20), result.getEndDate());
     assertEquals(LocalTime.of(10, 0), result.getStartTime());
     assertEquals(LocalTime.of(12, 0), result.getEndTime());
     assertEquals(StudyMeetingType.ONLINE, result.getMeetingType());

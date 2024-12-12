@@ -1,4 +1,4 @@
-package com.devonoff.studytimeline.service;
+package com.devonoff.domain.studytimeline.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

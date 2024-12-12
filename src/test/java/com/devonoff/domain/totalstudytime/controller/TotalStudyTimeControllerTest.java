@@ -1,4 +1,4 @@
-package com.devonoff.totalstudytime.controller;
+package com.devonoff.domain.totalstudytime.controller;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;

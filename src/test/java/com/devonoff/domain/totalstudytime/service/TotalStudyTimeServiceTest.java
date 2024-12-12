@@ -1,4 +1,4 @@
-package com.devonoff.totalstudytime.service;
+package com.devonoff.domain.totalstudytime.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
