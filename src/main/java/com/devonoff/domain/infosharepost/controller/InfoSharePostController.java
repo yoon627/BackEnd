@@ -4,16 +4,16 @@ import com.devonoff.domain.infosharepost.dto.InfoSharePostDto;
 import com.devonoff.domain.infosharepost.service.InfoSharePostService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/info-posts")
@@ -22,11 +22,10 @@ public class InfoSharePostController {
 
   private final InfoSharePostService infoSharePostService;
 
-  @PostMapping
+  @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<InfoSharePostDto> createInfoSharePost(
-      @RequestPart("file") MultipartFile file,
-      @RequestPart("data") InfoSharePostDto infoSharePost) {
-    var result = this.infoSharePostService.createInfoSharePost(infoSharePost, file);
+      @ModelAttribute InfoSharePostDto infoSharePostDto) {
+    var result = this.infoSharePostService.createInfoSharePost(infoSharePostDto);
     return ResponseEntity.ok(result);
   }
 
@@ -41,7 +40,8 @@ public class InfoSharePostController {
   //TODO userId -> nickname으로 변경해야함, InfoSharePost 테이블에 nickname추가?
   @GetMapping("/author/{userId}")
   public ResponseEntity<Page<InfoSharePostDto>> getInfoSharePostsByUserId(@PathVariable Long userId,
-      @RequestParam Integer page, @RequestParam String search) {
+      @RequestParam(required = false, defaultValue = "0") Integer page,
+      @RequestParam(required = false, defaultValue = "") String search) {
     var result = this.infoSharePostService.getInfoSharePostsByUserId(userId, page, search);
     return ResponseEntity.ok(result);
   }
@@ -55,9 +55,8 @@ public class InfoSharePostController {
 
   @PostMapping("/{infoPostId}")
   public ResponseEntity<InfoSharePostDto> updateInfoSharePost(@PathVariable Long infoPostId,
-      @RequestPart("file") MultipartFile file,
-      @RequestPart("data") InfoSharePostDto infoSharePostDto) {
-    var result = this.infoSharePostService.updateInfoSharePost(infoPostId, infoSharePostDto, file);
+      @ModelAttribute InfoSharePostDto infoSharePostDto) {
+    var result = this.infoSharePostService.updateInfoSharePost(infoPostId, infoSharePostDto);
     return ResponseEntity.ok(result);
   }
 

@@ -13,6 +13,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -75,6 +76,7 @@ public class StudyPostCreateRequest {
 
   private String thumbnailImgUrl; // 썸네일 이미지
 
+  @Nullable
   private MultipartFile file;
 
   @NotNull(message = "최대 모집 인원은 필수입니다.")

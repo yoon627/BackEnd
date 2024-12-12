@@ -14,12 +14,10 @@ import com.devonoff.type.PostType;
 import java.util.Collections;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -35,6 +33,8 @@ public class QnaPostService {
   private final QnaPostRepository qnaPostRepository;
   private final UserRepository userRepository;
   private final PhotoService photoService;
+  @Value("${cloud.aws.s3.default-thumbnail-image-url}")
+  private String defaultThumbnailImageUrl;
 
   /**
    * 질의 응답 게시글 생성
@@ -48,9 +48,9 @@ public class QnaPostService {
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
     // 썸네일 저장
-    String uploadedThumbnailUrl = null;
-    if (qnaPostRequest.getThumbnail() != null && !qnaPostRequest.getThumbnail().isEmpty()) {
-      uploadedThumbnailUrl = photoService.save(qnaPostRequest.getThumbnail());
+    String uploadedThumbnailUrl = defaultThumbnailImageUrl;
+    if (qnaPostRequest.getFile() != null && !qnaPostRequest.getFile().isEmpty()) {
+      uploadedThumbnailUrl = photoService.save(qnaPostRequest.getFile());
     }
 
     // QnaPost 저장
@@ -69,8 +69,7 @@ public class QnaPostService {
   }
 
   /**
-   * 질의 응답 게시글 전체 목록 조회 (최신순)
-   * 토큰 X
+   * 질의 응답 게시글 전체 목록 조회 (최신순) 토큰 X
    *
    * @param page   조회할 페이지 번호 (1부터 시작)
    * @param search 검색 키워드 (optional)
@@ -87,9 +86,10 @@ public class QnaPostService {
     return qnaPostRepository.findByTitleContaining(search.trim(), pageable)
         .map(QnaPostDto::fromEntity);
   }
+
   /**
-   * 특정 사용자의 질의 응답 게시글 목록 조회 (최신순)
-   * 토큰O
+   * 특정 사용자의 질의 응답 게시글 목록 조회 (최신순) 토큰O
+   *
    * @param userId
    * @param page
    * @param search
@@ -113,8 +113,8 @@ public class QnaPostService {
   }
 
   /**
-   * 특정 질의 응답 게시글 상세 조회
-   * 토큰 X
+   * 특정 질의 응답 게시글 상세 조회 토큰 X
+   *
    * @param qnaPostId
    * @return QnaPostDto
    */
@@ -149,19 +149,22 @@ public class QnaPostService {
     }
 
     // 썸네일 업데이트 로직
-    String updatedThumbnailUrl = qnaPost.getThumbnailUrl();
-    if (qnaPostUpdateDto.getThumbnail() != null && !qnaPostUpdateDto.getThumbnail().isEmpty()) {
-      if (qnaPost.getThumbnailUrl() != null) {
+    String updatedThumbnailUrl = qnaPostUpdateDto.getThumbnailImgUrl();
+    if (qnaPostUpdateDto.getFile() != null && !qnaPostUpdateDto.getFile().isEmpty()) {
+      photoService.delete(qnaPost.getThumbnailUrl());
+      updatedThumbnailUrl = photoService.save(qnaPostUpdateDto.getFile());
+      qnaPost.setThumbnailUrl(updatedThumbnailUrl);
+    } else {
+      if (updatedThumbnailUrl != null && !updatedThumbnailUrl.isEmpty()
+          && updatedThumbnailUrl.equals(defaultThumbnailImageUrl)) {
         photoService.delete(qnaPost.getThumbnailUrl());
+        qnaPost.setThumbnailUrl(defaultThumbnailImageUrl);
       }
-      updatedThumbnailUrl = photoService.save(qnaPostUpdateDto.getThumbnail());
     }
 
     // 게시글 업데이트
     qnaPost.setTitle(qnaPostUpdateDto.getTitle());
     qnaPost.setContent(qnaPostUpdateDto.getContent());
-    qnaPost.setThumbnailUrl(updatedThumbnailUrl);
-
     QnaPost updatedQnaPost = qnaPostRepository.save(qnaPost);
 
     return QnaPostDto.fromEntity(updatedQnaPost);
@@ -190,14 +193,9 @@ public class QnaPostService {
     }
 
     // 썸네일 파일 삭제
-    if (qnaPost.getThumbnailUrl() != null) {
-      photoService.delete(qnaPost.getThumbnailUrl());
-    }
+    photoService.delete(qnaPost.getThumbnailUrl());
 
     // 게시글 삭제
     qnaPostRepository.delete(qnaPost);
   }
 }
-
-
-
