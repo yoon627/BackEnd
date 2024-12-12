@@ -250,8 +250,8 @@ class StudyServiceTest {
     // Then
     assertNotNull(result);
     assertEquals(2, result.size());
-    assertEquals("참가자1", result.get(0).getNickname());
-    assertEquals("참가자2", result.get(1).getNickname());
+    assertEquals("참가자1", result.get(0).getUser().getNickname());
+    assertEquals("참가자2", result.get(1).getUser().getNickname());
   }
 
   @DisplayName("스터디 상태 자동 업데이트")
