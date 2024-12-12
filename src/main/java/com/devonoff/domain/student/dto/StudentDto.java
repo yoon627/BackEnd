@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
 @Builder
@@ -16,14 +15,12 @@ public class StudentDto {
 
   private Long studentId;
   private UserDto user;
-  private String nickname;
   private Boolean isLeader;
 
   public static StudentDto fromEntity(Student student) {
     return StudentDto.builder()
         .studentId(student.getId())
         .user(UserDto.fromEntity(student.getUser()))
-        .nickname(student.getUser().getNickname())
         .isLeader(student.getIsLeader())
         .build();
   }
