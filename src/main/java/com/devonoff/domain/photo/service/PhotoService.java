@@ -26,6 +26,12 @@ public class PhotoService {
 
   private String urlPrefix;
 
+  @Value("${cloud.aws.s3.default-thumbnail-image-url}")
+  private String defaultThumbnailImageUrl;
+
+  @Value("${cloud.aws.s3.default-profile-image-url}")
+  private String defaultProfileImageUrl;
+
   @PostConstruct
   public void init() {
     urlPrefix = "https://" + bucket + ".s3." + region + ".amazonaws.com/";
@@ -44,7 +50,6 @@ public class PhotoService {
       metadata.setContentLength(file.getSize());
       if (amazonS3Client.doesObjectExist(bucket, userId + "/" + fileName)) {
         return urlPrefix + userId + "/" + fileName;
-//        throw new ResponseStatusException(HttpStatus.CONFLICT, "File already exists");
       }
       this.amazonS3Client.putObject(bucket, userId + "/" + fileName,
           file.getInputStream(),
@@ -56,6 +61,13 @@ public class PhotoService {
   }
 
   public void delete(String fileUrl) {
-    this.amazonS3Client.deleteObject(bucket, fileUrl.substring(urlPrefix.length()));
+    if (fileUrl.equals(defaultThumbnailImageUrl) || fileUrl.equals(defaultProfileImageUrl)) {
+      return;
+    }
+    try {
+      this.amazonS3Client.deleteObject(bucket, fileUrl.substring(urlPrefix.length()));
+    } catch (Exception e) {
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+    }
   }
 }

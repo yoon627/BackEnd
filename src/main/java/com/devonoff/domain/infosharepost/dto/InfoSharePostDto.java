@@ -19,7 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class InfoSharePostDto {
 
   private Long id;
-  private UserDto userDto;
+  private UserDto user;
   private String thumbnailImgUrl;
   private String title;
   private String description;
@@ -32,7 +32,7 @@ public class InfoSharePostDto {
   public static InfoSharePostDto fromEntity(InfoSharePost post) {
     return InfoSharePostDto.builder()
         .id(post.getId())
-        .userDto(UserDto.fromEntity(post.getUser()))
+        .user(UserDto.fromEntity(post.getUser()))
         .thumbnailImgUrl(post.getThumbnailImgUrl())
         .title(post.getTitle())
         .description(post.getDescription())
@@ -44,7 +44,7 @@ public class InfoSharePostDto {
 
   public static InfoSharePost toEntity(InfoSharePostDto infoSharePostDto) {
     return InfoSharePost.builder()
-        .user(UserDto.toEntity(infoSharePostDto.getUserDto()))
+        .user(UserDto.toEntity(infoSharePostDto.getUser()))
         .thumbnailImgUrl(infoSharePostDto.getThumbnailImgUrl())
         .title(infoSharePostDto.getTitle())
         .description(infoSharePostDto.getDescription())

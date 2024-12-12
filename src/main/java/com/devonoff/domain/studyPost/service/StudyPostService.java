@@ -25,7 +25,6 @@ import com.devonoff.type.StudySubject;
 import com.devonoff.util.DayTypeUtils;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -133,17 +132,15 @@ public class StudyPostService {
     studyPost.setLatitude(request.getLatitude());
     studyPost.setLongitude(request.getLongitude());
     studyPost.setStatus(request.getStatus());
+    //파일이 있는 경우
     if (file != null && !file.isEmpty()) {
-      if (originImgUrl != null && !originImgUrl.isEmpty() && !Objects.equals(originImgUrl,
-          defaultThumbnailImageUrl)) {
-        photoService.delete(originImgUrl);
-      }
-      String savedImgUrl = photoService.save(file);
-      System.out.println(savedImgUrl);
-      studyPost.setThumbnailImgUrl(savedImgUrl);
+      photoService.delete(originImgUrl);
+      studyPost.setThumbnailImgUrl(photoService.save(file));
     } else {
+      //파일이 없는 경우
       if (requestImgUrl != null && !requestImgUrl.isEmpty() && requestImgUrl.equals(
           defaultThumbnailImageUrl)) {
+        photoService.delete(originImgUrl);
         studyPost.setThumbnailImgUrl(defaultThumbnailImageUrl);
       }
     }

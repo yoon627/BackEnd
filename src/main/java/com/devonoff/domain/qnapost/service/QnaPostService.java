@@ -151,17 +151,13 @@ public class QnaPostService {
     // 썸네일 업데이트 로직
     String updatedThumbnailUrl = qnaPostUpdateDto.getThumbnailImgUrl();
     if (qnaPostUpdateDto.getFile() != null && !qnaPostUpdateDto.getFile().isEmpty()) {
-      if (qnaPost.getThumbnailUrl() != null) {
-        photoService.delete(qnaPost.getThumbnailUrl());
-      }
+      photoService.delete(qnaPost.getThumbnailUrl());
       updatedThumbnailUrl = photoService.save(qnaPostUpdateDto.getFile());
       qnaPost.setThumbnailUrl(updatedThumbnailUrl);
     } else {
       if (updatedThumbnailUrl != null && !updatedThumbnailUrl.isEmpty()
           && updatedThumbnailUrl.equals(defaultThumbnailImageUrl)) {
-        if (!qnaPost.getThumbnailUrl().equals(defaultThumbnailImageUrl)) {
-          photoService.delete(qnaPost.getThumbnailUrl());
-        }
+        photoService.delete(qnaPost.getThumbnailUrl());
         qnaPost.setThumbnailUrl(defaultThumbnailImageUrl);
       }
     }
@@ -169,8 +165,6 @@ public class QnaPostService {
     // 게시글 업데이트
     qnaPost.setTitle(qnaPostUpdateDto.getTitle());
     qnaPost.setContent(qnaPostUpdateDto.getContent());
-//    qnaPost.setThumbnailUrl(updatedThumbnailUrl);
-
     QnaPost updatedQnaPost = qnaPostRepository.save(qnaPost);
 
     return QnaPostDto.fromEntity(updatedQnaPost);
@@ -199,9 +193,7 @@ public class QnaPostService {
     }
 
     // 썸네일 파일 삭제
-    if (qnaPost.getThumbnailUrl() != null) {
-      photoService.delete(qnaPost.getThumbnailUrl());
-    }
+    photoService.delete(qnaPost.getThumbnailUrl());
 
     // 게시글 삭제
     qnaPostRepository.delete(qnaPost);

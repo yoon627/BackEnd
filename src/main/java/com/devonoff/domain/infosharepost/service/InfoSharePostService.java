@@ -45,7 +45,7 @@ public class InfoSharePostService {
   public InfoSharePostDto createInfoSharePost(InfoSharePostDto infoSharePostDto) {
     User user = this.userRepository.findById(authService.getLoginUserId())
         .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
-    infoSharePostDto.setUserDto(UserDto.fromEntity(user));
+    infoSharePostDto.setUser(UserDto.fromEntity(user));
     MultipartFile file = infoSharePostDto.getFile();
     if (file != null && !file.isEmpty()) {
       infoSharePostDto.setThumbnailImgUrl(photoService.save(file));
@@ -75,6 +75,7 @@ public class InfoSharePostService {
         .orElseThrow(() -> new CustomException(POST_NOT_FOUND)));
   }
 
+  @Transactional
   public InfoSharePostDto updateInfoSharePost(Long infoPostId, InfoSharePostDto infoSharePostDto) {
     if (!Objects.equals(authService.getLoginUserId(), infoSharePostDto.getUserId())) {
       throw new CustomException(UNAUTHORIZED_ACCESS);
@@ -87,17 +88,12 @@ public class InfoSharePostService {
     String requestImgUrl = infoSharePostDto.getThumbnailImgUrl();
 
     if (file != null && !file.isEmpty()) {
-      if (originImgUrl != null && !originImgUrl.isEmpty() && !originImgUrl.equals(
-          defaultThumbnailImageUrl)) {
-        photoService.delete(originImgUrl);
-      }
+      photoService.delete(originImgUrl);
       infoSharePost.setThumbnailImgUrl(photoService.save(file));
     } else {
       if (requestImgUrl != null && !requestImgUrl.isEmpty() && requestImgUrl.equals(
           defaultThumbnailImageUrl)) {
-        if (!originImgUrl.equals(defaultThumbnailImageUrl)) {
-          photoService.delete(originImgUrl);
-        }
+        photoService.delete(originImgUrl);
         infoSharePost.setThumbnailImgUrl(defaultThumbnailImageUrl);
       }
     }
@@ -107,19 +103,14 @@ public class InfoSharePostService {
     return InfoSharePostDto.fromEntity(this.infoSharePostRepository.save(infoSharePost));
   }
 
+  @Transactional
   public void deleteInfoSharePost(Long infoPostId) {
     InfoSharePost infoSharePost = this.infoSharePostRepository.findById(infoPostId)
         .orElseThrow(() -> new CustomException(POST_NOT_FOUND));
     if (!Objects.equals(authService.getLoginUserId(), infoSharePost.getUser().getId())) {
       throw new CustomException(UNAUTHORIZED_ACCESS);
     }
-    if (infoSharePost.getThumbnailImgUrl() != null) {
-      try {
-        photoService.delete(infoSharePost.getThumbnailImgUrl());
-      } catch (Exception e) {
-        log.info("존재하지 않는 사진입니다.");
-      }
-    }
+    photoService.delete(infoSharePost.getThumbnailImgUrl());
     this.infoSharePostRepository.deleteById(infoPostId);
   }
 }
