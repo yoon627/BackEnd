@@ -95,35 +95,6 @@ class AuthControllerTest {
   }
 
   @Test
-  @DisplayName("이메일 중복 확인 - 성공")
-  void testCheckEmail_Success() throws Exception {
-    // given
-    EmailRequest emailRequest = EmailRequest.builder()
-        .email("test@email.com")
-        .build();
-    willDoNothing().given(authService).emailCheck(emailRequest);
-
-    // when, then
-    mockMvc.perform(post("/api/auth/check-email")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(emailRequest)))
-        .andExpect(status().isOk());
-  }
-
-  @Test
-  @DisplayName("이메일 중복 확인 - 실패 (유효성 검증 실패)")
-  void testCheckEmail_Fail_ValidationFail() throws Exception {
-    // given
-    EmailRequest emailRequest = EmailRequest.builder().build();
-
-    // when, then
-    mockMvc.perform(post("/api/auth/check-email")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(emailRequest)))
-        .andExpect(status().isBadRequest());
-  }
-
-  @Test
   @DisplayName("인증번호 이메일 전송 - 성공")
   void testSendEmail_Success() throws Exception {
     // given
@@ -312,7 +283,6 @@ class AuthControllerTest {
   void testReissueToken_Success() throws Exception {
     // given
     ReissueTokenRequest reissueTokenRequest = ReissueTokenRequest.builder()
-        .email("test@email.com")
         .refreshToken("RefreshToken")
         .build();
 
@@ -336,7 +306,6 @@ class AuthControllerTest {
   void testReissueToken_Fail_ValidationFail() throws Exception {
     // given
     ReissueTokenRequest reissueTokenRequest = ReissueTokenRequest.builder()
-        .refreshToken("RefreshToken")
         .build();
 
     // when, then

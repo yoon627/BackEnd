@@ -65,15 +65,6 @@ public class AuthService {
   }
 
   /**
-   * 사용자 Email 중복 체크
-   *
-   * @param emailRequest
-   */
-  public void emailCheck(EmailRequest emailRequest) {
-    checkExistsEmail(emailRequest.getEmail());
-  }
-
-  /**
    * 이메일 인증번호 전송
    *
    * @param emailSendRequest
@@ -200,10 +191,12 @@ public class AuthService {
    * @return ReissueTokenResponse
    */
   public ReissueTokenResponse reissueToken(ReissueTokenRequest reissueTokenRequest) {
-    User user = userRepository.findByEmail(reissueTokenRequest.getEmail())
+    Long userId = jwtProvider.getUserId(reissueTokenRequest.getRefreshToken());
+
+    User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-    String refreshTokenKey = reissueTokenRequest.getEmail() + "-refreshToken";
+    String refreshTokenKey = user.getEmail() + "-refreshToken";
     String refreshTokenData = authRedisRepository.getData(refreshTokenKey);
 
     if (refreshTokenData == null) {
