@@ -74,7 +74,7 @@ public class StudyPost extends BaseTimeEntity {
   @Column(nullable = false)
   private LocalDate recruitmentPeriod; // 모집 기한
 
-  @Column(nullable = false)
+  @Column(columnDefinition = "TEXT", nullable = false)
   private String description; // 본문
 
   @Column
