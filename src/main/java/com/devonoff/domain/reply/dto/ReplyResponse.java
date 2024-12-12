@@ -19,7 +19,7 @@ public class ReplyResponse {
   private PostType postType;
   private Long commentsId;
   private String content;
-  private UserDto userDto;
+  private UserDto user;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
@@ -31,7 +31,7 @@ public class ReplyResponse {
         .postType(reply.getPostType())
         .commentsId(reply.getComment().getId())
         .content(reply.getContent())
-        .userDto(UserDto.fromEntity(reply.getUser()))  // User 엔티티에서 UserDto로 변환
+        .user(UserDto.fromEntity(reply.getUser()))  // User 엔티티에서 UserDto로 변환
         .createdAt(reply.getCreatedAt())
         .updatedAt(reply.getUpdatedAt())
         .build();

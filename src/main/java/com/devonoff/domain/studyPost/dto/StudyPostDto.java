@@ -2,6 +2,7 @@ package com.devonoff.domain.studyPost.dto;
 
 
 import com.devonoff.domain.studyPost.entity.StudyPost;
+import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyPostStatus;
@@ -44,7 +45,7 @@ public class StudyPostDto {
   private String thumbnailImgUrl;
   private Integer maxParticipants;
   private Integer currentParticipants;
-  private Long userId;
+  private UserDto user;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
@@ -70,7 +71,7 @@ public class StudyPostDto {
         .thumbnailImgUrl(studyPost.getThumbnailImgUrl())
         .maxParticipants(studyPost.getMaxParticipants())
         .currentParticipants(studyPost.getCurrentParticipants())
-        .userId(studyPost.getUser().getId())
+        .user(UserDto.fromEntity(studyPost.getUser()))
         .createdAt(studyPost.getCreatedAt())
         .updatedAt(studyPost.getUpdatedAt())
         .build();
