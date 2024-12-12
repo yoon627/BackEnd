@@ -1,0 +1,81 @@
+spring:
+
+  application:
+    name:
+      DevOnOff
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${MYSQL_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    show-sql: true
+    database: mysql
+    hibernate:
+      ddl-auto: validate
+
+  batch:
+    jdbc:
+      initialize-schema: never # 개발 환경에서는 always로 설정, 운영 환경에서는 never로 설정
+
+  jwt:
+    secret: ${JWT_SECRET_KEY}
+  #
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+  data:
+    redis:
+      jedis:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+      host: localhost
+      port: 6379
+
+    web:
+      pageable:
+        default-page-size: 12 # 기본 페이지 크기 12로 설정
+        max-page-size: 100
+
+  security:
+    oauth2:
+      client:
+        registration:
+          # Kakao OAuth2
+          kakao:
+            client-id: ${KAKAO_REST_API_KEY}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+            redirect-uri: ${KAKAO_REDIRECT_URI}
+          # Naver OAuth2
+          naver:
+            client-id: ${NAVER_CLIENT_ID}
+            client-secret: ${NAVER_CLIENT_SECRET}
+            redirect-uri: ${NAVER_REDIRECT_URI}
+
+cloud:
+  aws:
+    s3:
+      bucket: ${S3_BUCKET_NAME}
+      default-profile-image-url: https://${S3_BUCKET_NAME}.s3.${S3_REGION}.amazonaws.com/default/default-profile-image.png
+      default-thumbnail-image-url: https://${S3_BUCKET_NAME}.s3.${S3_REGION}.amazonaws.com/default/thumbnail.png
+    region:
+      static: ${S3_REGION}
+    credentials:
+      accessKey: ${S3_ACCESS_KEY}
+      secretKey: ${S3_SECRET_KEY}
+    stack:
+      auto: false
