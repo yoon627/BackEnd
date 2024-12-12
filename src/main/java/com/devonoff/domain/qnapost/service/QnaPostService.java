@@ -1,17 +1,21 @@
 package com.devonoff.domain.qnapost.service;
 
+import com.devonoff.domain.comment.entity.Comment;
+import com.devonoff.domain.comment.repository.CommentRepository;
 import com.devonoff.domain.photo.service.PhotoService;
 import com.devonoff.domain.qnapost.dto.QnaPostDto;
 import com.devonoff.domain.qnapost.dto.QnaPostRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostUpdateDto;
 import com.devonoff.domain.qnapost.entity.QnaPost;
 import com.devonoff.domain.qnapost.repository.QnaPostRepository;
+import com.devonoff.domain.reply.Repository.ReplyRepository;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.PostType;
 import java.util.Collections;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +34,8 @@ public class QnaPostService {
 
   private final QnaPostRepository qnaPostRepository;
   private final UserRepository userRepository;
+  private final CommentRepository commentRepository;
+  private final ReplyRepository replyRepository;
   private final PhotoService photoService;
   @Value("${cloud.aws.s3.default-thumbnail-image-url}")
   private String defaultThumbnailImageUrl;
@@ -192,6 +198,16 @@ public class QnaPostService {
 
     // 썸네일 파일 삭제
     photoService.delete(qnaPost.getThumbnailUrl());
+
+    // 관련된 댓글, 대댓글 삭제
+    List<Comment> commentList = commentRepository.findAllByPostIdAndPostType(qnaPostId,
+        PostType.QNA);
+
+    for (Comment comment : commentList) {
+      replyRepository.deleteAllByComment(comment);
+    }
+
+    commentRepository.deleteAllByPostIdAndPostType(qnaPostId, PostType.QNA);
 
     // 게시글 삭제
     qnaPostRepository.delete(qnaPost);
