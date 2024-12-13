@@ -1,24 +1,30 @@
-package com.devonoff.infosharepost.service;
+package com.devonoff.domain.infosharepost.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.devonoff.domain.comment.entity.Comment;
+import com.devonoff.domain.comment.repository.CommentRepository;
 import com.devonoff.domain.infosharepost.dto.InfoSharePostDto;
 import com.devonoff.domain.infosharepost.entity.InfoSharePost;
 import com.devonoff.domain.infosharepost.repository.InfoSharePostRepository;
-import com.devonoff.domain.infosharepost.service.InfoSharePostService;
 import com.devonoff.domain.photo.service.PhotoService;
+import com.devonoff.domain.reply.Repository.ReplyRepository;
 import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
+import com.devonoff.type.PostType;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +44,12 @@ class InfoSharePostServiceTest {
 
   @Mock
   private UserRepository userRepository;
+
+  @Mock
+  private CommentRepository commentRepository;
+
+  @Mock
+  private ReplyRepository replyRepository;
 
   @Mock
   private PhotoService photoService;
@@ -68,7 +80,7 @@ class InfoSharePostServiceTest {
     when(infoSharePostRepository.save(any())).thenReturn(entity);
 
     // when
-    InfoSharePostDto result = infoSharePostService.createInfoSharePost(dto, file);
+    InfoSharePostDto result = infoSharePostService.createInfoSharePost(dto);
 
     // then
     assertNotNull(result);
@@ -91,7 +103,7 @@ class InfoSharePostServiceTest {
 
     // when & then
     CustomException exception = assertThrows(CustomException.class, () ->
-        infoSharePostService.createInfoSharePost(dto, file));
+        infoSharePostService.createInfoSharePost(dto));
 
     assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
   }
@@ -102,7 +114,7 @@ class InfoSharePostServiceTest {
     // given
     Long postId = 1L;
     InfoSharePostDto dto = InfoSharePostDto.builder()
-        .userDto(UserDto.builder().id(2L).build()) // 다른 사용자의 ID
+        .user(UserDto.builder().id(2L).build()) // 다른 사용자의 ID
         .build();
     MultipartFile file = mock(MultipartFile.class);
 
@@ -110,7 +122,7 @@ class InfoSharePostServiceTest {
 
     // when & then
     CustomException exception = assertThrows(CustomException.class, () ->
-        infoSharePostService.updateInfoSharePost(postId, dto, file));
+        infoSharePostService.updateInfoSharePost(postId, dto));
 
     assertEquals(ErrorCode.UNAUTHORIZED_ACCESS, exception.getErrorCode());
   }
@@ -121,8 +133,18 @@ class InfoSharePostServiceTest {
     // given
     InfoSharePost post = InfoSharePost.builder().user(User.builder().id(1L).build()).build();
 
+    List<Comment> commentList = List.of(
+        Comment.builder().id(1L).postId(1L).postType(PostType.INFO).build(),
+        Comment.builder().id(2L).postId(1L).postType(PostType.INFO).build()
+    );
+
     when(authService.getLoginUserId()).thenReturn(1L); // Mock 로그인 사용자 ID
     when(infoSharePostRepository.findById(1L)).thenReturn(Optional.of(post));
+    doNothing().when(photoService).delete(anyString());
+    when(commentRepository.findAllByPostIdAndPostType(1L, PostType.INFO))
+        .thenReturn(commentList);
+    doNothing().when(replyRepository).deleteAllByComment(any(Comment.class));
+    doNothing().when(commentRepository).deleteAllByPostIdAndPostType(1L, PostType.INFO);
 
     // when
     infoSharePostService.deleteInfoSharePost(1L);

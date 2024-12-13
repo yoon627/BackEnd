@@ -22,6 +22,8 @@ import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
 import com.devonoff.domain.studyPost.service.StudyPostService;
+import com.devonoff.domain.user.dto.UserDto;
+import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
@@ -72,6 +74,8 @@ class StudyPostControllerTest {
   void getStudyPostDetail_Success() throws Exception {
     Long studyPostId = 1L;
 
+    User user = User.builder().id(11L).nickname("User11").build();
+
     StudyPostDto studyPostDto = new StudyPostDto();
     studyPostDto.setId(studyPostId);
     studyPostDto.setTitle("스터디 모집글! 상세 조회 테스트");
@@ -89,7 +93,7 @@ class StudyPostControllerTest {
     studyPostDto.setLatitude(35.6895);
     studyPostDto.setLongitude(139.6917);
     studyPostDto.setMaxParticipants(5);
-    studyPostDto.setUserId(11L);
+    studyPostDto.setUser(UserDto.fromEntity(user));
 
     when(studyPostService.getStudyPostDetail(studyPostId)).thenReturn(studyPostDto);
 
@@ -112,7 +116,7 @@ class StudyPostControllerTest {
         .andExpect(jsonPath("$.latitude").value(35.6895))
         .andExpect(jsonPath("$.longitude").value(139.6917))
         .andExpect(jsonPath("$.maxParticipants").value(5))
-        .andExpect(jsonPath("$.userId").value(11L));
+        .andExpect(jsonPath("$.user.id").value(11L));
   }
 
   @DisplayName("스터디 모집글 상세 조회 실패 - 모집글 없음")
@@ -176,10 +180,17 @@ class StudyPostControllerTest {
     when(studyPostService.getStudyPostsByUserId(eq(userId), any(Pageable.class)))
         .thenThrow(new CustomException(ErrorCode.USER_NOT_FOUND, "유저를 찾을 수 없습니다."));
 
+    String expectedResponse = """
+        {
+            "errorCode": "USER_NOT_FOUND",
+            "errorMessage": "유저를 찾을 수 없습니다."
+        }
+    """;
+
     // When & Then
     mockMvc.perform(get("/api/study-posts/author/{userId}", userId))
         .andExpect(status().isNotFound())
-        .andExpect(content().string("유저를 찾을 수 없습니다."));
+        .andExpect(content().json(expectedResponse));
 
     verify(studyPostService, times(1)).getStudyPostsByUserId(eq(userId), any(Pageable.class));
   }
@@ -188,6 +199,8 @@ class StudyPostControllerTest {
   @Test
   void searchStudyPosts_Success() throws Exception {
     // Given
+    User user = User.builder().id(11L).nickname("User11").build();
+
     StudyPostDto studyPostDto = new StudyPostDto();
     studyPostDto.setId(1L);
     studyPostDto.setTitle("코딩 테스트 준비");
@@ -205,7 +218,7 @@ class StudyPostControllerTest {
     studyPostDto.setLatitude(37.5665);
     studyPostDto.setLongitude(126.9780);
     studyPostDto.setMaxParticipants(5);
-    studyPostDto.setUserId(11L);
+    studyPostDto.setUser(UserDto.fromEntity(user));
 
     Page<StudyPostDto> mockPage = new PageImpl<>(List.of(studyPostDto), PageRequest.of(0, 20), 1);
 
@@ -244,7 +257,7 @@ class StudyPostControllerTest {
         .andExpect(jsonPath("$.content[0].latitude").value(37.5665))
         .andExpect(jsonPath("$.content[0].longitude").value(126.9780))
         .andExpect(jsonPath("$.content[0].maxParticipants").value(5))
-        .andExpect(jsonPath("$.content[0].userId").value(11L));
+        .andExpect(jsonPath("$.content[0].user.id").value(11L));
   }
 
   @DisplayName("스터디 모집글 생성 성공")
@@ -257,6 +270,8 @@ class StudyPostControllerTest {
         MediaType.IMAGE_JPEG_VALUE,
         "Test Image Content".getBytes()
     );
+
+    User user = User.builder().id(1L).nickname("User1").build();
 
     StudyPostDto response = StudyPostDto.builder()
         .id(1L)
@@ -273,7 +288,7 @@ class StudyPostControllerTest {
         .recruitmentPeriod(LocalDate.of(2024, 12, 5))
         .description("코딩 테스트 스터디 모집")
         .maxParticipants(5)
-        .userId(1L)
+        .user(UserDto.fromEntity(user))
         .thumbnailImgUrl("mock_thumbnail_url")
         .build();
 
@@ -314,7 +329,7 @@ class StudyPostControllerTest {
         .andExpect(jsonPath("$.recruitmentPeriod").value("2024-12-05"))
         .andExpect(jsonPath("$.description").value("코딩 테스트 스터디 모집"))
         .andExpect(jsonPath("$.maxParticipants").value(5))
-        .andExpect(jsonPath("$.userId").value(1L))
+        .andExpect(jsonPath("$.user.id").value(1L))
         .andExpect(jsonPath("$.thumbnailImgUrl").value("mock_thumbnail_url"));
   }
 
@@ -349,6 +364,13 @@ class StudyPostControllerTest {
     doThrow(new CustomException(ErrorCode.INVALID_MAX_PARTICIPANTS))
         .when(studyPostService).createStudyPost(any(StudyPostCreateRequest.class));
 
+    String expectedResponse = """
+        {
+            "errorCode": "INVALID_MAX_PARTICIPANTS",
+            "errorMessage": "모집 인원은 최소 2명, 최대 10명까지 설정할 수 있습니다."
+        }
+    """;
+
     // When & Then
     mockMvc.perform(multipart("/api/study-posts")
             .file(file)
@@ -368,7 +390,7 @@ class StudyPostControllerTest {
             .param("userId", String.valueOf(request.getUserId()))
             .contentType(MediaType.MULTIPART_FORM_DATA))
         .andExpect(status().isBadRequest())
-        .andExpect(content().string("모집 인원은 최소 2명, 최대 10명까지 설정할 수 있습니다."));
+        .andExpect(content().json(expectedResponse));
   }
 
   @DisplayName("스터디 모집글 생성 실패 - 유저가 없는 경우")
@@ -402,6 +424,13 @@ class StudyPostControllerTest {
     doThrow(new CustomException(ErrorCode.USER_NOT_FOUND))
         .when(studyPostService).createStudyPost(any(StudyPostCreateRequest.class));
 
+    String expectedResponse = """
+        {
+            "errorCode": "USER_NOT_FOUND",
+            "errorMessage": "사용자를 찾을 수 없습니다."
+        }
+    """;
+
     // When & Then
     mockMvc.perform(multipart("/api/study-posts")
             .file(file)
@@ -421,7 +450,7 @@ class StudyPostControllerTest {
             .param("userId", String.valueOf(request.getUserId()))
             .contentType(MediaType.MULTIPART_FORM_DATA))
         .andExpect(status().isNotFound())
-        .andExpect(content().string("사용자를 찾을 수 없습니다."));
+        .andExpect(content().json(expectedResponse));
   }
 
   @DisplayName("스터디 모집글 생성 실패 - 병행 스터디에서 위도/경도 없음")
@@ -457,6 +486,13 @@ class StudyPostControllerTest {
     doThrow(new CustomException(ErrorCode.LOCATION_REQUIRED_FOR_HYBRID))
         .when(studyPostService).createStudyPost(any(StudyPostCreateRequest.class));
 
+    String expectedResponse = """
+        {
+            "errorCode": "LOCATION_REQUIRED_FOR_HYBRID",
+            "errorMessage": "온/오프라인 병행 스터디의 경우 위치 정보가 필수입니다."
+        }
+    """;
+
     // When & Then
     mockMvc.perform(multipart("/api/study-posts")
             .file(file)
@@ -476,7 +512,7 @@ class StudyPostControllerTest {
             .param("userId", String.valueOf(request.getUserId()))
             .contentType(MediaType.MULTIPART_FORM_DATA))
         .andExpect(status().isBadRequest())
-        .andExpect(content().string("온/오프라인 병행 스터디의 경우 위치 정보가 필수입니다."));
+        .andExpect(content().json(expectedResponse));
   }
 
   @DisplayName("스터디 모집글 수정 성공")
@@ -485,7 +521,8 @@ class StudyPostControllerTest {
     // Given
     Long studyPostId = 1L;
 
-    StudyPostUpdateRequest updateRequest = StudyPostUpdateRequest.builder()
+    StudyPostDto updatedResponse = StudyPostDto.builder()
+        .id(studyPostId)
         .title("Updated Title")
         .studyName("Updated Study")
         .subject(StudySubject.JOB_PREPARATION)
@@ -505,54 +542,33 @@ class StudyPostControllerTest {
         .maxParticipants(10)
         .build();
 
-    StudyPostDto updatedResponse = StudyPostDto.builder()
-        .id(studyPostId)
-        .title(updateRequest.getTitle())
-        .studyName(updateRequest.getStudyName())
-        .subject(updateRequest.getSubject())
-        .difficulty(updateRequest.getDifficulty())
-        .dayType(updateRequest.getDayType())
-        .startDate(updateRequest.getStartDate())
-        .endDate(updateRequest.getEndDate())
-        .startTime(updateRequest.getStartTime())
-        .endTime(updateRequest.getEndTime())
-        .meetingType(updateRequest.getMeetingType())
-        .recruitmentPeriod(updateRequest.getRecruitmentPeriod())
-        .description(updateRequest.getDescription())
-        .latitude(updateRequest.getLatitude())
-        .longitude(updateRequest.getLongitude())
-        .status(updateRequest.getStatus())
-        .thumbnailImgUrl(updateRequest.getThumbnailImgUrl())
-        .maxParticipants(updateRequest.getMaxParticipants())
-        .build();
-
     when(studyPostService.updateStudyPost(eq(studyPostId), any(StudyPostUpdateRequest.class)))
         .thenReturn(updatedResponse);
 
+    MockMultipartFile thumbnail = new MockMultipartFile(
+        "thumbnailImg", "test-thumbnail.png", MediaType.IMAGE_PNG_VALUE, "Dummy Image Content".getBytes()
+    );
+
     // When & Then
-    mockMvc.perform(put("/api/study-posts/{studyPostId}", studyPostId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("""
-                {
-                  "title": "Updated Title",
-                  "studyName": "Updated Study",
-                  "subject": "JOB_PREPARATION",
-                  "difficulty": "HIGH",
-                  "dayType": ["월", "화"],
-                  "startDate": "2024-12-10",
-                  "endDate": "2024-12-20",
-                  "startTime": "18:00:00",
-                  "endTime": "20:00:00",
-                  "meetingType": "ONLINE",
-                  "recruitmentPeriod": "2024-12-05",
-                  "description": "Updated Description",
-                  "latitude": 37.5665,
-                  "longitude": 126.9780,
-                  "status": "RECRUITING",
-                  "thumbnailImgUrl": "updated_thumbnail_url",
-                  "maxParticipants": 10
-                }
-                """))
+    mockMvc.perform(multipart("/api/study-posts/{studyPostId}", studyPostId)
+            .file(thumbnail)
+            .param("title", "Updated Title")
+            .param("studyName", "Updated Study")
+            .param("subject", "JOB_PREPARATION")
+            .param("difficulty", "HIGH")
+            .param("dayType", "월", "화")
+            .param("startDate", "2024-12-10")
+            .param("endDate", "2024-12-20")
+            .param("startTime", "18:00:00")
+            .param("endTime", "20:00:00")
+            .param("meetingType", "ONLINE")
+            .param("recruitmentPeriod", "2024-12-05")
+            .param("description", "Updated Description")
+            .param("latitude", "37.5665")
+            .param("longitude", "126.9780")
+            .param("status", "RECRUITING")
+            .param("maxParticipants", "10")
+            .contentType(MediaType.MULTIPART_FORM_DATA))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(studyPostId))
         .andExpect(jsonPath("$.title").value("Updated Title"))
@@ -575,8 +591,7 @@ class StudyPostControllerTest {
         .andExpect(jsonPath("$.maxParticipants").value(10))
         .andDo(print());
 
-    verify(studyPostService, times(1)).updateStudyPost(eq(studyPostId),
-        any(StudyPostUpdateRequest.class));
+    verify(studyPostService, times(1)).updateStudyPost(eq(studyPostId), any(StudyPostUpdateRequest.class));
   }
 
   @DisplayName("스터디 모집글 수정 실패 - 모집글 없음")
@@ -589,16 +604,28 @@ class StudyPostControllerTest {
         .when(studyPostService)
         .updateStudyPost(eq(studyPostId), any(StudyPostUpdateRequest.class));
 
+    String expectedResponse = """
+        {
+            "errorCode": "STUDY_POST_NOT_FOUND",
+            "errorMessage": "스터디 모집글을 찾을 수 없습니다."
+        }
+    """;
+
+    MockMultipartFile multipartFile = new MockMultipartFile(
+        "image",
+        "test-image.png",
+        MediaType.IMAGE_PNG_VALUE,
+        "Dummy Image Content".getBytes()
+    );
+
     // When & Then
-    mockMvc.perform(put("/api/study-posts/{studyPostId}", studyPostId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("""
-                {
-                  "title": "Non-existent Title"
-                }
-                """))
+    mockMvc.perform(multipart("/api/study-posts/{studyPostId}", studyPostId)
+            .file(multipartFile)
+            .param("title", "Non-existent Title")
+            .param("description", "Updated description")
+            .contentType(MediaType.MULTIPART_FORM_DATA))
         .andExpect(status().isNotFound())
-        .andExpect(content().string("스터디 모집글을 찾을 수 없습니다."))
+        .andExpect(content().json(expectedResponse))
         .andDo(print());
 
     verify(studyPostService, times(1)).updateStudyPost(eq(studyPostId),
@@ -632,11 +659,18 @@ class StudyPostControllerTest {
     doThrow(new CustomException(ErrorCode.STUDY_POST_NOT_FOUND))
         .when(studyPostService).closeStudyPost(studyPostId);
 
+    String expectedResponse = """
+        {
+            "errorCode": "STUDY_POST_NOT_FOUND",
+            "errorMessage": "스터디 모집글을 찾을 수 없습니다."
+        }
+    """;
+
     // When & Then
     mockMvc.perform(patch("/api/study-posts/{studyPostId}/close", studyPostId)
             .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isNotFound()) // HTTP 404 상태 확인
-        .andExpect(content().string("스터디 모집글을 찾을 수 없습니다."))
+        .andExpect(content().json(expectedResponse))
         .andDo(print());
 
     verify(studyPostService, times(1)).closeStudyPost(studyPostId);
@@ -651,11 +685,19 @@ class StudyPostControllerTest {
     doThrow(new CustomException(ErrorCode.INVALID_STUDY_STATUS))
         .when(studyPostService).closeStudyPost(studyPostId);
 
+    String expectedResponse = """
+        {
+            "errorCode": "INVALID_STUDY_STATUS",
+            "errorMessage": "잘못된 스터디 상태값입니다."
+        }
+    """;
+
+
     // When & Then
     mockMvc.perform(patch("/api/study-posts/{studyPostId}/close", studyPostId)
             .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest()) // 400
-        .andExpect(content().string("잘못된 스터디 상태값입니다."))
+        .andExpect(content().json(expectedResponse))
         .andDo(print());
 
     verify(studyPostService, times(1)).closeStudyPost(studyPostId);
@@ -670,11 +712,18 @@ class StudyPostControllerTest {
     doThrow(new CustomException(ErrorCode.NO_APPROVED_SIGNUPS))
         .when(studyPostService).closeStudyPost(studyPostId);
 
+    String expectedResponse = """
+        {
+            "errorCode": "NO_APPROVED_SIGNUPS",
+            "errorMessage": "승인된 신청자가 없습니다."
+        }
+    """;
+
     // When & Then
     mockMvc.perform(patch("/api/study-posts/{studyPostId}/close", studyPostId)
             .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest()) // 400
-        .andExpect(content().string("승인된 신청자가 없습니다."))
+        .andExpect(content().json(expectedResponse))
         .andDo(print());
 
     verify(studyPostService, times(1)).closeStudyPost(studyPostId);
@@ -706,11 +755,18 @@ class StudyPostControllerTest {
     doThrow(new CustomException(ErrorCode.STUDY_POST_NOT_FOUND))
         .when(studyPostService).cancelStudyPost(studyPostId);
 
+    String expectedResponse = """
+        {
+            "errorCode": "STUDY_POST_NOT_FOUND",
+            "errorMessage": "스터디 모집글을 찾을 수 없습니다."
+        }
+    """;
+
     // When & Then
     mockMvc.perform(patch("/api/study-posts/{studyPostId}/cancel", studyPostId)
             .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isNotFound()) // 404
-        .andExpect(content().string("스터디 모집글을 찾을 수 없습니다."))
+        .andExpect(content().json(expectedResponse))
         .andDo(print());
 
     verify(studyPostService, times(1)).cancelStudyPost(studyPostId);
@@ -725,11 +781,18 @@ class StudyPostControllerTest {
     doThrow(new CustomException(ErrorCode.INVALID_STUDY_STATUS))
         .when(studyPostService).cancelStudyPost(studyPostId);
 
+    String expectedResponse = """
+        {
+            "errorCode": "INVALID_STUDY_STATUS",
+            "errorMessage": "잘못된 스터디 상태값입니다."
+        }
+    """;
+
     // When & Then
     mockMvc.perform(patch("/api/study-posts/{studyPostId}/cancel", studyPostId)
             .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest()) // 400
-        .andExpect(content().string("잘못된 스터디 상태값입니다."))
+        .andExpect(content().json(expectedResponse))
         .andDo(print());
 
     verify(studyPostService, times(1)).cancelStudyPost(studyPostId);
@@ -763,12 +826,19 @@ class StudyPostControllerTest {
     doThrow(new CustomException(ErrorCode.STUDY_POST_NOT_FOUND))
         .when(studyPostService).extendCanceledStudy(studyPostId, newRecruitmentPeriod);
 
+    String expectedResponse = """
+        {
+            "errorCode": "STUDY_POST_NOT_FOUND",
+            "errorMessage": "스터디 모집글을 찾을 수 없습니다."
+        }
+    """;
+
     // When & Then
     mockMvc.perform(patch("/api/study-posts/{studyPostId}/extend-canceled", studyPostId)
             .param("recruitmentPeriod", newRecruitmentPeriod.toString())
             .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isNotFound())
-        .andExpect(content().string("스터디 모집글을 찾을 수 없습니다."));
+        .andExpect(content().json(expectedResponse));
 
     verify(studyPostService, times(1)).extendCanceledStudy(studyPostId, newRecruitmentPeriod);
   }
@@ -783,12 +853,19 @@ class StudyPostControllerTest {
     doThrow(new CustomException(ErrorCode.INVALID_STUDY_STATUS))
         .when(studyPostService).extendCanceledStudy(studyPostId, newRecruitmentPeriod);
 
+    String expectedResponse = """
+        {
+            "errorCode": "INVALID_STUDY_STATUS",
+            "errorMessage": "잘못된 스터디 상태값입니다."
+        }
+    """;
+
     // When & Then
     mockMvc.perform(patch("/api/study-posts/{studyPostId}/extend-canceled", studyPostId)
             .param("recruitmentPeriod", newRecruitmentPeriod.toString())
             .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest())
-        .andExpect(content().string("잘못된 스터디 상태값입니다."));
+        .andExpect(content().json(expectedResponse));
 
     verify(studyPostService, times(1)).extendCanceledStudy(studyPostId, newRecruitmentPeriod);
   }
@@ -803,12 +880,19 @@ class StudyPostControllerTest {
     doThrow(new CustomException(ErrorCode.STUDY_EXTENSION_FAILED))
         .when(studyPostService).extendCanceledStudy(studyPostId, newRecruitmentPeriod);
 
+    String expectedResponse = """
+        {
+            "errorCode": "STUDY_EXTENSION_FAILED",
+            "errorMessage": "스터디 모집 기한 연장은 최대 1개월입니다."
+        }
+    """;
+
     // When & Then
     mockMvc.perform(patch("/api/study-posts/{studyPostId}/extend-canceled", studyPostId)
             .param("recruitmentPeriod", newRecruitmentPeriod.toString())
             .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest()) // 상태 코드 확인
-        .andExpect(content().string("스터디 모집 기한 연장은 최대 1개월입니다."));
+        .andExpect(content().json(expectedResponse));
 
     verify(studyPostService, times(1)).extendCanceledStudy(studyPostId, newRecruitmentPeriod);
   }

@@ -62,7 +62,6 @@ public class CommentService {
    * @param pageable 페이징 정보
    * @return 페이징된 댓글 응답 DTO
    */
-
   @Transactional(readOnly = true)
   public Page<CommentResponse> getComments(Long postId, PostType postType, Pageable pageable) {
     // 댓글 페이징 조회
@@ -76,7 +75,6 @@ public class CommentService {
    * @param commentId            수정할 댓글 ID
    * @param commentUpdateRequest 댓글 수정 요청 DTO
    */
-
   @Transactional
   public void updateComment(Long commentId, CommentUpdateRequest commentUpdateRequest) {
 
@@ -96,6 +94,11 @@ public class CommentService {
     commentRepository.save(comment);
   }
 
+  /**
+   * 댓글 삭제
+   *
+   * @param commentId
+   */
   @Transactional
   public void deleteComment(Long commentId) {
 

@@ -7,9 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -18,25 +16,21 @@ import com.devonoff.domain.comment.dto.CommentResponse;
 import com.devonoff.domain.comment.dto.CommentUpdateRequest;
 import com.devonoff.domain.comment.entity.Comment;
 import com.devonoff.domain.comment.repository.CommentRepository;
-import com.devonoff.domain.qnapost.entity.QnaPost;
-import com.devonoff.domain.qnapost.repository.QnaPostRepository;
-import com.devonoff.domain.studyPost.repository.StudyPostRepository;
+import com.devonoff.domain.reply.Repository.ReplyRepository;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
+import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.PostType;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,10 +41,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class CommentServiceTest {
@@ -65,38 +55,18 @@ class CommentServiceTest {
   private UserRepository userRepository;
 
   @Mock
-  private StudyPostRepository studyPostRepository;
+  private ReplyRepository replyRepository;
 
   @Mock
-  private QnaPostRepository qnaPostRepository;
+  private AuthService authService;
 
-
-  @BeforeEach
-  void setup() {
-    Map<PostType, Object> repositoryMap = new HashMap<>();
-    repositoryMap.put(PostType.STUDY, studyPostRepository);
-    repositoryMap.put(PostType.QNA, qnaPostRepository);
-    ReflectionTestUtils.setField(commentService, "repositoryMap", repositoryMap);
-
-
-    // SecurityContext 설정
-    SecurityContext securityContext = mock(SecurityContext.class);
-    Authentication authentication = mock(Authentication.class);
-
-    lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
-    lenient().when(authentication.getPrincipal()).thenReturn("1");
-   // when(securityContext.getAuthentication()).thenReturn(authentication);
-   // when(authentication.getPrincipal()).thenReturn("1"); // 사용자 ID를 String으로 설정
-
-    SecurityContextHolder.setContext(securityContext);
-  }
-
+  @Mock
+  private PostValidationService postValidationService;
 
   @Test
   @DisplayName("댓글 생성 - 성공 (QnA 게시글)")
   void testCreateComment_Success_Qna() {
     // Mock 데이터 생성
-    QnaPost qnaPost = new QnaPost(); // QnaPost 객체 생성
     User user = User.builder()
         .id(1L)
         .nickname("user1")
@@ -121,7 +91,9 @@ class CommentServiceTest {
         .build();
 
     // Mocking
-    when(qnaPostRepository.findById(1L)).thenReturn(Optional.of(qnaPost)); // QnaPost 반환
+    doNothing().when(postValidationService).validatePostExists(commentRequest.getPostType(),
+        commentRequest.getPostId());
+    when(authService.getLoginUserId()).thenReturn(1L);
     when(userRepository.findById(1L)).thenReturn(Optional.of(user));
     when(commentRepository.save(any(Comment.class))).thenReturn(comment);
 
@@ -145,17 +117,11 @@ class CommentServiceTest {
         .isSecret(false)
         .build();
 
-    // 게시글이 존재한다고 가정(Mock 설정)
-    QnaPost mockQnaPost = QnaPost.builder()
-        .id(1L)
-        .title("Test QnA Post")
-        .build(); // QnaPost Mock 생성
-
-    // Mocking 정확히 수정
-    when(qnaPostRepository.findById(1L)).thenReturn(Optional.of(mockQnaPost));
-
-    // 사용자가 없다고 설정(Mock)
-    when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
+    // Mocking 설정
+    doNothing().when(postValidationService).validatePostExists(commentRequest.getPostType(),
+        commentRequest.getPostId());
+    when(authService.getLoginUserId()).thenReturn(1L);
+    when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
     // when & then
     CustomException exception = assertThrows(CustomException.class, () ->
@@ -180,7 +146,8 @@ class CommentServiceTest {
         .build();
 
     Page<Comment> mockPage = new PageImpl<>(List.of(comment));
-    when(commentRepository.findByPostIdAndPostType(postId, postType, pageable)).thenReturn(mockPage);
+    when(commentRepository.findByPostIdAndPostType(postId, postType, pageable)).thenReturn(
+        mockPage);
 
     int threadCount = 10;
     ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
@@ -216,14 +183,14 @@ class CommentServiceTest {
       });
     }
   }
+
   @Test
   @DisplayName("댓글 수정 - 성공")
   void testUpdateComment_Success() {
     Long commentId = 1L;
-    Long userId = 1L;
 
     User user = User.builder()
-        .id(userId)
+        .id(1L)
         .nickname("user1")
         .email("test@test.com")
         .build();
@@ -240,7 +207,8 @@ class CommentServiceTest {
         .isSecret(true)
         .build();
 
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    when(authService.getLoginUserId()).thenReturn(1L);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
     when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
 
     commentService.updateComment(commentId, updateRequest);
@@ -254,10 +222,9 @@ class CommentServiceTest {
   @DisplayName("댓글 삭제 - 성공")
   void testDeleteComment_Success() {
     Long commentId = 1L;
-    Long userId = 1L;
 
     User user = User.builder()
-        .id(userId)
+        .id(1L)
         .nickname("user1")
         .email("test@test.com")
         .build();
@@ -269,8 +236,11 @@ class CommentServiceTest {
         .user(user)
         .build();
 
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    when(authService.getLoginUserId()).thenReturn(1L);
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
     when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+    doNothing().when(replyRepository).deleteAllByComment(comment);
+    doNothing().when(commentRepository).delete(comment);
 
     commentService.deleteComment(commentId);
 

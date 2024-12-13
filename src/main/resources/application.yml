@@ -71,6 +71,7 @@ cloud:
     s3:
       bucket: ${S3_BUCKET_NAME}
       default-profile-image-url: https://${S3_BUCKET_NAME}.s3.${S3_REGION}.amazonaws.com/default/default-profile-image.png
+      default-thumbnail-image-url: https://${S3_BUCKET_NAME}.s3.${S3_REGION}.amazonaws.com/default/thumbnail.png
     region:
       static: ${S3_REGION}
     credentials:

@@ -2,6 +2,7 @@ package com.devonoff.domain.comment.repository;
 
 import com.devonoff.domain.comment.entity.Comment;
 import com.devonoff.type.PostType;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -14,4 +15,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
   @EntityGraph(attributePaths = {"replies"})
   Page<Comment> findByPostIdAndPostType(Long postId, PostType postType, Pageable pageable);
 
+  List<Comment> findAllByPostIdAndPostType(Long postId, PostType postType);
+
+  void deleteAllByPostIdAndPostType(Long postId, PostType postType);
 }

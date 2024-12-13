@@ -78,7 +78,8 @@ public class StudySignupService {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
-    validateStudyPostOwnership(studyPost.getUser().getId(), authService.getLoginUserId());
+// 로그인된 사용자라면 모두 신청자 목록 요청 가능하도록 수정
+//    validateStudyPostOwnership(studyPost.getUser().getId(), authService.getLoginUserId());
 
     // 상태별 신청 목록 조회
     List<StudySignup> studySignups;

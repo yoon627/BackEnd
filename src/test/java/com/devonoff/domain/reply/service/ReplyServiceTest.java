@@ -80,6 +80,7 @@ class ReplyServiceTest {
     when(savedReply.getId()).thenReturn(1L); // 저장된 대댓글 ID 반환
     when(savedReply.getContent()).thenReturn(replyRequest.getContent()); // 저장된 대댓글 내용 반환
     when(savedReply.getUser()).thenReturn(loggedInUser); // 저장된 대댓글 작성자 반환
+    when(savedReply.getComment()).thenReturn(parentComment); // 저장된 대댓글 부모 댓글 반환
 
     // 보안 컨텍스트 설정
     mockSecurityContext(userId);
@@ -131,7 +132,6 @@ class ReplyServiceTest {
     SecurityContextHolder.setContext(securityContext);
   }
 
-
   @Test
   @DisplayName("대댓글 수정 성공")
   void testUpdateReplySuccess() {
@@ -146,18 +146,22 @@ class ReplyServiceTest {
 
     Reply existingReply = mock(Reply.class);
     User loggedInUser = mock(User.class);
+    Comment parentComment = mock(Comment.class);
     Reply savedReply = mock(Reply.class);
 
     // Mock 동작 설정
     when(replyRepository.findById(replyId)).thenReturn(Optional.of(existingReply));
     when(existingReply.getUser()).thenReturn(loggedInUser);
+    when(existingReply.getComment()).thenReturn(parentComment); // 기존 댓글의 부모 댓글 설정
     when(loggedInUser.getId()).thenReturn(userId);
+    when(parentComment.getId()).thenReturn(1L); // 부모 댓글 ID 설정
     when(replyRepository.save(any(Reply.class))).thenReturn(savedReply);
 
     // Mock savedReply 필드값 설정
     when(savedReply.getId()).thenReturn(replyId);
     when(savedReply.getContent()).thenReturn("Updated content");
     when(savedReply.getUser()).thenReturn(loggedInUser);
+    when(savedReply.getComment()).thenReturn(parentComment); // 저장된 대댓글의 부모 댓글 설정
 
     mockSecurityContext(userId);
 

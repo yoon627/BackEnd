@@ -133,7 +133,7 @@ class StudyPostServiceTest {
     assertEquals(35.6895, result.getLatitude());
     assertEquals(139.6917, result.getLongitude());
     assertEquals(5, result.getMaxParticipants());
-    assertEquals(11L, result.getUserId());
+    assertEquals(11L, result.getUser().getId());
   }
 
   @DisplayName("스터디 모집글 상세 조회 실패 - 모집글 없음")
@@ -338,7 +338,7 @@ class StudyPostServiceTest {
     Assertions.assertEquals(request.getMeetingType(), result.getMeetingType());
     Assertions.assertEquals(request.getRecruitmentPeriod(), result.getRecruitmentPeriod());
     Assertions.assertEquals(request.getDescription(), result.getDescription());
-    Assertions.assertEquals(loggedInUserId, result.getUserId());
+    Assertions.assertEquals(loggedInUserId, result.getUser().getId());
     Assertions.assertEquals("mock_thumbnail_url", result.getThumbnailImgUrl());
 
     verify(authService, times(1)).getLoginUserId();
@@ -459,6 +459,7 @@ class StudyPostServiceTest {
     // Given
     Long studyPostId = 1L;
     Long loggedInUserId = 1L;
+    MultipartFile file = mock(MultipartFile.class);
 
     User user = new User();
     user.setId(loggedInUserId);
@@ -483,12 +484,14 @@ class StudyPostServiceTest {
         .latitude(37.5665)
         .longitude(126.9780)
         .status(StudyPostStatus.RECRUITING)
+        .file(file)
         .thumbnailImgUrl("updated_thumbnail_url")
         .maxParticipants(10)
         .build();
 
     when(authService.getLoginUserId()).thenReturn(loggedInUserId);
     when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
+    when(photoService.save(file)).thenReturn("updated_thumbnail_url");
     when(studyPostRepository.save(any(StudyPost.class))).thenAnswer(
         invocation -> invocation.getArgument(0));
 

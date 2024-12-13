@@ -51,7 +51,7 @@ class StudySignupControllerTest {
     StudySignupDto response = StudySignupDto.builder()
         .signupId(10L)
         .userId(1L)
-        .nickName("참가자")
+        .nickname("참가자")
         .status(StudySignupStatus.PENDING)
         .build();
 
@@ -65,7 +65,7 @@ class StudySignupControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.signupId").value(10L))
         .andExpect(jsonPath("$.userId").value(1L))
-        .andExpect(jsonPath("$.nickName").value("참가자"))
+        .andExpect(jsonPath("$.nickname").value("참가자"))
         .andExpect(jsonPath("$.status").value("PENDING"));
 
     verify(studySignupService, times(1)).createStudySignup(any(StudySignupCreateRequest.class));
@@ -83,7 +83,8 @@ class StudySignupControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"studyPostId\": 100, \"userId\": 1}"))
         .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$").value("스터디 모집글을 찾을 수 없습니다."));
+        .andExpect(jsonPath("$.errorCode").value("STUDY_POST_NOT_FOUND"))
+        .andExpect(jsonPath("$.errorMessage").value("스터디 모집글을 찾을 수 없습니다."));
   }
 
   @Test
@@ -98,7 +99,8 @@ class StudySignupControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"studyPostId\": 100, \"userId\": 1}"))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$").value("잘못된 스터디 상태값입니다."));
+        .andExpect(jsonPath("$.errorCode").value("INVALID_STUDY_STATUS"))
+        .andExpect(jsonPath("$.errorMessage").value("잘못된 스터디 상태값입니다."));
   }
 
   @Test
@@ -113,7 +115,8 @@ class StudySignupControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"studyPostId\": 100, \"userId\": 1}"))
         .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$").value("사용자를 찾을 수 없습니다."));
+        .andExpect(jsonPath("$.errorCode").value("USER_NOT_FOUND"))
+        .andExpect(jsonPath("$.errorMessage").value("사용자를 찾을 수 없습니다."));
   }
 
   @Test
@@ -128,7 +131,8 @@ class StudySignupControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"studyPostId\": 100, \"userId\": 1}"))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$").value("이미 해당 스터디에 신청했습니다."));
+        .andExpect(jsonPath("$.errorCode").value("DUPLICATE_APPLICATION"))
+        .andExpect(jsonPath("$.errorMessage").value("이미 해당 스터디에 신청했습니다."));
   }
 
   @Test
@@ -177,7 +181,8 @@ class StudySignupControllerTest {
     mockMvc.perform(patch("/api/study-signup/{studySignupId}", studySignupId)
             .param("newStatus", newStatus.name()))
         .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$").value("스터디 신청 내역을 찾을 수 없습니다."));
+        .andExpect(jsonPath("$.errorCode").value("SIGNUP_NOT_FOUND"))
+        .andExpect(jsonPath("$.errorMessage").value("스터디 신청 내역을 찾을 수 없습니다."));
   }
 
   @Test
@@ -194,7 +199,8 @@ class StudySignupControllerTest {
     mockMvc.perform(patch("/api/study-signup/{studySignupId}", studySignupId)
             .param("newStatus", newStatus.name()))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$").value("잘못된 스터디 상태값입니다."));
+        .andExpect(jsonPath("$.errorCode").value("INVALID_STUDY_STATUS"))
+        .andExpect(jsonPath("$.errorMessage").value("잘못된 스터디 상태값입니다."));
   }
 
   @Test
@@ -211,7 +217,8 @@ class StudySignupControllerTest {
     mockMvc.perform(patch("/api/study-signup/{studySignupId}", studySignupId)
             .param("newStatus", newStatus.name()))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$").value("이미 확정된 신청 상태입니다."));
+        .andExpect(jsonPath("$.errorCode").value("SIGNUP_STATUS_ALREADY_FINALIZED"))
+        .andExpect(jsonPath("$.errorMessage").value("이미 확정된 신청 상태입니다."));
   }
 
   @Test
@@ -225,13 +232,13 @@ class StudySignupControllerTest {
         StudySignupDto.builder()
             .signupId(10L)
             .userId(101L)
-            .nickName("참가자1")
+            .nickname("참가자1")
             .status(StudySignupStatus.PENDING)
             .build(),
         StudySignupDto.builder()
             .signupId(11L)
             .userId(102L)
-            .nickName("참가자2")
+            .nickname("참가자2")
             .status(StudySignupStatus.PENDING)
             .build()
     );
@@ -245,9 +252,9 @@ class StudySignupControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.size()").value(2))
         .andExpect(jsonPath("$[0].signupId").value(10L))
-        .andExpect(jsonPath("$[0].nickName").value("참가자1"))
+        .andExpect(jsonPath("$[0].nickname").value("참가자1"))
         .andExpect(jsonPath("$[1].signupId").value(11L))
-        .andExpect(jsonPath("$[1].nickName").value("참가자2"));
+        .andExpect(jsonPath("$[1].nickname").value("참가자2"));
 
     verify(studySignupService).getSignupList(studyPostId, filterStatus);
   }
@@ -267,7 +274,8 @@ class StudySignupControllerTest {
             .param("studyPostId", studyPostId.toString())
             .param("status", filterStatus.name()))
         .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$").value("스터디 모집글을 찾을 수 없습니다."));
+        .andExpect(jsonPath("$.errorCode").value("STUDY_POST_NOT_FOUND"))
+        .andExpect(jsonPath("$.errorMessage").value("스터디 모집글을 찾을 수 없습니다."));
 
     verify(studySignupService).getSignupList(studyPostId, filterStatus);
   }
@@ -299,7 +307,8 @@ class StudySignupControllerTest {
     // When & Then
     mockMvc.perform(delete("/api/study-signup/{studySignupId}", studySignupId))
         .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$").value("스터디 신청 내역을 찾을 수 없습니다."));
+        .andExpect(jsonPath("$.errorCode").value("SIGNUP_NOT_FOUND"))
+        .andExpect(jsonPath("$.errorMessage").value("스터디 신청 내역을 찾을 수 없습니다."));
 
     verify(studySignupService).cancelSignup(studySignupId);
   }

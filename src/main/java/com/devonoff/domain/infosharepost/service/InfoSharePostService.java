@@ -4,15 +4,20 @@ import static com.devonoff.type.ErrorCode.POST_NOT_FOUND;
 import static com.devonoff.type.ErrorCode.UNAUTHORIZED_ACCESS;
 import static com.devonoff.type.ErrorCode.USER_NOT_FOUND;
 
+import com.devonoff.domain.comment.entity.Comment;
+import com.devonoff.domain.comment.repository.CommentRepository;
 import com.devonoff.domain.infosharepost.dto.InfoSharePostDto;
 import com.devonoff.domain.infosharepost.entity.InfoSharePost;
 import com.devonoff.domain.infosharepost.repository.InfoSharePostRepository;
 import com.devonoff.domain.photo.service.PhotoService;
+import com.devonoff.domain.reply.Repository.ReplyRepository;
 import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
+import com.devonoff.type.PostType;
+import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +37,8 @@ public class InfoSharePostService {
 
   private final InfoSharePostRepository infoSharePostRepository;
   private final UserRepository userRepository;
+  private final CommentRepository commentRepository;
+  private final ReplyRepository replyRepository;
   private final PhotoService photoService;
   private final AuthService authService;
 
@@ -111,6 +118,14 @@ public class InfoSharePostService {
       throw new CustomException(UNAUTHORIZED_ACCESS);
     }
     photoService.delete(infoSharePost.getThumbnailImgUrl());
+    List<Comment> commentList = commentRepository.findAllByPostIdAndPostType(infoPostId,
+        PostType.INFO);
+
+    for (Comment comment : commentList) {
+      replyRepository.deleteAllByComment(comment);
+    }
+
+    commentRepository.deleteAllByPostIdAndPostType(infoPostId, PostType.INFO);
     this.infoSharePostRepository.deleteById(infoPostId);
   }
 }

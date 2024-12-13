@@ -10,7 +10,6 @@ import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
 import com.devonoff.domain.totalstudytime.entity.TotalStudyTime;
 import com.devonoff.domain.totalstudytime.repository.TotalStudyTimeRepository;
-import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyStatus;
@@ -33,7 +32,6 @@ public class StudyService {
   private final TotalStudyTimeRepository totalStudyTimeRepository;
   private final StudentRepository studentRepository;
   private final TimeProvider timeProvider;
-  private final AuthService authService;
 
   // 모집글 마감 시 자동으로 스터디 생성
   public Study createStudyFromClosedPost(Long studyPostId) {

@@ -1,17 +1,21 @@
 package com.devonoff.domain.qnapost.service;
 
+import com.devonoff.domain.comment.entity.Comment;
+import com.devonoff.domain.comment.repository.CommentRepository;
 import com.devonoff.domain.photo.service.PhotoService;
 import com.devonoff.domain.qnapost.dto.QnaPostDto;
 import com.devonoff.domain.qnapost.dto.QnaPostRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostUpdateDto;
 import com.devonoff.domain.qnapost.entity.QnaPost;
 import com.devonoff.domain.qnapost.repository.QnaPostRepository;
+import com.devonoff.domain.reply.Repository.ReplyRepository;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import com.devonoff.type.PostType;
 import java.util.Collections;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,10 +32,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class QnaPostService {
 
-  private static final int QNA_PAGE_SIZE = 5;
-
   private final QnaPostRepository qnaPostRepository;
   private final UserRepository userRepository;
+  private final CommentRepository commentRepository;
+  private final ReplyRepository replyRepository;
   private final PhotoService photoService;
   @Value("${cloud.aws.s3.default-thumbnail-image-url}")
   private String defaultThumbnailImageUrl;
@@ -71,7 +75,7 @@ public class QnaPostService {
   /**
    * 질의 응답 게시글 전체 목록 조회 (최신순) 토큰 X
    *
-   * @param page   조회할 페이지 번호 (1부터 시작)
+   * @param pageable   조회할 페이지 번호 (1부터 시작)
    * @param search 검색 키워드 (optional)
    * @return Page<QnaPostDto>
    */
@@ -91,7 +95,7 @@ public class QnaPostService {
    * 특정 사용자의 질의 응답 게시글 목록 조회 (최신순) 토큰O
    *
    * @param userId
-   * @param page
+   * @param pageable
    * @param search
    * @return Page<QnaPostDto>
    */
@@ -194,6 +198,16 @@ public class QnaPostService {
 
     // 썸네일 파일 삭제
     photoService.delete(qnaPost.getThumbnailUrl());
+
+    // 관련된 댓글, 대댓글 삭제
+    List<Comment> commentList = commentRepository.findAllByPostIdAndPostType(qnaPostId,
+        PostType.QNA);
+
+    for (Comment comment : commentList) {
+      replyRepository.deleteAllByComment(comment);
+    }
+
+    commentRepository.deleteAllByPostIdAndPostType(qnaPostId, PostType.QNA);
 
     // 게시글 삭제
     qnaPostRepository.delete(qnaPost);
