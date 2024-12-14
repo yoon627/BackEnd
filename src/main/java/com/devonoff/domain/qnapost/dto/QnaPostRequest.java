@@ -20,5 +20,5 @@ public class QnaPostRequest {
   private MultipartFile file;
   private String title;
   private String content;
-  //private PostType postType;
+
 }

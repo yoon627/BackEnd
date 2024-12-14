@@ -62,7 +62,6 @@ public class QnaPostService {
         .title(qnaPostRequest.getTitle())
         .content(qnaPostRequest.getContent())
         .thumbnailUrl(uploadedThumbnailUrl)
-        .postType(PostType.QNA)
         .user(user)
         .build();
 
