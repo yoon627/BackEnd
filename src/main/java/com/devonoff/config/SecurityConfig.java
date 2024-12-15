@@ -68,8 +68,6 @@ public class SecurityConfig {
                 "/api/study-posts/search-by-id",
                 "/api/info-posts",
                 "/api/info-posts/**",
-                "/api/comments/**",
-                "/api/comments",
                 "/api/qna-posts",
                 "/api/qna-posts/**"
             )
