@@ -1,27 +1,39 @@
 package com.devonoff.domain.qnapost.service;
 
-import com.devonoff.domain.comment.entity.Comment;
-import com.devonoff.domain.comment.repository.CommentRepository;
+import static com.devonoff.type.ErrorCode.UNAUTHORIZED_ACCESS;
+import static com.devonoff.type.ErrorCode.USER_NOT_FOUND;
+
 import com.devonoff.domain.photo.service.PhotoService;
+import com.devonoff.domain.qnapost.dto.QnaCommentDto;
+import com.devonoff.domain.qnapost.dto.QnaCommentRequest;
+import com.devonoff.domain.qnapost.dto.QnaCommentResponse;
 import com.devonoff.domain.qnapost.dto.QnaPostDto;
+import com.devonoff.domain.qnapost.dto.QnaReplyDto;
+import com.devonoff.domain.qnapost.dto.QnaReplyRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostUpdateDto;
+import com.devonoff.domain.qnapost.entity.QnaComment;
 import com.devonoff.domain.qnapost.entity.QnaPost;
+import com.devonoff.domain.qnapost.entity.QnaReply;
+import com.devonoff.domain.qnapost.repository.QnaCommentRepository;
+import com.devonoff.domain.qnapost.repository.QnaReplyRepository;
 import com.devonoff.domain.qnapost.repository.QnaPostRepository;
-import com.devonoff.domain.reply.Repository.ReplyRepository;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
+import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
-import com.devonoff.type.PostType;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -34,9 +46,10 @@ public class QnaPostService {
 
   private final QnaPostRepository qnaPostRepository;
   private final UserRepository userRepository;
-  private final CommentRepository commentRepository;
-  private final ReplyRepository replyRepository;
+  private final QnaCommentRepository qnaCommentRepository;
+  private final QnaReplyRepository qnaReplyRepository;
   private final PhotoService photoService;
+  private final AuthService authService;
   @Value("${cloud.aws.s3.default-thumbnail-image-url}")
   private String defaultThumbnailImageUrl;
 
@@ -154,9 +167,9 @@ public class QnaPostService {
     // 썸네일 업데이트 로직
     String updatedThumbnailUrl = qnaPostUpdateDto.getThumbnailImgUrl();
     if (qnaPostUpdateDto.getFile() != null && !qnaPostUpdateDto.getFile().isEmpty()) {
-      photoService.delete(qnaPost.getThumbnailUrl());
       updatedThumbnailUrl = photoService.save(qnaPostUpdateDto.getFile());
       qnaPost.setThumbnailUrl(updatedThumbnailUrl);
+      photoService.delete(qnaPost.getThumbnailUrl());
     } else {
       if (updatedThumbnailUrl != null && !updatedThumbnailUrl.isEmpty()
           && updatedThumbnailUrl.equals(defaultThumbnailImageUrl)) {
@@ -199,16 +212,168 @@ public class QnaPostService {
     photoService.delete(qnaPost.getThumbnailUrl());
 
     // 관련된 댓글, 대댓글 삭제
-    List<Comment> commentList = commentRepository.findAllByPostIdAndPostType(qnaPostId,
-        PostType.QNA);
+    List<QnaComment> commentList = qnaCommentRepository.findAllByQnaPost(qnaPost);
 
-    for (Comment comment : commentList) {
-      replyRepository.deleteAllByComment(comment);
+    for (QnaComment comment : commentList) {
+      qnaReplyRepository.deleteAllByComment(comment);
     }
 
-    commentRepository.deleteAllByPostIdAndPostType(qnaPostId, PostType.QNA);
+    qnaCommentRepository.deleteAllByQnaPost(qnaPost);
 
     // 게시글 삭제
     qnaPostRepository.delete(qnaPost);
+  }
+
+  // 댓글
+  /**
+   * 댓글 작성
+   *
+   * @param qnaPostId
+   * @param qnaCommentRequest
+   * @return QnaCommentDto
+   */
+  public QnaCommentDto createQnaPostComment(
+      Long qnaPostId, QnaCommentRequest qnaCommentRequest
+  ) {
+    Long loginUserId = authService.getLoginUserId();
+    User user = userRepository.findById(loginUserId)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+    QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
+        .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+    QnaComment savedQnaComment = qnaCommentRepository.save(
+        QnaCommentRequest.toEntity(user, qnaPost, qnaCommentRequest)
+    );
+
+    return QnaCommentDto.fromEntity(savedQnaComment);
+  }
+
+  /**
+   * 댓글 조회
+   *
+   * @param qnaPostId
+   * @param page
+   * @return Page<QnaCommentResponse>
+   */
+  public Page<QnaCommentResponse> getQnaPostComments(Long qnaPostId, Integer page) {
+    QnaPost qnaPost = qnaPostRepository.findById(qnaPostId)
+        .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+
+    Pageable pageable = PageRequest.of(page, 12, Sort.by("createdAt").ascending());
+
+    return qnaCommentRepository.findAllByQnaPost(qnaPost, pageable)
+        .map(QnaCommentResponse::fromEntity);
+  }
+
+  /**
+   * 댓글 수정
+   *
+   * @param commentId
+   * @param qnaCommentRequest
+   * @return QnaCommentDto
+   */
+  public QnaCommentDto updateQnaPostComment(
+      Long commentId, QnaCommentRequest qnaCommentRequest
+  ) {
+    QnaComment qnaComment = qnaCommentRepository.findById(commentId)
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+    if (!Objects.equals(authService.getLoginUserId(), qnaComment.getUser().getId())) {
+      throw new CustomException(UNAUTHORIZED_ACCESS);
+    }
+
+    qnaComment.setIsSecret(qnaCommentRequest.getIsSecret());
+    qnaComment.setContent(qnaCommentRequest.getContent());
+
+    return QnaCommentDto.fromEntity(qnaCommentRepository.save(qnaComment));
+  }
+
+  /**
+   * 댓글 삭제
+   *
+   * @param commentId
+   * @return QnaCommentDto
+   */
+  @Transactional
+  public QnaCommentDto deleteQnaPostComment(Long commentId) {
+    QnaComment qnaComment = qnaCommentRepository.findById(commentId)
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+    if (!Objects.equals(authService.getLoginUserId(), qnaComment.getUser().getId())) {
+      throw new CustomException(UNAUTHORIZED_ACCESS);
+    }
+
+    qnaReplyRepository.deleteAllByComment(qnaComment);
+    qnaCommentRepository.delete(qnaComment);
+
+    return QnaCommentDto.fromEntity(qnaComment);
+  }
+
+  // 대댓글
+  /**
+   * 대댓글 작성
+   *
+   * @param commentId
+   * @param qnaReplyRequest
+   * @return QnaReplyDto
+   */
+  public QnaReplyDto createQnaPostReply(
+      Long commentId, QnaReplyRequest qnaReplyRequest
+  ) {
+    Long loginUserId = authService.getLoginUserId();
+    User user = userRepository.findById(loginUserId)
+        .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+    QnaComment qnaComment = qnaCommentRepository.findById(commentId)
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+    QnaReply savedQnaReply = qnaReplyRepository.save(
+        QnaReplyRequest.toEntity(user, qnaComment, qnaReplyRequest)
+    );
+
+    return QnaReplyDto.fromEntity(savedQnaReply);
+  }
+
+  /**
+   * 대댓글 수정
+   *
+   * @param replyId
+   * @param qnaReplyRequest
+   * @return QnaReplyDto
+   */
+  public QnaReplyDto updateQnaPostReply(
+      Long replyId, QnaReplyRequest qnaReplyRequest
+  ) {
+    QnaReply qnaReply = qnaReplyRepository.findById(replyId)
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+    if (!Objects.equals(authService.getLoginUserId(), qnaReply.getUser().getId())) {
+      throw new CustomException(UNAUTHORIZED_ACCESS);
+    }
+
+    qnaReply.setIsSecret(qnaReplyRequest.getIsSecret());
+    qnaReply.setContent(qnaReplyRequest.getContent());
+
+    return QnaReplyDto.fromEntity(qnaReplyRepository.save(qnaReply));
+  }
+
+  /**
+   * 대댓글 삭제
+   *
+   * @param replyId
+   * @return QnaReplyDto
+   */
+  public QnaReplyDto deleteQnaPostReply(Long replyId) {
+    QnaReply qnaReply = qnaReplyRepository.findById(replyId)
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+    if (!Objects.equals(authService.getLoginUserId(), qnaReply.getUser().getId())) {
+      throw new CustomException(UNAUTHORIZED_ACCESS);
+    }
+
+    qnaReplyRepository.delete(qnaReply);
+
+    return QnaReplyDto.fromEntity(qnaReply);
   }
 }

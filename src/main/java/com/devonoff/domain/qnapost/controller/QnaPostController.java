@@ -1,7 +1,12 @@
 package com.devonoff.domain.qnapost.controller;
 
 
+import com.devonoff.domain.qnapost.dto.QnaCommentDto;
+import com.devonoff.domain.qnapost.dto.QnaCommentRequest;
+import com.devonoff.domain.qnapost.dto.QnaCommentResponse;
 import com.devonoff.domain.qnapost.dto.QnaPostDto;
+import com.devonoff.domain.qnapost.dto.QnaReplyDto;
+import com.devonoff.domain.qnapost.dto.QnaReplyRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostUpdateDto;
 import com.devonoff.domain.qnapost.service.QnaPostService;
@@ -16,6 +21,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -101,7 +108,6 @@ public class QnaPostController {
     return ResponseEntity.ok(response);
   }
 
-
   /**
    * 게시글 삭제
    *
@@ -114,5 +120,110 @@ public class QnaPostController {
     // 서비스 호출
     qnaPostService.deleteQnaPost(qnaPostId);
     return ResponseEntity.ok().build(); // 상태 코드 200 반환
+  }
+
+  // 댓글
+  /**
+   * 댓글 작성
+   *
+   * @param qnaPostId
+   * @param qnaCommentRequest
+   * @return ResponseEntity<QnaCommentDto>
+   */
+  @PostMapping("/{qnaPostId}/comments")
+  public ResponseEntity<QnaCommentDto> createQnaPostComment(
+      @PathVariable Long qnaPostId,
+      @RequestBody @Valid QnaCommentRequest qnaCommentRequest
+  ) {
+    return ResponseEntity.ok(qnaPostService.createQnaPostComment(qnaPostId, qnaCommentRequest));
+  }
+
+  /**
+   * 댓글 조회
+   *
+   * @param qnaPostId
+   * @param page
+   * @return ResponseEntity<Page<QnaCommentResponse>>
+   */
+  @GetMapping("/{qnaPostId}/comments")
+  public ResponseEntity<Page<QnaCommentResponse>> getQnaPostComments(
+      @PathVariable Long qnaPostId,
+      @RequestParam(required = false, defaultValue = "0") Integer page
+  ) {
+    return ResponseEntity.ok(qnaPostService.getQnaPostComments(qnaPostId, page));
+  }
+
+  /**
+   * 댓글 수정
+   *
+   * @param commentId
+   * @param qnaCommentRequest
+   * @return ResponseEntity<QnaCommentDto>
+   */
+  @PutMapping("/comments/{commentId}")
+  public ResponseEntity<QnaCommentDto> updateQnaPostComment(
+      @PathVariable Long commentId,
+      @RequestBody @Valid QnaCommentRequest qnaCommentRequest
+  ) {
+    return ResponseEntity.ok(qnaPostService.updateQnaPostComment(commentId, qnaCommentRequest));
+  }
+
+  /**
+   * 댓글 삭제
+   *
+   * @param commentId
+   * @return ResponseEntity<QnaCommentDto>
+   */
+  @DeleteMapping("/comments/{commentId}")
+  public ResponseEntity<QnaCommentDto> deleteQnaPostComment(
+      @PathVariable Long commentId
+  ) {
+    QnaCommentDto qnaCommentDto = qnaPostService.deleteQnaPostComment(commentId);
+    return ResponseEntity.ok().build();
+  }
+
+  // 대댓글
+  /**
+   * 대댓글 작성
+   *
+   * @param commentId
+   * @param qnaReplyRequest
+   * @return ResponseEntity<QnaReplyDto>
+   */
+  @PostMapping("/comments/{commentId}")
+  public ResponseEntity<QnaReplyDto> createQnaPostReply(
+      @PathVariable Long commentId,
+      @RequestBody @Valid QnaReplyRequest qnaReplyRequest
+  ) {
+    return ResponseEntity.ok(qnaPostService.createQnaPostReply(commentId, qnaReplyRequest));
+  }
+
+  /**
+   * 대댓글 수정
+   *
+   * @param replyId
+   * @param qnaReplyRequest
+   * @return ResponseEntity<QnaReplyDto>
+   */
+  @PutMapping("/replies/{replyId}")
+  public ResponseEntity<QnaReplyDto> updateQnaPostReply(
+      @PathVariable Long replyId,
+      @RequestBody @Valid QnaReplyRequest qnaReplyRequest
+  ) {
+    return ResponseEntity.ok(qnaPostService.updateQnaPostReply(replyId, qnaReplyRequest));
+  }
+
+  /**
+   * 대댓글 삭제
+   *
+   * @param replyId
+   * @return ResponseEntity<QnaReplyDto>
+   */
+  @DeleteMapping("/replies/{replyId}")
+  public ResponseEntity<QnaReplyDto> deleteQnaPostReply(
+      @PathVariable Long replyId
+  ) {
+    QnaReplyDto qnaReplyDto = qnaPostService.deleteQnaPostReply(replyId);
+    return ResponseEntity.ok().build();
   }
 }
