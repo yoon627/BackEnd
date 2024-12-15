@@ -212,6 +212,10 @@ public class InfoSharePostService {
     InfoShareComment infoShareComment = infoShareCommentRepository.findById(commentId)
         .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
+    if (!Objects.equals(authService.getLoginUserId(), infoShareComment.getUser().getId())) {
+      throw new CustomException(UNAUTHORIZED_ACCESS);
+    }
+
     infoShareReplyRepository.deleteAllByComment(infoShareComment);
     infoShareCommentRepository.delete(infoShareComment);
 
@@ -277,6 +281,10 @@ public class InfoSharePostService {
   public InfoShareReplyDto deleteInfoSharePostReply(Long replyId) {
     InfoShareReply infoShareReply = infoShareReplyRepository.findById(replyId)
         .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+    if (!Objects.equals(authService.getLoginUserId(), infoShareReply.getUser().getId())) {
+      throw new CustomException(UNAUTHORIZED_ACCESS);
+    }
 
     infoShareReplyRepository.delete(infoShareReply);
 
