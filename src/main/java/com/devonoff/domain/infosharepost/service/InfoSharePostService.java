@@ -101,8 +101,8 @@ public class InfoSharePostService {
     String requestImgUrl = infoSharePostDto.getThumbnailImgUrl();
 
     if (file != null && !file.isEmpty()) {
-      photoService.delete(originImgUrl);
       infoSharePost.setThumbnailImgUrl(photoService.save(file));
+      photoService.delete(originImgUrl);
     } else {
       if (requestImgUrl != null && !requestImgUrl.isEmpty() && requestImgUrl.equals(
           defaultThumbnailImageUrl)) {
@@ -170,7 +170,7 @@ public class InfoSharePostService {
     InfoSharePost infoSharePost = infoSharePostRepository.findById(infoPostId)
         .orElseThrow(() -> new CustomException(POST_NOT_FOUND));
 
-    Pageable pageable = PageRequest.of(page, defaultPageSize, Sort.by("createdAt").ascending());
+    Pageable pageable = PageRequest.of(page, 12, Sort.by("createdAt").ascending());
 
     return infoShareCommentRepository.findAllByInfoSharePost(infoSharePost, pageable)
         .map(InfoShareCommentResponse::fromEntity);

@@ -86,9 +86,9 @@ public class InfoSharePostController {
       @PathVariable Long infoPostId,
       @RequestBody @Valid InfoShareCommentRequest infoShareCommentRequest
   ) {
-    InfoShareCommentDto infoSharePostComment = infoSharePostService.createInfoSharePostComment(
-        infoPostId, infoShareCommentRequest);
-    return ResponseEntity.ok(infoSharePostComment);
+    return ResponseEntity.ok(
+        infoSharePostService.createInfoSharePostComment(infoPostId, infoShareCommentRequest)
+    );
   }
 
   /**
