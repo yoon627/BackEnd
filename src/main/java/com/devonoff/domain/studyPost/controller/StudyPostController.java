@@ -1,24 +1,33 @@
 package com.devonoff.domain.studyPost.controller;
 
+import com.devonoff.domain.studyPost.dto.StudyCommentDto;
+import com.devonoff.domain.studyPost.dto.StudyCommentRequest;
+import com.devonoff.domain.studyPost.dto.StudyCommentResponse;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
+import com.devonoff.domain.studyPost.dto.StudyReplyDto;
+import com.devonoff.domain.studyPost.dto.StudyReplyRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
 import com.devonoff.domain.studyPost.service.StudyPostService;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySubject;
+import jakarta.validation.Valid;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -100,6 +109,113 @@ public class StudyPostController {
   public ResponseEntity<Void> extendCanceledStudy(
       @PathVariable Long studyPostId, @RequestParam LocalDate recruitmentPeriod) {
     studyPostService.extendCanceledStudy(studyPostId, recruitmentPeriod);
+    return ResponseEntity.ok().build();
+  }
+
+  // 댓글
+  /**
+   * 댓글 작성
+   *
+   * @param studyPostId
+   * @param studyCommentRequest
+   * @return ResponseEntity<StudyCommentDto>
+   */
+  @PostMapping("/study-posts/{studyPostId}/comments")
+  public ResponseEntity<StudyCommentDto> createStudyPostComment(
+      @PathVariable Long studyPostId,
+      @RequestBody @Valid StudyCommentRequest studyCommentRequest
+  ) {
+    return ResponseEntity.ok(
+        studyPostService.createStudyPostComment(studyPostId, studyCommentRequest)
+    );
+  }
+
+  /**
+   * 댓글 조회
+   *
+   * @param studyPostId
+   * @param page
+   * @return ResponseEntity<Page<StudyCommentResponse>>
+   */
+  @GetMapping("/study-posts/{studyPostId}/comments")
+  public ResponseEntity<Page<StudyCommentResponse>> getStudyPostComments(
+      @PathVariable Long studyPostId,
+      @RequestParam(required = false, defaultValue = "0") Integer page
+  ) {
+    return ResponseEntity.ok(studyPostService.getStudyPostComments(studyPostId, page));
+  }
+
+  /**
+   * 댓글 수정
+   *
+   * @param commentId
+   * @param studyCommentRequest
+   * @return ResponseEntity<StudyCommentDto>
+   */
+  @PutMapping("/study-posts/comments/{commentId}")
+  public ResponseEntity<StudyCommentDto> updateStudyPostComment(
+      @PathVariable Long commentId,
+      @RequestBody @Valid StudyCommentRequest studyCommentRequest
+  ) {
+    return ResponseEntity.ok(studyPostService.updateStudyPostComment(commentId, studyCommentRequest));
+  }
+
+  /**
+   * 댓글 삭제
+   *
+   * @param commentId
+   * @return ResponseEntity<StudyCommentDto>
+   */
+  @DeleteMapping("/study-posts/comments/{commentId}")
+  public ResponseEntity<StudyCommentDto> deleteStudyPostComment(
+      @PathVariable Long commentId
+  ) {
+    StudyCommentDto studyCommentDto = studyPostService.deleteStudyPostComment(commentId);
+    return ResponseEntity.ok().build();
+  }
+
+  // 대댓글
+  /**
+   * 대댓글 작성
+   *
+   * @param commentId
+   * @param studyReplyRequest
+   * @return ResponseEntity<StudyReplyDto>
+   */
+  @PostMapping("/comments/{commentId}")
+  public ResponseEntity<StudyReplyDto> createStudyPostReply(
+      @PathVariable Long commentId,
+      @RequestBody @Valid StudyReplyRequest studyReplyRequest
+  ) {
+    return ResponseEntity.ok(studyPostService.createStudyPostReply(commentId, studyReplyRequest));
+  }
+
+  /**
+   * 대댓글 수정
+   *
+   * @param replyId
+   * @param studyReplyRequest
+   * @return ResponseEntity<StudyReplyDto>
+   */
+  @PutMapping("/replies/{replyId}")
+  public ResponseEntity<StudyReplyDto> updateStudyPostReply(
+      @PathVariable Long replyId,
+      @RequestBody @Valid StudyReplyRequest studyReplyRequest
+  ) {
+    return ResponseEntity.ok(studyPostService.updateStudyPostReply(replyId, studyReplyRequest));
+  }
+
+  /**
+   * 대댓글 삭제
+   *
+   * @param replyId
+   * @return ResponseEntity<StudyReplyDto>
+   */
+  @DeleteMapping("/replies/{replyId}")
+  public ResponseEntity<StudyReplyDto> deleteStudyPostReply(
+      @PathVariable Long replyId
+  ) {
+    StudyReplyDto studyReplyDto = studyPostService.deleteStudyPostReply(replyId);
     return ResponseEntity.ok().build();
   }
 }
