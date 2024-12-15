@@ -120,7 +120,7 @@ public class StudyPostController {
    * @param studyCommentRequest
    * @return ResponseEntity<StudyCommentDto>
    */
-  @PostMapping("/study-posts/{studyPostId}/comments")
+  @PostMapping("/{studyPostId}/comments")
   public ResponseEntity<StudyCommentDto> createStudyPostComment(
       @PathVariable Long studyPostId,
       @RequestBody @Valid StudyCommentRequest studyCommentRequest
@@ -137,7 +137,7 @@ public class StudyPostController {
    * @param page
    * @return ResponseEntity<Page<StudyCommentResponse>>
    */
-  @GetMapping("/study-posts/{studyPostId}/comments")
+  @GetMapping("/{studyPostId}/comments")
   public ResponseEntity<Page<StudyCommentResponse>> getStudyPostComments(
       @PathVariable Long studyPostId,
       @RequestParam(required = false, defaultValue = "0") Integer page
@@ -152,7 +152,7 @@ public class StudyPostController {
    * @param studyCommentRequest
    * @return ResponseEntity<StudyCommentDto>
    */
-  @PutMapping("/study-posts/comments/{commentId}")
+  @PutMapping("/comments/{commentId}")
   public ResponseEntity<StudyCommentDto> updateStudyPostComment(
       @PathVariable Long commentId,
       @RequestBody @Valid StudyCommentRequest studyCommentRequest
@@ -166,7 +166,7 @@ public class StudyPostController {
    * @param commentId
    * @return ResponseEntity<StudyCommentDto>
    */
-  @DeleteMapping("/study-posts/comments/{commentId}")
+  @DeleteMapping("/comments/{commentId}")
   public ResponseEntity<StudyCommentDto> deleteStudyPostComment(
       @PathVariable Long commentId
   ) {
