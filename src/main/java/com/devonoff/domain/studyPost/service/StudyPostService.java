@@ -1,15 +1,27 @@
 package com.devonoff.domain.studyPost.service;
 
+import static com.devonoff.type.ErrorCode.UNAUTHORIZED_ACCESS;
+import static com.devonoff.type.ErrorCode.USER_NOT_FOUND;
+
 import com.devonoff.domain.photo.service.PhotoService;
 import com.devonoff.domain.student.entity.Student;
 import com.devonoff.domain.student.repository.StudentRepository;
 import com.devonoff.domain.study.entity.Study;
 import com.devonoff.domain.study.service.StudyService;
+import com.devonoff.domain.studyPost.dto.StudyCommentDto;
+import com.devonoff.domain.studyPost.dto.StudyCommentRequest;
+import com.devonoff.domain.studyPost.dto.StudyCommentResponse;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
+import com.devonoff.domain.studyPost.dto.StudyReplyDto;
+import com.devonoff.domain.studyPost.dto.StudyReplyRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
+import com.devonoff.domain.studyPost.entity.StudyComment;
 import com.devonoff.domain.studyPost.entity.StudyPost;
+import com.devonoff.domain.studyPost.entity.StudyReply;
+import com.devonoff.domain.studyPost.repository.StudyCommentRepository;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
+import com.devonoff.domain.studyPost.repository.StudyReplyRepository;
 import com.devonoff.domain.studySignup.entity.StudySignup;
 import com.devonoff.domain.studySignup.repository.StudySignupRepository;
 import com.devonoff.domain.user.entity.User;
@@ -25,10 +37,13 @@ import com.devonoff.type.StudySubject;
 import com.devonoff.util.DayTypeUtils;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,6 +59,8 @@ public class StudyPostService {
   private final StudyService studyService;
   private final AuthService authService;
   private final PhotoService photoService;
+  private final StudyCommentRepository studyCommentRepository;
+  private final StudyReplyRepository studyReplyRepository;
   @Value("${cloud.aws.s3.default-thumbnail-image-url}")
   private String defaultThumbnailImageUrl;
 
@@ -276,5 +293,157 @@ public class StudyPostService {
         .currentParticipants(0) // 기본값: 0명
         .user(user)
         .build();
+  }
+
+  // 댓글
+  /**
+   * 댓글 작성
+   *
+   * @param studyPostId
+   * @param studyCommentRequest
+   * @return StudyCommentDto
+   */
+  public StudyCommentDto createStudyPostComment(
+      Long studyPostId, StudyCommentRequest studyCommentRequest
+  ) {
+    Long loginUserId = authService.getLoginUserId();
+    User user = userRepository.findById(loginUserId)
+        .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+    StudyPost studyPost = studyPostRepository.findById(studyPostId)
+        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
+
+    StudyComment savedStudyComment = studyCommentRepository.save(
+        StudyCommentRequest.toEntity(user, studyPost, studyCommentRequest)
+    );
+
+    return StudyCommentDto.fromEntity(savedStudyComment);
+  }
+
+  /**
+   * 댓글 조회
+   *
+   * @param studyPostId
+   * @return Page<StudyCommentDto>
+   */
+  public Page<StudyCommentResponse> getStudyPostComments(Long studyPostId, Integer page) {
+    StudyPost studyPost = studyPostRepository.findById(studyPostId)
+        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
+
+    Pageable pageable = PageRequest.of(page, 12, Sort.by("createdAt").ascending());
+
+    return studyCommentRepository.findAllByStudyPost(studyPost, pageable)
+        .map(StudyCommentResponse::fromEntity);
+  }
+
+  /**
+   * 댓글 수정
+   *
+   * @param commentId
+   * @param studyCommentRequest
+   * @return StudyCommentDto
+   */
+  public StudyCommentDto updateStudyPostComment(
+      Long commentId, StudyCommentRequest studyCommentRequest
+  ) {
+    StudyComment studyComment = studyCommentRepository.findById(commentId)
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+    if (!Objects.equals(authService.getLoginUserId(), studyComment.getUser().getId())) {
+      throw new CustomException(UNAUTHORIZED_ACCESS);
+    }
+
+    studyComment.setIsSecret(studyCommentRequest.getIsSecret());
+    studyComment.setContent(studyCommentRequest.getContent());
+
+    return StudyCommentDto.fromEntity(studyCommentRepository.save(studyComment));
+  }
+
+  /**
+   * 댓글 삭제
+   *
+   * @param commentId
+   * @return StudyCommentDto
+   */
+  @Transactional
+  public StudyCommentDto deleteStudyPostComment(Long commentId) {
+    StudyComment studyComment = studyCommentRepository.findById(commentId)
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+    if (!Objects.equals(authService.getLoginUserId(), studyComment.getUser().getId())) {
+      throw new CustomException(UNAUTHORIZED_ACCESS);
+    }
+
+    studyReplyRepository.deleteAllByComment(studyComment);
+    studyCommentRepository.delete(studyComment);
+
+    return StudyCommentDto.fromEntity(studyComment);
+  }
+
+  // 대댓글
+  /**
+   * 대댓글 작성
+   *
+   * @param commentId
+   * @param studyReplyRequest
+   * @return StudyReplyDto
+   */
+  public StudyReplyDto createStudyPostReply(
+      Long commentId, StudyReplyRequest studyReplyRequest
+  ) {
+    Long loginUserId = authService.getLoginUserId();
+    User user = userRepository.findById(loginUserId)
+        .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+    StudyComment studyComment = studyCommentRepository.findById(commentId)
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+    StudyReply savedStudyReply = studyReplyRepository.save(
+        StudyReplyRequest.toEntity(user, studyComment, studyReplyRequest)
+    );
+
+    return StudyReplyDto.fromEntity(savedStudyReply);
+  }
+
+  /**
+   * 대댓글 수정
+   *
+   * @param replyId
+   * @param studyReplyRequest
+   * @return StudyReplyDto
+   */
+  public StudyReplyDto updateStudyPostReply(
+      Long replyId, StudyReplyRequest studyReplyRequest
+  ) {
+    StudyReply studyReply = studyReplyRepository.findById(replyId)
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+    if (!Objects.equals(authService.getLoginUserId(), studyReply.getUser().getId())) {
+      throw new CustomException(UNAUTHORIZED_ACCESS);
+    }
+
+    studyReply.setIsSecret(studyReplyRequest.getIsSecret());
+    studyReply.setContent(studyReplyRequest.getContent());
+
+    return StudyReplyDto.fromEntity(studyReplyRepository.save(studyReply));
+  }
+
+  /**
+   * 대댓글 삭제
+   *
+   * @param replyId
+   * @return StudyReplyDto
+   */
+  public StudyReplyDto deleteStudyPostReply(Long replyId) {
+    StudyReply studyReply = studyReplyRepository.findById(replyId)
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+    if (!Objects.equals(authService.getLoginUserId(), studyReply.getUser().getId())) {
+      throw new CustomException(UNAUTHORIZED_ACCESS);
+    }
+
+    studyReplyRepository.delete(studyReply);
+
+    return StudyReplyDto.fromEntity(studyReply);
   }
 }

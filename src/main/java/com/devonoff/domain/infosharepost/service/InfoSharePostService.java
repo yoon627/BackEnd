@@ -4,19 +4,25 @@ import static com.devonoff.type.ErrorCode.POST_NOT_FOUND;
 import static com.devonoff.type.ErrorCode.UNAUTHORIZED_ACCESS;
 import static com.devonoff.type.ErrorCode.USER_NOT_FOUND;
 
-import com.devonoff.domain.comment.entity.Comment;
-import com.devonoff.domain.comment.repository.CommentRepository;
+import com.devonoff.domain.infosharepost.dto.InfoShareCommentDto;
+import com.devonoff.domain.infosharepost.dto.InfoShareCommentRequest;
+import com.devonoff.domain.infosharepost.dto.InfoShareCommentResponse;
 import com.devonoff.domain.infosharepost.dto.InfoSharePostDto;
+import com.devonoff.domain.infosharepost.dto.InfoShareReplyDto;
+import com.devonoff.domain.infosharepost.dto.InfoShareReplyRequest;
 import com.devonoff.domain.infosharepost.entity.InfoSharePost;
+import com.devonoff.domain.infosharepost.entity.InfoShareComment;
+import com.devonoff.domain.infosharepost.entity.InfoShareReply;
+import com.devonoff.domain.infosharepost.repository.InfoShareCommentRepository;
+import com.devonoff.domain.infosharepost.repository.InfoShareReplyRepository;
 import com.devonoff.domain.infosharepost.repository.InfoSharePostRepository;
 import com.devonoff.domain.photo.service.PhotoService;
-import com.devonoff.domain.reply.Repository.ReplyRepository;
 import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
-import com.devonoff.type.PostType;
+import com.devonoff.type.ErrorCode;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -37,8 +43,8 @@ public class InfoSharePostService {
 
   private final InfoSharePostRepository infoSharePostRepository;
   private final UserRepository userRepository;
-  private final CommentRepository commentRepository;
-  private final ReplyRepository replyRepository;
+  private final InfoShareCommentRepository infoShareCommentRepository;
+  private final InfoShareReplyRepository infoShareReplyRepository;
   private final PhotoService photoService;
   private final AuthService authService;
 
@@ -95,8 +101,8 @@ public class InfoSharePostService {
     String requestImgUrl = infoSharePostDto.getThumbnailImgUrl();
 
     if (file != null && !file.isEmpty()) {
-      photoService.delete(originImgUrl);
       infoSharePost.setThumbnailImgUrl(photoService.save(file));
+      photoService.delete(originImgUrl);
     } else {
       if (requestImgUrl != null && !requestImgUrl.isEmpty() && requestImgUrl.equals(
           defaultThumbnailImageUrl)) {
@@ -118,14 +124,170 @@ public class InfoSharePostService {
       throw new CustomException(UNAUTHORIZED_ACCESS);
     }
     photoService.delete(infoSharePost.getThumbnailImgUrl());
-    List<Comment> commentList = commentRepository.findAllByPostIdAndPostType(infoPostId,
-        PostType.INFO);
+    List<InfoShareComment> commentList =
+        infoShareCommentRepository.findAllByInfoSharePost(infoSharePost);
 
-    for (Comment comment : commentList) {
-      replyRepository.deleteAllByComment(comment);
+    for (InfoShareComment comment : commentList) {
+      infoShareReplyRepository.deleteAllByComment(comment);
     }
 
-    commentRepository.deleteAllByPostIdAndPostType(infoPostId, PostType.INFO);
+    infoShareCommentRepository.deleteAllByInfoSharePost(infoSharePost);
     this.infoSharePostRepository.deleteById(infoPostId);
+  }
+
+  // 댓글
+  /**
+   * 댓글 생성
+   *
+   * @param infoPostId
+   * @param infoShareCommentRequest
+   * @return InfoSharePostCommentDto
+   */
+  public InfoShareCommentDto createInfoSharePostComment(
+      Long infoPostId, InfoShareCommentRequest infoShareCommentRequest
+  ) {
+    Long loginUserId = authService.getLoginUserId();
+    User user = userRepository.findById(loginUserId)
+        .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+    InfoSharePost infoSharePost = infoSharePostRepository.findById(infoPostId)
+        .orElseThrow(() -> new CustomException(POST_NOT_FOUND));
+
+    InfoShareComment savedPostComment = infoShareCommentRepository.save(
+        InfoShareCommentRequest.toEntity(user, infoSharePost, infoShareCommentRequest)
+    );
+
+    return InfoShareCommentDto.fromEntity(savedPostComment);
+  }
+
+  /**
+   * 댓글 조회
+   *
+   * @param infoPostId
+   * @return Page<InfoShareCommentResponse>
+   */
+  public Page<InfoShareCommentResponse> getInfoSharePostComments(Long infoPostId, Integer page) {
+    InfoSharePost infoSharePost = infoSharePostRepository.findById(infoPostId)
+        .orElseThrow(() -> new CustomException(POST_NOT_FOUND));
+
+    Pageable pageable = PageRequest.of(page, 12, Sort.by("createdAt").ascending());
+
+    return infoShareCommentRepository.findAllByInfoSharePost(infoSharePost, pageable)
+        .map(InfoShareCommentResponse::fromEntity);
+  }
+
+  /**
+   * 댓글 수정
+   *
+   * @param commentId
+   * @param infoShareCommentRequest
+   * @return InfoShareCommentDto
+   */
+  public InfoShareCommentDto updateInfoSharePostComment(
+      Long commentId, InfoShareCommentRequest infoShareCommentRequest
+  ) {
+    InfoShareComment infoShareComment = infoShareCommentRepository.findById(commentId)
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+    if (!Objects.equals(authService.getLoginUserId(), infoShareComment.getUser().getId())) {
+      throw new CustomException(UNAUTHORIZED_ACCESS);
+    }
+
+    infoShareComment.setIsSecret(infoShareCommentRequest.getIsSecret());
+    infoShareComment.setContent(infoShareCommentRequest.getContent());
+
+    return InfoShareCommentDto.fromEntity(
+        infoShareCommentRepository.save(infoShareComment)
+    );
+  }
+
+  /**
+   * 댓글 삭제
+   *
+   * @param commentId
+   * @return InfoShareCommentDto
+   */
+  @Transactional
+  public InfoShareCommentDto deleteInfoSharePostComment(Long commentId) {
+    InfoShareComment infoShareComment = infoShareCommentRepository.findById(commentId)
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+    if (!Objects.equals(authService.getLoginUserId(), infoShareComment.getUser().getId())) {
+      throw new CustomException(UNAUTHORIZED_ACCESS);
+    }
+
+    infoShareReplyRepository.deleteAllByComment(infoShareComment);
+    infoShareCommentRepository.delete(infoShareComment);
+
+    return InfoShareCommentDto.fromEntity(infoShareComment);
+  }
+
+  // 대댓글
+  /**
+   * 대댓글 작성
+   *
+   * @param commentId
+   * @param infoShareReplyRequest
+   * @return InfoShareReplyDto
+   */
+  public InfoShareReplyDto createInfoSharePostReply(
+      Long commentId, InfoShareReplyRequest infoShareReplyRequest
+  ) {
+    Long loginUserId = authService.getLoginUserId();
+    User user = userRepository.findById(loginUserId)
+        .orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+    InfoShareComment infoShareComment = infoShareCommentRepository.findById(commentId)
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+    InfoShareReply infoShareReply = infoShareReplyRepository.save(
+        InfoShareReplyRequest.toEntity(
+            user, infoShareComment, infoShareReplyRequest
+        )
+    );
+
+    return InfoShareReplyDto.fromEntity(infoShareReply);
+  }
+
+  /**
+   * 대댓글 수정
+   *
+   * @param replyId
+   * @param infoShareReplyRequest
+   * @return InfoShareReplyDto
+   */
+  public InfoShareReplyDto updateInfoSharePostReply(
+      Long replyId, InfoShareReplyRequest infoShareReplyRequest
+  ) {
+    InfoShareReply infoShareReply = infoShareReplyRepository.findById(replyId)
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+    if (!Objects.equals(authService.getLoginUserId(), infoShareReply.getUser().getId())) {
+      throw new CustomException(UNAUTHORIZED_ACCESS);
+    }
+
+    infoShareReply.setIsSecret(infoShareReplyRequest.getIsSecret());
+    infoShareReply.setContent(infoShareReplyRequest.getContent());
+
+    return InfoShareReplyDto.fromEntity(infoShareReplyRepository.save(infoShareReply));
+  }
+
+  /**
+   * 대댓글 삭제
+   *
+   * @param replyId
+   * @return InfoShareReplyDto
+   */
+  public InfoShareReplyDto deleteInfoSharePostReply(Long replyId) {
+    InfoShareReply infoShareReply = infoShareReplyRepository.findById(replyId)
+        .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+    if (!Objects.equals(authService.getLoginUserId(), infoShareReply.getUser().getId())) {
+      throw new CustomException(UNAUTHORIZED_ACCESS);
+    }
+
+    infoShareReplyRepository.delete(infoShareReply);
+
+    return InfoShareReplyDto.fromEntity(infoShareReply);
   }
 }
