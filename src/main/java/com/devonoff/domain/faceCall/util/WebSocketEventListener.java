@@ -24,14 +24,14 @@ public class WebSocketEventListener {
     StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
     // 연결된 사용자 정보 가져오기
     String sessionId = headerAccessor.getSessionId();
-//    String camKey = (String) headerAccessor.getNativeHeader("camKey").get(0); // TODO 필요하면 쓰기
-    String roomId = (String) headerAccessor.getNativeHeader("roomId").get(0);
+    String userId = (String) headerAccessor.getNativeHeader("userId").get(0); // TODO 필요하면 쓰기
+    String studyId = (String) headerAccessor.getNativeHeader("studyId").get(0);
     //TODO 프론트엔드에서 jwt 보내줘야함 안보내주면 contextholder나 다른 방법 찾아야함
-    String jwt = (String) headerAccessor.getNativeHeader("jwt").get(0);
-    String userId = String.valueOf(jwtProvider.getUserId(jwt));
+//    String jwt = (String) headerAccessor.getNativeHeader("jwt").get(0);
+//    String userId = String.valueOf(jwtProvider.getUserId(jwt));
     userIdSessionManager.addUser(sessionId, userId);
-    studyIdSessionManager.addUser(sessionId, roomId);
-    roomManager.addUser(roomId, userId, sessionId);
+    studyIdSessionManager.addUser(sessionId, studyId);
+    roomManager.addUser(studyId, userId, sessionId);
   }
 
   @EventListener
