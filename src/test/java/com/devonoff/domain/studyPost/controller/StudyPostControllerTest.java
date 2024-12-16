@@ -3,24 +3,33 @@ package com.devonoff.domain.studyPost.controller;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.devonoff.domain.studyPost.dto.StudyCommentDto;
+import com.devonoff.domain.studyPost.dto.StudyCommentRequest;
+import com.devonoff.domain.studyPost.dto.StudyCommentResponse;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
+import com.devonoff.domain.studyPost.dto.StudyReplyDto;
+import com.devonoff.domain.studyPost.dto.StudyReplyRequest;
 import com.devonoff.domain.studyPost.service.StudyPostService;
 import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.entity.User;
@@ -32,13 +41,14 @@ import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySubject;
 import com.devonoff.util.JwtProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -65,6 +75,9 @@ class StudyPostControllerTest {
 
   @MockBean
   private JwtProvider jwtProvider;
+
+  @Autowired
+  private ObjectMapper objectMapper;
 
   @MockBean
   private AuthService authService;
@@ -224,7 +237,7 @@ class StudyPostControllerTest {
 
     when(studyPostService.searchStudyPosts(
         any(), any(), any(), any(),
-        Mockito.anyInt(), any(), any(), any(), any()))
+        anyInt(), any(), any(), any(), any()))
         .thenReturn(mockPage);
 
     // When & Then
@@ -895,5 +908,134 @@ class StudyPostControllerTest {
         .andExpect(content().json(expectedResponse));
 
     verify(studyPostService, times(1)).extendCanceledStudy(studyPostId, newRecruitmentPeriod);
+  }
+
+  @Test
+  @DisplayName("댓글 생성 - 성공")
+  void testCreateStudyPostComment_Success() throws Exception {
+    // given
+    Long studyPostId = 1L;
+    StudyCommentRequest studyCommentRequest = StudyCommentRequest.builder()
+        .isSecret(false)
+        .content("testComment")
+        .build();
+
+    StudyCommentDto studyCommentDto = StudyCommentDto.builder().id(1L).build();
+
+    when(studyPostService.createStudyPostComment(eq(studyPostId), eq(studyCommentRequest)))
+        .thenReturn(studyCommentDto);
+
+    // when & then
+    mockMvc.perform(post("/api/study-posts/1/comments")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(studyCommentRequest)))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("댓글 조회 - 성공")
+  void testGetStudyPostComments_Success() throws Exception {
+    // given
+    StudyCommentResponse studyCommentResponse = StudyCommentResponse.builder()
+        .id(1L)
+        .build();
+
+    Page<StudyCommentResponse> page = new PageImpl<>(
+        Collections.singletonList(studyCommentResponse)
+    );
+
+    when(studyPostService.getStudyPostComments(anyLong(), anyInt()))
+        .thenReturn(page);
+
+    // when & then
+    mockMvc.perform(get("/api/study-posts/1/comments")
+            .param("page", "0"))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("댓글 수정 - 성공")
+  void testUpdateStudyPostComment_Success() throws Exception {
+    // given
+    Long commentId = 1L;
+    StudyCommentRequest studyCommentRequest = StudyCommentRequest.builder()
+        .isSecret(false)
+        .content("testComment")
+        .build();
+
+    StudyCommentDto studyCommentDto = StudyCommentDto.builder().id(1L).build();
+
+    when(studyPostService.updateStudyPostComment(eq(commentId), eq(studyCommentRequest)))
+        .thenReturn(studyCommentDto);
+
+    // when & then
+    mockMvc.perform(put("/api/study-posts/comments/1")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(studyCommentRequest)))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("댓글 삭제 - 성공")
+  void testDeleteStudyPostComment_Success() throws Exception {
+    // when & then
+    mockMvc.perform(delete("/api/study-posts/comments/1"))
+        .andExpect(status().isOk());
+
+    verify(studyPostService).deleteStudyPostComment(1L);
+  }
+
+  @Test
+  @DisplayName("대댓글 생성 - 성공")
+  void testCreateStudyPostReply_Success() throws Exception {
+    // given
+    Long commentId = 1L;
+    StudyReplyRequest studyReplyRequest = StudyReplyRequest.builder()
+        .isSecret(false)
+        .content("testCommentReply")
+        .build();
+
+    StudyReplyDto studyReplyDto = StudyReplyDto.builder().id(1L).build();
+
+    when(studyPostService.createStudyPostReply(eq(commentId), eq(studyReplyRequest)))
+        .thenReturn(studyReplyDto);
+
+    // when & then
+    mockMvc.perform(post("/api/study-posts/comments/1")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(studyReplyRequest)))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("대댓글 수정 - 성공")
+  void testUpdateStudyPostReply_Success() throws Exception {
+    // given
+    Long replyId = 1L;
+    StudyReplyRequest studyReplyRequest = StudyReplyRequest.builder()
+        .isSecret(false)
+        .content("testCommentReply")
+        .build();
+
+    StudyReplyDto studyReplyDto = StudyReplyDto.builder().id(1L).build();
+
+    when(studyPostService.updateStudyPostReply(eq(replyId), eq(studyReplyRequest)))
+        .thenReturn(studyReplyDto);
+
+    // when & then
+    mockMvc.perform(put("/api/study-posts/replies/1")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(studyReplyRequest)))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("대댓글 삭제 - 성공")
+  void testDeleteStudyPostReply_Success() throws Exception {
+    // when & then
+    mockMvc.perform(delete("/api/study-posts/replies/1"))
+        .andExpect(status().isOk());
+
+    verify(studyPostService).deleteStudyPostReply(1L);
   }
 }
