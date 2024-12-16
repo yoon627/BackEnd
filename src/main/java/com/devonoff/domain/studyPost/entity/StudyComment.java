@@ -1,13 +1,10 @@
-package com.devonoff.domain.comment.entity;
+package com.devonoff.domain.studyPost.entity;
+
 
 import com.devonoff.common.entity.BaseTimeEntity;
-import com.devonoff.domain.reply.entity.Reply;
 import com.devonoff.domain.user.entity.User;
-import com.devonoff.type.PostType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -28,33 +25,26 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 @Entity
-public class Comment extends BaseTimeEntity {
+public class StudyComment extends BaseTimeEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-
-  @Column(nullable = false, length = 50)
-  @Enumerated(EnumType.STRING)
-  private PostType postType; // 게시글 유형
-
+  @ManyToOne
+  @JoinColumn(name = "post_id", nullable = false)
+  private StudyPost studyPost;
 
   @Column(nullable = false)
-  private Long postId; // 게시글 ID
+  private Boolean isSecret;
 
   @Column(nullable = false)
-  private Boolean isSecret; // 비밀 댓글 여부
+  private String content;
 
-  @Column(nullable = false)
-  private String content; // 댓글 내용
-
-
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne
   @JoinColumn(name = "user_id", nullable = false)
-  private User user; // 댓글 작성자와 연결
+  private User user;
 
   @OneToMany(mappedBy = "comment", fetch = FetchType.LAZY)
-  private List<Reply> replies; // 댓글에 달린 대댓글들
-
+  private List<StudyReply> replies;
 }

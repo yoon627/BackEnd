@@ -1,19 +1,16 @@
-package com.devonoff.domain.qnapost.entity;
+package com.devonoff.domain.studyPost.entity;
+
 
 import com.devonoff.common.entity.BaseTimeEntity;
 import com.devonoff.domain.user.entity.User;
-import com.devonoff.type.PostType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,24 +23,23 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "qna_post")
-public class QnaPost extends BaseTimeEntity {
+public class StudyReply extends BaseTimeEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @NotBlank
-  private String title;
+  @Column(nullable = false)
+  private Boolean isSecret;
 
-  @NotBlank
+  @Column(nullable = false)
   private String content;
-
-  @Column(name = "thumbnail_img_url")
-  private String thumbnailUrl;
 
   @ManyToOne
   @JoinColumn(name = "user_id", nullable = false)
   private User user;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "comment_id", nullable = false)
+  private StudyComment comment;
 }
