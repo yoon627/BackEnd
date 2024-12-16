@@ -2,9 +2,12 @@ package com.devonoff.domain.qnapost.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -12,17 +15,29 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.devonoff.domain.photo.service.PhotoService;
+import com.devonoff.domain.qnapost.dto.QnaCommentDto;
+import com.devonoff.domain.qnapost.dto.QnaCommentRequest;
+import com.devonoff.domain.qnapost.dto.QnaCommentResponse;
 import com.devonoff.domain.qnapost.dto.QnaPostDto;
 import com.devonoff.domain.qnapost.dto.QnaPostRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostUpdateDto;
+import com.devonoff.domain.qnapost.dto.QnaReplyDto;
+import com.devonoff.domain.qnapost.dto.QnaReplyRequest;
+import com.devonoff.domain.qnapost.entity.QnaComment;
 import com.devonoff.domain.qnapost.entity.QnaPost;
+import com.devonoff.domain.qnapost.entity.QnaReply;
+import com.devonoff.domain.qnapost.repository.QnaCommentRepository;
 import com.devonoff.domain.qnapost.repository.QnaPostRepository;
+import com.devonoff.domain.qnapost.repository.QnaReplyRepository;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
+import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,12 +55,21 @@ class QnaPostServiceTest {
 
   @Mock
   private QnaPostRepository qnaPostRepository;
+  
+  @Mock
+  private QnaCommentRepository qnaCommentRepository;
+
+  @Mock
+  private QnaReplyRepository qnaReplyRepository;
 
   @Mock
   private UserRepository userRepository;
 
   @Mock
   private PhotoService photoService;
+  
+  @Mock
+  private AuthService authService;
 
   @InjectMocks
   private QnaPostService qnaPostService;
@@ -261,4 +285,684 @@ class QnaPostServiceTest {
         post.getTitle().equals("Updated Title") &&
             post.getUser().getId().equals(1L)
     ));
-  }}
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 댓글 생성 - 성공")
+  void testCreateQnaPostComment_Success() {
+    // given
+    Long qnaPostId = 1L;
+    QnaCommentRequest qnaCommentRequest = QnaCommentRequest.builder()
+        .isSecret(false)
+        .content("testComment")
+        .build();
+
+    User user = User.builder().id(1L).nickname("testUser").build();
+    QnaPost qnaPost = QnaPost.builder()
+        .id(1L)
+        .title("Test Title")
+        .user(user)
+        .build();
+
+    QnaComment qnaComment = QnaComment.builder()
+        .id(1L)
+        .qnaPost(qnaPost)
+        .isSecret(false)
+        .content("testComment")
+        .user(user)
+        .build();
+
+    when(authService.getLoginUserId()).thenReturn(1L);
+    when(userRepository.findById(eq(1L))).thenReturn(Optional.of(user));
+    when(qnaPostRepository.findById(eq(qnaPostId)))
+        .thenReturn(Optional.of(qnaPost));
+    when(qnaCommentRepository.save(any(QnaComment.class))).thenReturn(qnaComment);
+
+    // when
+    QnaCommentDto qnaPostComment = qnaPostService.createQnaPostComment(
+        qnaPostId, qnaCommentRequest);
+
+    // then
+    verify(authService, times(1)).getLoginUserId();
+    verify(userRepository, times(1)).findById(eq(1L));
+    verify(qnaPostRepository, times(1)).findById(eq(qnaPostId));
+    verify(qnaCommentRepository, times(1))
+        .save(any(QnaComment.class));
+
+    assertEquals(1L, qnaPostComment.getId());
+    assertEquals(1L, qnaPostComment.getPostId());
+    assertEquals(false, qnaPostComment.getIsSecret());
+    assertEquals("testComment", qnaPostComment.getContent());
+    assertEquals(1L, qnaPostComment.getUser().getId());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 댓글 생성 - 실패 (존재하지 않는 유저)")
+  void testCreateQnaPostComment_Fail_UserNotFound() {
+    // given
+    Long qnaPostId = 1L;
+    QnaCommentRequest qnaCommentRequest = QnaCommentRequest.builder()
+        .isSecret(false)
+        .content("testComment")
+        .build();
+
+    when(authService.getLoginUserId()).thenReturn(1L);
+    when(userRepository.findById(eq(1L))).thenReturn(Optional.empty());
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> qnaPostService.createQnaPostComment(qnaPostId, qnaCommentRequest));
+
+    // then
+    verify(authService, times(1)).getLoginUserId();
+    verify(userRepository, times(1)).findById(eq(1L));
+
+    assertEquals(ErrorCode.USER_NOT_FOUND, customException.getErrorCode());
+    assertEquals("사용자를 찾을 수 없습니다.", customException.getErrorMessage());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 댓글 생성 - 실패 (존재하지 않는 게시글)")
+  void testCreateQnaPostComment_Fail_PostNotFound() {
+    // given
+    Long qnaPostId = 1L;
+    QnaCommentRequest qnaCommentRequest = QnaCommentRequest.builder()
+        .isSecret(false)
+        .content("testComment")
+        .build();
+
+    User user = User.builder().id(1L).nickname("testUser").build();
+
+    when(authService.getLoginUserId()).thenReturn(1L);
+    when(userRepository.findById(eq(1L))).thenReturn(Optional.of(user));
+    when(qnaPostRepository.findById(eq(1L))).thenReturn(Optional.empty());
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> qnaPostService.createQnaPostComment(qnaPostId, qnaCommentRequest));
+
+    // then
+    verify(authService, times(1)).getLoginUserId();
+    verify(userRepository, times(1)).findById(eq(1L));
+    verify(qnaPostRepository, times(1)).findById(eq(1L));
+
+    assertEquals(ErrorCode.POST_NOT_FOUND, customException.getErrorCode());
+    assertEquals("게시글을 찾을 수 없습니다.", customException.getErrorMessage());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 댓글 조회 - 성공")
+  void testGetQnaPostComment_Success() {
+    // given
+    Long qnaPostId = 1L;
+
+    Pageable pageable = PageRequest.of(0, 12, Sort.by("createdAt").ascending());
+
+    User user1 = User.builder().id(1L).nickname("testUser1").build();
+    User user2 = User.builder().id(2L).nickname("testUser2").build();
+    QnaPost qnaPost = QnaPost.builder()
+        .id(1L)
+        .title("Test Title")
+        .user(user1)
+        .build();
+
+    List<QnaComment> commentList = List.of(
+        QnaComment.builder()
+            .id(1L)
+            .qnaPost(qnaPost)
+            .user(user1)
+            .replies(Collections.emptyList())
+            .build(),
+        QnaComment.builder()
+            .id(2L)
+            .qnaPost(qnaPost)
+            .user(user2)
+            .replies(Collections.emptyList())
+            .build()
+    );
+
+    Page<QnaComment> responseCommentList = new PageImpl<>(commentList);
+
+    when(qnaPostRepository.findById(eq(qnaPostId)))
+        .thenReturn(Optional.of(qnaPost));
+    when(qnaCommentRepository.findAllByQnaPost(eq(qnaPost), eq(pageable)))
+        .thenReturn(responseCommentList);
+
+    // when
+    Page<QnaCommentResponse> qnaPostComments = qnaPostService.getQnaPostComments(qnaPostId, 0);
+
+    // then
+    verify(qnaPostRepository, times(1)).findById(eq(qnaPostId));
+    verify(qnaCommentRepository, times(1))
+        .findAllByQnaPost(eq(qnaPost), eq(pageable));
+
+    Assertions.assertNotNull(qnaPostComments);
+    assertEquals(2, qnaPostComments.getSize());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 댓글 조회 - 실패 (존재하지 않느 게시글)")
+  void testGetQnaPostComment_Fail_PostNotFound() {
+    // given
+    Long qnaPostId = 1L;
+
+    when(qnaPostRepository.findById(eq(qnaPostId))).thenReturn(Optional.empty());
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> qnaPostService.getQnaPostComments(qnaPostId, 0));
+
+    // then
+    verify(qnaPostRepository, times(1)).findById(eq(qnaPostId));
+
+    assertEquals(ErrorCode.POST_NOT_FOUND, customException.getErrorCode());
+    assertEquals("게시글을 찾을 수 없습니다.", customException.getErrorMessage());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 댓글 수정 - 성공")
+  void testUpdateQnaPostComment_Success() {
+    // given
+    Long qnaCommentId = 1L;
+    QnaCommentRequest qnaCommentRequest = QnaCommentRequest.builder()
+        .isSecret(true)
+        .content("updateComment")
+        .build();
+
+    User user = User.builder().id(1L).nickname("testUser").build();
+    QnaPost qnaPost = QnaPost.builder()
+        .id(1L)
+        .title("Test Title")
+        .user(user)
+        .build();
+
+    QnaComment qnaComment = QnaComment.builder()
+        .id(1L)
+        .qnaPost(qnaPost)
+        .isSecret(false)
+        .content("testComment")
+        .user(user)
+        .build();
+
+    when(qnaCommentRepository.findById(eq(qnaCommentId))).thenReturn(Optional.of(qnaComment));
+    when(authService.getLoginUserId()).thenReturn(1L);
+    when(qnaCommentRepository.save(any(QnaComment.class))).thenReturn(qnaComment);
+
+    // when
+    QnaCommentDto qnaCommentDto = 
+        qnaPostService.updateQnaPostComment(qnaCommentId, qnaCommentRequest);
+
+    // then
+    verify(qnaCommentRepository, times(1)).findById(eq(qnaCommentId));
+    verify(authService, times(1)).getLoginUserId();
+    verify(qnaCommentRepository, times(1)).save(any(QnaComment.class));
+
+    assertEquals(1L, qnaCommentDto.getId());
+    assertEquals(1L, qnaCommentDto.getPostId());
+    assertEquals(true, qnaCommentDto.getIsSecret());
+    assertEquals("updateComment", qnaCommentDto.getContent());
+    assertEquals(1L, qnaCommentDto.getUser().getId());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 댓글 수정 - 실패 (존재하지 않는 댓글)")
+  void testUpdateQnaPostComment_Fail_CommentNotFound() {
+    // given
+    Long qnaCommentId = 1L;
+    QnaCommentRequest qnaCommentRequest = QnaCommentRequest.builder()
+        .isSecret(true)
+        .content("updateComment")
+        .build();
+
+    when(qnaCommentRepository.findById(eq(qnaCommentId))).thenReturn(Optional.empty());
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> qnaPostService.updateQnaPostComment(qnaCommentId, qnaCommentRequest));
+
+    // then
+    verify(qnaCommentRepository, times(1)).findById(eq(qnaCommentId));
+
+    assertEquals(ErrorCode.COMMENT_NOT_FOUND, customException.getErrorCode());
+    assertEquals("댓글을 찾을 수 없습니다.", customException.getErrorMessage());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 댓글 수정 - 실패 (로그인한 유저와 불일치)")
+  void testUpdateQnaPostComment_Fail_UuAuthorizedAccess() {
+    // given
+    Long qnaCommentId = 1L;
+    QnaCommentRequest qnaCommentRequest = QnaCommentRequest.builder()
+        .isSecret(true)
+        .content("updateComment")
+        .build();
+
+    User user = User.builder().id(1L).nickname("testUser").build();
+    QnaPost qnaPost = QnaPost.builder()
+        .id(1L)
+        .title("Test Title")
+        .user(user)
+        .build();
+
+    QnaComment qnaComment = QnaComment.builder()
+        .id(1L)
+        .qnaPost(qnaPost)
+        .isSecret(false)
+        .content("testComment")
+        .user(user)
+        .build();
+
+    when(qnaCommentRepository.findById(eq(qnaCommentId))).thenReturn(Optional.of(qnaComment));
+    when(authService.getLoginUserId()).thenReturn(2L);
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> qnaPostService.updateQnaPostComment(qnaCommentId, qnaCommentRequest));
+
+    // then
+    verify(qnaCommentRepository, times(1)).findById(eq(qnaCommentId));
+
+    assertEquals(ErrorCode.UNAUTHORIZED_ACCESS, customException.getErrorCode());
+    assertEquals("접근 권한이 없습니다.", customException.getErrorMessage());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 댓글 삭제 - 성공")
+  void testDeleteQnaPostComment_Success() {
+    // given
+    Long qnaCommentId = 1L;
+
+    User user = User.builder().id(1L).nickname("testUser").build();
+    QnaPost qnaPost = QnaPost.builder()
+        .id(1L)
+        .title("Test Title")
+        .user(user)
+        .build();
+
+    QnaComment qnaComment = QnaComment.builder()
+        .id(1L)
+        .qnaPost(qnaPost)
+        .isSecret(false)
+        .content("testComment")
+        .user(user)
+        .build();
+
+    when(qnaCommentRepository.findById(eq(qnaCommentId))).thenReturn(Optional.of(qnaComment));
+    when(authService.getLoginUserId()).thenReturn(1L);
+    doNothing().when(qnaReplyRepository).deleteAllByComment(eq(qnaComment));
+    doNothing().when(qnaCommentRepository).delete(eq(qnaComment));
+
+    // when
+    QnaCommentDto qnaPostComment = qnaPostService.deleteQnaPostComment(qnaCommentId);
+
+    // then
+    verify(qnaCommentRepository, times(1)).findById(eq(qnaCommentId));
+    verify(authService, times(1)).getLoginUserId();
+    verify(qnaReplyRepository, times(1)).deleteAllByComment(eq(qnaComment));
+    verify(qnaCommentRepository, times(1)).delete(eq(qnaComment));
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 댓글 삭제 - 실패 (존재하지 않는 댓글)")
+  void testDeleteQnaPostComment_Fail_CommentNotFound() {
+    // given
+    Long qnaCommentId = 1L;
+
+    when(qnaCommentRepository.findById(eq(qnaCommentId))).thenReturn(Optional.empty());
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> qnaPostService.deleteQnaPostComment(qnaCommentId));
+
+    // then
+    verify(qnaCommentRepository, times(1)).findById(eq(qnaCommentId));
+
+    assertEquals(ErrorCode.COMMENT_NOT_FOUND, customException.getErrorCode());
+    assertEquals("댓글을 찾을 수 없습니다.", customException.getErrorMessage());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 댓글 삭제 - 실패 (로그인한 유저와 불일치)")
+  void testDeleteQnaPostComment_Fail_UnAuthorizeAccess() {
+    // given
+    Long qnaCommentId = 1L;
+
+    User user = User.builder().id(1L).nickname("testUser").build();
+    QnaPost qnaPost = QnaPost.builder()
+        .id(1L)
+        .title("Test Title")
+        .user(user)
+        .build();
+
+    QnaComment qnaComment = QnaComment.builder()
+        .id(1L)
+        .qnaPost(qnaPost)
+        .isSecret(false)
+        .content("testComment")
+        .user(user)
+        .build();
+
+    when(qnaCommentRepository.findById(eq(qnaCommentId))).thenReturn(Optional.of(qnaComment));
+    when(authService.getLoginUserId()).thenReturn(2L);
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> qnaPostService.deleteQnaPostComment(qnaCommentId));
+
+    // then
+    verify(qnaCommentRepository, times(1)).findById(eq(qnaCommentId));
+    verify(authService, times(1)).getLoginUserId();
+
+    assertEquals(ErrorCode.UNAUTHORIZED_ACCESS, customException.getErrorCode());
+    assertEquals("접근 권한이 없습니다.", customException.getErrorMessage());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 대댓글 생성 - 성공")
+  void testCreateQnaPostReply_Success() {
+    // given
+    Long qnaCommentId = 1L;
+    QnaReplyRequest qnaReplyRequest = QnaReplyRequest.builder()
+        .isSecret(false)
+        .content("testCommentReply")
+        .build();
+
+    User user = User.builder().id(1L).nickname("testUser").build();
+
+    QnaComment qnaComment = QnaComment.builder()
+        .id(1L)
+        .isSecret(false)
+        .content("testComment")
+        .user(user)
+        .build();
+
+    QnaReply qnaReply = QnaReply.builder()
+        .id(1L)
+        .isSecret(false)
+        .content("testReply")
+        .user(user)
+        .comment(qnaComment)
+        .build();
+
+    when(authService.getLoginUserId()).thenReturn(1L);
+    when(userRepository.findById(eq(1L))).thenReturn(Optional.of(user));
+    when(qnaCommentRepository.findById(eq(qnaCommentId))).thenReturn(Optional.of(qnaComment));
+    when(qnaReplyRepository.save(any(QnaReply.class))).thenReturn(qnaReply);
+
+    // when
+    QnaReplyDto qnaPostReply = qnaPostService.createQnaPostReply(qnaCommentId, qnaReplyRequest);
+
+    // then
+    verify(authService, times(1)).getLoginUserId();
+    verify(userRepository, times(1)).findById(eq(1L));
+    verify(qnaCommentRepository, times(1)).findById(eq(qnaCommentId));
+    verify(qnaReplyRepository, times(1)).save(any(QnaReply.class));
+
+    assertEquals(1L, qnaPostReply.getId());
+    assertEquals(1L, qnaPostReply.getCommentId());
+    assertEquals(false, qnaPostReply.getIsSecret());
+    assertEquals("testReply", qnaPostReply.getContent());
+    assertEquals(1L, qnaPostReply.getUser().getId());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 대댓글 생성 - 실패 (존재하지 않는 유저)")
+  void testCreateQnaPostReply_Fail_UserNotFound() {
+    // given
+    Long qnaCommentId = 1L;
+    QnaReplyRequest qnaReplyRequest = QnaReplyRequest.builder()
+        .isSecret(false)
+        .content("testCommentReply")
+        .build();
+
+    when(authService.getLoginUserId()).thenReturn(1L);
+    when(userRepository.findById(eq(1L))).thenReturn(Optional.empty());
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> qnaPostService.createQnaPostReply(qnaCommentId, qnaReplyRequest));
+
+    // then
+    verify(authService, times(1)).getLoginUserId();
+    verify(userRepository, times(1)).findById(eq(1L));
+
+    assertEquals(ErrorCode.USER_NOT_FOUND, customException.getErrorCode());
+    assertEquals("사용자를 찾을 수 없습니다.", customException.getErrorMessage());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 대댓글 생성 - 실패 (존재하지 않는 댓글)")
+  void testCreateQnaPostReply_Fail_CommentNotFound() {
+    // given
+    Long qnaCommentId = 1L;
+    QnaReplyRequest qnaReplyRequest = QnaReplyRequest.builder()
+        .isSecret(false)
+        .content("testCommentReply")
+        .build();
+
+    User user = User.builder().id(1L).nickname("testUser").build();
+
+    when(authService.getLoginUserId()).thenReturn(1L);
+    when(userRepository.findById(eq(1L))).thenReturn(Optional.of(user));
+    when(qnaCommentRepository.findById(eq(qnaCommentId))).thenReturn(Optional.empty());
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> qnaPostService.createQnaPostReply(qnaCommentId, qnaReplyRequest));
+
+    // then
+    verify(authService, times(1)).getLoginUserId();
+    verify(userRepository, times(1)).findById(eq(1L));
+
+    assertEquals(ErrorCode.COMMENT_NOT_FOUND, customException.getErrorCode());
+    assertEquals("댓글을 찾을 수 없습니다.", customException.getErrorMessage());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 대댓글 수정 - 성공")
+  void testUpdateQnaPostReply_Success() {
+    // given
+    Long replyId = 1L;
+    QnaReplyRequest qnaReplyRequest = QnaReplyRequest.builder()
+        .isSecret(true)
+        .content("updateReply")
+        .build();
+
+    User user = User.builder().id(1L).nickname("testUser").build();
+
+    QnaComment qnaComment = QnaComment.builder()
+        .id(1L)
+        .isSecret(false)
+        .content("testComment")
+        .user(user)
+        .build();
+
+    QnaReply qnaReply = QnaReply.builder()
+        .id(1L)
+        .isSecret(false)
+        .content("testReply")
+        .user(user)
+        .comment(qnaComment)
+        .build();
+
+    when(qnaReplyRepository.findById(eq(replyId))).thenReturn(Optional.of(qnaReply));
+    when(authService.getLoginUserId()).thenReturn(1L);
+    when(qnaReplyRepository.save(any(QnaReply.class))).thenReturn(qnaReply);
+
+    // when
+    QnaReplyDto qnaPostComment = qnaPostService.updateQnaPostReply(replyId, qnaReplyRequest);
+
+    // then
+    verify(qnaReplyRepository, times(1)).findById(eq(replyId));
+    verify(authService, times(1)).getLoginUserId();
+    verify(qnaReplyRepository, times(1)).save(any(QnaReply.class));
+
+    assertEquals(1L, qnaPostComment.getId());
+    assertEquals(1L, qnaPostComment.getCommentId());
+    assertEquals(true, qnaPostComment.getIsSecret());
+    assertEquals("updateReply", qnaPostComment.getContent());
+    assertEquals(1L, qnaPostComment.getUser().getId());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 대댓글 수정 - 실패 (존재하지 않는 대댓글)")
+  void testUpdateQnaPostReply_Fail_ReplyNotFound() {
+    // given
+    Long replyId = 1L;
+    QnaReplyRequest qnaReplyRequest = QnaReplyRequest.builder()
+        .isSecret(true)
+        .content("updateReply")
+        .build();
+
+    when(qnaReplyRepository.findById(eq(replyId))).thenReturn(Optional.empty());
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> qnaPostService.updateQnaPostReply(replyId, qnaReplyRequest));
+
+    // then
+    verify(qnaReplyRepository, times(1)).findById(eq(replyId));
+
+    assertEquals(ErrorCode.COMMENT_NOT_FOUND, customException.getErrorCode());
+    assertEquals("댓글을 찾을 수 없습니다.", customException.getErrorMessage());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 대댓글 수정 - 실패 (로그인한 유저와 불일치)")
+  void testUpdateQnaPostReply_Fail_UnAuthorizeAccess() {
+    // given
+    Long replyId = 1L;
+    QnaReplyRequest qnaReplyRequest = QnaReplyRequest.builder()
+        .isSecret(true)
+        .content("updateReply")
+        .build();
+
+    User user = User.builder().id(1L).nickname("testUser").build();
+
+    QnaComment qnaComment = QnaComment.builder()
+        .id(1L)
+        .isSecret(false)
+        .content("testComment")
+        .user(user)
+        .build();
+
+    QnaReply qnaReply = QnaReply.builder()
+        .id(1L)
+        .isSecret(false)
+        .content("testReply")
+        .user(user)
+        .comment(qnaComment)
+        .build();
+
+    when(qnaReplyRepository.findById(eq(replyId))).thenReturn(Optional.of(qnaReply));
+    when(authService.getLoginUserId()).thenReturn(2L);
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> qnaPostService.updateQnaPostReply(replyId, qnaReplyRequest));
+
+    // then
+    verify(qnaReplyRepository, times(1))
+        .findById(eq(replyId));
+    verify(authService, times(1)).getLoginUserId();
+
+    assertEquals(ErrorCode.UNAUTHORIZED_ACCESS, customException.getErrorCode());
+    assertEquals("접근 권한이 없습니다.", customException.getErrorMessage());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 대댓글 삭제 - 성공")
+  void testDeleteQnaPostReply_Success() {
+    // given
+    Long replyId = 1L;
+
+    User user = User.builder().id(1L).nickname("testUser").build();
+
+    QnaComment qnaComment = QnaComment.builder()
+        .id(1L)
+        .isSecret(false)
+        .content("testComment")
+        .user(user)
+        .build();
+
+    QnaReply qnaReply = QnaReply.builder()
+        .id(1L)
+        .isSecret(false)
+        .content("testReply")
+        .user(user)
+        .comment(qnaComment)
+        .build();
+
+    when(qnaReplyRepository.findById(eq(replyId))).thenReturn(Optional.of(qnaReply));
+    when(authService.getLoginUserId()).thenReturn(1L);
+    doNothing().when(qnaReplyRepository).delete(eq(qnaReply));
+
+    // when
+    QnaReplyDto qnaPostComment = qnaPostService.deleteQnaPostReply(
+        replyId);
+
+    // then
+    verify(qnaReplyRepository, times(1)).findById(eq(replyId));
+    verify(authService, times(1)).getLoginUserId();
+    verify(qnaReplyRepository, times(1)).delete(eq(qnaReply));
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 대댓글 삭제 - 실패 (존재하지 않는 대댓글)")
+  void testDeleteQnaPostReply_Fail_ReplyNotFound() {
+    // given
+    Long replyId = 1L;
+
+    when(qnaReplyRepository.findById(eq(replyId))).thenReturn(Optional.empty());
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> qnaPostService.deleteQnaPostReply(replyId));
+
+    // then
+    verify(qnaReplyRepository, times(1)).findById(eq(replyId));
+
+    assertEquals(ErrorCode.COMMENT_NOT_FOUND, customException.getErrorCode());
+    assertEquals("댓글을 찾을 수 없습니다.", customException.getErrorMessage());
+  }
+
+  @Test
+  @DisplayName("질의응답 게시글 대댓글 삭제 - 실패 (로그인한 사용자와 불일치)")
+  void testDeleteQnaPostReply_Fail_UnAuthorizeAccess() {
+    // given
+    Long replyId = 1L;
+
+    User user = User.builder().id(1L).nickname("testUser").build();
+
+    QnaComment qnaComment = QnaComment.builder()
+        .id(1L)
+        .isSecret(false)
+        .content("testComment")
+        .user(user)
+        .build();
+
+    QnaReply qnaReply = QnaReply.builder()
+        .id(1L)
+        .isSecret(false)
+        .content("testReply")
+        .user(user)
+        .comment(qnaComment)
+        .build();
+
+    when(qnaReplyRepository.findById(eq(replyId))).thenReturn(Optional.of(qnaReply));
+    when(authService.getLoginUserId()).thenReturn(2L);
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> qnaPostService.deleteQnaPostReply(replyId));
+
+    // then
+    verify(qnaReplyRepository, times(1))
+        .findById(eq(replyId));
+    verify(authService, times(1)).getLoginUserId();
+
+    assertEquals(ErrorCode.UNAUTHORIZED_ACCESS, customException.getErrorCode());
+    assertEquals("접근 권한이 없습니다.", customException.getErrorMessage());
+  }
+
+}
