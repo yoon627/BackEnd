@@ -61,36 +61,9 @@ public class StudyPostService {
   private final PhotoService photoService;
   private final StudyCommentRepository studyCommentRepository;
   private final StudyReplyRepository studyReplyRepository;
+
   @Value("${cloud.aws.s3.default-thumbnail-image-url}")
   private String defaultThumbnailImageUrl;
-
-  // 상세 조회
-  public StudyPostDto getStudyPostDetail(Long studyPostId) {
-    StudyPost studyPost = studyPostRepository.findById(studyPostId)
-        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
-
-    return StudyPostDto.fromEntity(studyPost);
-  }
-
-  // 상세 조회(userId)
-  public Page<StudyPostDto> getStudyPostsByUserId(Long userId, Pageable pageable) {
-    if (!userRepository.existsById(userId)) {
-      throw new CustomException(ErrorCode.USER_NOT_FOUND);
-    }
-
-    Page<StudyPost> studyPosts = studyPostRepository.findByUserId(userId, pageable);
-
-    return studyPosts.map(StudyPostDto::fromEntity);
-  }
-
-  // 조회 (검색리스트)
-  public Page<StudyPostDto> searchStudyPosts(StudyMeetingType meetingType, String title,
-      StudySubject subject, StudyDifficulty difficulty, int dayType, StudyPostStatus status,
-      Double latitude, Double longitude, Pageable pageable) {
-
-    return studyPostRepository.findStudyPostsByFilters(meetingType, title, subject, difficulty,
-        dayType, status, latitude, longitude, pageable);
-  }
 
   // 생성
   @Transactional
@@ -120,6 +93,34 @@ public class StudyPostService {
     studyPostRepository.save(studyPost);
 
     return StudyPostDto.fromEntity(studyPost);
+  }
+
+  // 상세 조회
+  public StudyPostDto getStudyPostDetail(Long studyPostId) {
+    StudyPost studyPost = studyPostRepository.findById(studyPostId)
+        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
+
+    return StudyPostDto.fromEntity(studyPost);
+  }
+
+  // 상세 조회(userId)
+  public Page<StudyPostDto> getStudyPostsByUserId(Long userId, Pageable pageable) {
+    if (!userRepository.existsById(userId)) {
+      throw new CustomException(ErrorCode.USER_NOT_FOUND);
+    }
+
+    Page<StudyPost> studyPosts = studyPostRepository.findByUserId(userId, pageable);
+
+    return studyPosts.map(StudyPostDto::fromEntity);
+  }
+
+  // 조회 (검색리스트)
+  public Page<StudyPostDto> searchStudyPosts(StudyMeetingType meetingType, String title,
+      StudySubject subject, StudyDifficulty difficulty, int dayType, StudyPostStatus status,
+      Double latitude, Double longitude, Pageable pageable) {
+
+    return studyPostRepository.findStudyPostsByFilters(meetingType, title, subject, difficulty,
+        dayType, status, latitude, longitude, pageable);
   }
 
   // 수정
@@ -248,51 +249,6 @@ public class StudyPostService {
     studyPost.setStatus(StudyPostStatus.RECRUITING);
     studyPost.setRecruitmentPeriod(newRecruitmentPeriod);
     studyPostRepository.save(studyPost);
-  }
-
-  // 모집글 작성자 검증
-  private void validateStudyPostOwnership(Long studyPostOwnerId) {
-    Long loggedInUserId = authService.getLoginUserId();
-    if (!studyPostOwnerId.equals(loggedInUserId)) {
-      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
-    }
-  }
-
-  // 생성 요청 사용자 검증
-  private void validateUserRequestOwnership(Long requestUserId) {
-    Long loggedInUserId = authService.getLoginUserId();
-    System.out.println("requestUserId: " + requestUserId);
-    System.out.println("loggedInUserId: " + loggedInUserId);
-    if (!requestUserId.equals(loggedInUserId)) {
-      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
-    }
-  }
-
-  // 스터디 모집글 엔티티 생성
-  private StudyPost buildStudyPost(StudyPostCreateRequest request, User user) {
-    int dayType = DayTypeUtils.encodeDaysFromRequest(request.getDayType());
-    return StudyPost.builder()
-        .title(request.getTitle())
-        .studyName(request.getStudyName())
-        .subject(request.getSubject())
-        .difficulty(request.getDifficulty())
-        .dayType(dayType)
-        .startDate(request.getStartDate())
-        .endDate(request.getEndDate())
-        .startTime(request.getStartTime())
-        .endTime(request.getEndTime())
-        .meetingType(request.getMeetingType())
-        .recruitmentPeriod(request.getRecruitmentPeriod())
-        .description(request.getDescription())
-        .latitude(request.getLatitude())
-        .longitude(request.getLongitude())
-        .address(request.getAddress())
-        .status(StudyPostStatus.RECRUITING) // 기본값 설정
-        .thumbnailImgUrl(request.getThumbnailImgUrl())
-        .maxParticipants(request.getMaxParticipants())
-        .currentParticipants(0) // 기본값: 0명
-        .user(user)
-        .build();
   }
 
   // 댓글
@@ -445,5 +401,52 @@ public class StudyPostService {
     studyReplyRepository.delete(studyReply);
 
     return StudyReplyDto.fromEntity(studyReply);
+  }
+
+  // ================================= Helper methods ================================= //
+
+  // 모집글 작성자 검증
+  private void validateStudyPostOwnership(Long studyPostOwnerId) {
+    Long loggedInUserId = authService.getLoginUserId();
+    if (!studyPostOwnerId.equals(loggedInUserId)) {
+      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+    }
+  }
+
+  // 생성 요청 사용자 검증
+  private void validateUserRequestOwnership(Long requestUserId) {
+    Long loggedInUserId = authService.getLoginUserId();
+    System.out.println("requestUserId: " + requestUserId);
+    System.out.println("loggedInUserId: " + loggedInUserId);
+    if (!requestUserId.equals(loggedInUserId)) {
+      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+    }
+  }
+
+  // 스터디 모집글 엔티티 생성
+  private StudyPost buildStudyPost(StudyPostCreateRequest request, User user) {
+    int dayType = DayTypeUtils.encodeDaysFromRequest(request.getDayType());
+    return StudyPost.builder()
+        .title(request.getTitle())
+        .studyName(request.getStudyName())
+        .subject(request.getSubject())
+        .difficulty(request.getDifficulty())
+        .dayType(dayType)
+        .startDate(request.getStartDate())
+        .endDate(request.getEndDate())
+        .startTime(request.getStartTime())
+        .endTime(request.getEndTime())
+        .meetingType(request.getMeetingType())
+        .recruitmentPeriod(request.getRecruitmentPeriod())
+        .description(request.getDescription())
+        .latitude(request.getLatitude())
+        .longitude(request.getLongitude())
+        .address(request.getAddress())
+        .status(StudyPostStatus.RECRUITING) // 기본값 설정
+        .thumbnailImgUrl(request.getThumbnailImgUrl())
+        .maxParticipants(request.getMaxParticipants())
+        .currentParticipants(0) // 기본값: 0명
+        .user(user)
+        .build();
   }
 }
