@@ -58,7 +58,8 @@ public class SecurityConfig {
                 "/api/auth/sign-up",
                 "/api/auth/sign-in/**",
                 "/api/auth/token-reissue",
-                "/oauth2/**"
+                "/oauth2/**",
+                "/ws/**"
             )
             .permitAll()
             .requestMatchers(HttpMethod.GET,
@@ -89,12 +90,14 @@ public class SecurityConfig {
   protected CorsConfigurationSource corsConfigurationSorce() {
 
     CorsConfiguration corsConfigurationV1 = new CorsConfiguration();
-    corsConfigurationV1.addAllowedOrigin("*");
+    corsConfigurationV1.addAllowedOrigin("http://localhost:3000"); // 명확한 Origin 명시
+    corsConfigurationV1.setAllowCredentials(true);
     corsConfigurationV1.addAllowedMethod("*");
     corsConfigurationV1.addAllowedHeader("*");
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/api/**", corsConfigurationV1);
+    source.registerCorsConfiguration("/ws/**", corsConfigurationV1);
 
     return source;
   }
