@@ -10,7 +10,6 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,27 +26,33 @@ public class StudyPostUpdateRequest {
 
   private String title;
   private String studyName;
+
   private StudySubject subject;
   private StudyDifficulty difficulty;
   private List<String> dayType;
+
   private LocalDate startDate;
   private LocalDate endDate;
   private LocalTime startTime;
   private LocalTime endTime;
+
   private StudyMeetingType meetingType;
   private LocalDate recruitmentPeriod;
+
   private String description;
   private Double latitude;
   private Double longitude;
+  private String address;
+
   private StudyPostStatus status;
   private String thumbnailImgUrl;
-  @Nullable
   private MultipartFile file;
+
   @NotNull(message = "최대 모집 인원은 필수입니다.")
   @Min(value = 2, message = "최소 모집 인원은 2명입니다.")
   @Max(value = 10, message = "최대 모집 인원은 10명입니다.")
   private Integer maxParticipants;
+
   private Long userId;
   private Long studyPostId;
-
 }
