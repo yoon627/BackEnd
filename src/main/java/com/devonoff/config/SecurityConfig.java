@@ -58,7 +58,9 @@ public class SecurityConfig {
                 "/api/auth/sign-up",
                 "/api/auth/sign-in/**",
                 "/api/auth/token-reissue",
-                "/oauth2/**"
+                "/oauth2/**",
+                "/signaling/**",
+                "/healthcheck"
             )
             .permitAll()
             .requestMatchers(HttpMethod.GET,
@@ -95,6 +97,7 @@ public class SecurityConfig {
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/api/**", corsConfigurationV1);
+    source.registerCorsConfiguration("/signaling", corsConfigurationV1);
 
     return source;
   }
