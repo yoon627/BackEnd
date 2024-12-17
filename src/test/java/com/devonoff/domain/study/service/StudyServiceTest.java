@@ -284,7 +284,7 @@ class StudyServiceTest {
         .thenReturn(inProgressStudies);
 
     // when
-    studyService.updateStudyStatuses();
+    studyService.updateStudyStatusBatch();
 
     // then
     verify(studyRepository).findAllByStatusAndStartDateBefore(StudyStatus.PENDING, fixedNow);

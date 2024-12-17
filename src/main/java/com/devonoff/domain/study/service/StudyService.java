@@ -39,20 +39,8 @@ public class StudyService {
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
     int totalParticipants = studyPost.getCurrentParticipants() + 1;
-
-    // 현재 시간을 기준으로 상태 설정
-    LocalDateTime now = LocalDateTime.now();
-    LocalDateTime startDateTime = studyPost.getStartDate().atTime(studyPost.getStartTime());
-    LocalDateTime endDateTime = studyPost.getEndDate().plusDays(1).atStartOfDay();
-    StudyStatus initialStatus;
-
-    if (now.isBefore(startDateTime)) {
-      initialStatus = StudyStatus.PENDING;
-    } else if (now.isBefore(endDateTime)) {
-      initialStatus = StudyStatus.IN_PROGRESS;
-    } else {
-      initialStatus = StudyStatus.COMPLETED;
-    }
+    LocalDateTime now = timeProvider.now();
+    StudyStatus initialStatus = determineStudyStatus(studyPost, now);
 
     Study study = Study.builder()
         .studyName(studyPost.getStudyName())
@@ -70,11 +58,7 @@ public class StudyService {
         .totalParticipants(totalParticipants)
         .build();
 
-    Study savedStudy = studyRepository.save(study);
-    totalStudyTimeRepository.save(
-        TotalStudyTime.builder().studyId(savedStudy.getId()).totalStudyTime(0L).build());
-
-    return savedStudy;
+    return saveStudyAndTotalTime(study);
   }
 
   // 특정 사용자가 속한 스터디 목록 조회
@@ -97,14 +81,38 @@ public class StudyService {
 
   // 스터디 상태 변경(스케쥴러)
   @Transactional
-  public void updateStudyStatuses() {
+  public void updateStudyStatusBatch() {
     LocalDateTime now = timeProvider.now();
+    updatePendingStudies(now);
+    updateInProgressStudies(now);
+  }
 
+  // ================================= Helper methods ================================= //
+
+  private StudyStatus determineStudyStatus(StudyPost studyPost, LocalDateTime now) {
+    LocalDateTime startDateTime = studyPost.getStartDate().atTime(studyPost.getStartTime());
+    LocalDateTime endDateTime = studyPost.getEndDate().plusDays(1).atStartOfDay();
+
+    if (now.isBefore(startDateTime)) return StudyStatus.PENDING;
+    if (now.isBefore(endDateTime)) return StudyStatus.IN_PROGRESS;
+    return StudyStatus.COMPLETED;
+  }
+
+  private Study saveStudyAndTotalTime(Study study) {
+    Study savedStudy = studyRepository.save(study);
+    totalStudyTimeRepository.save(
+        TotalStudyTime.builder().studyId(savedStudy.getId()).totalStudyTime(0L).build());
+    return savedStudy;
+  }
+
+  private void updatePendingStudies(LocalDateTime now) {
     List<Study> pendingStudies = studyRepository.findAllByStatusAndStartDateBefore(
         StudyStatus.PENDING, now);
     pendingStudies.forEach(study -> study.setStatus(StudyStatus.IN_PROGRESS));
     studyRepository.saveAll(pendingStudies);
+  }
 
+  private void updateInProgressStudies(LocalDateTime now) {
     List<Study> inProgressStudies = studyRepository.findAllByStatusAndEndDateBefore(
         StudyStatus.IN_PROGRESS, now.toLocalDate().atStartOfDay());
     inProgressStudies.forEach(study -> study.setStatus(StudyStatus.COMPLETED));
