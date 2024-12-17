@@ -29,22 +29,13 @@ public class StudySignupService {
 
   // 스터디 신청
   public StudySignupDto createStudySignup(StudySignupCreateRequest request) {
-    validateSignupOwnership(request.getUserId(), authService.getLoginUserId());
+    validateOwnership(request.getUserId(), authService.getLoginUserId());
 
-    StudyPost studyPost = studyPostRepository.findById(request.getStudyPostId())
-        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
+    StudyPost studyPost = findStudyPostById(request.getStudyPostId());
+    validateRecruitingStatus(studyPost);
 
-    if (studyPost.getStatus() != StudyPostStatus.RECRUITING) {
-      throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
-    }
-
-    User user = userRepository.findById(request.getUserId())
-        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-    boolean alreadySignedUp = studySignupRepository.existsByStudyPostAndUser(studyPost, user);
-    if (alreadySignedUp) {
-      throw new CustomException(ErrorCode.DUPLICATE_APPLICATION);
-    }
+    User user = findUserById(request.getUserId());
+    checkDuplicateSignup(studyPost, user);
 
     StudySignup studySignup = StudySignup.builder()
         .studyPost(studyPost)
@@ -59,14 +50,12 @@ public class StudySignupService {
 
   // 신청 상태 관리(승인/거절)
   public void updateSignupStatus(Long studySignupId, StudySignupStatus newStatus) {
-    StudySignup studySignup = studySignupRepository.findById(studySignupId)
-        .orElseThrow(() -> new CustomException(ErrorCode.SIGNUP_NOT_FOUND));
-
+    StudySignup studySignup = findSignupById(studySignupId);
     StudyPost studyPost = studySignup.getStudyPost();
 
-    validateStudyPostOwnership(studyPost.getUser().getId(), authService.getLoginUserId());
+    validateOwnership(studyPost.getUser().getId(), authService.getLoginUserId());
+    validateRecruitingStatus(studyPost);
 
-    validateStudyPostStatus(studyPost);
     processSignupStatusChange(studySignup, studyPost, newStatus);
 
     studySignupRepository.save(studySignup);
@@ -75,11 +64,7 @@ public class StudySignupService {
 
   // 신청 목록 조회
   public List<StudySignupDto> getSignupList(Long studyPostId, StudySignupStatus status) {
-    StudyPost studyPost = studyPostRepository.findById(studyPostId)
-        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
-
-// 로그인된 사용자라면 모두 신청자 목록 요청 가능하도록 수정
-//    validateStudyPostOwnership(studyPost.getUser().getId(), authService.getLoginUserId());
+    StudyPost studyPost = findStudyPostById(studyPostId);
 
     // 상태별 신청 목록 조회
     List<StudySignup> studySignups;
@@ -96,11 +81,8 @@ public class StudySignupService {
 
   // 신청 취소
   public void cancelSignup(Long studySignupId) {
-    StudySignup studySignup = studySignupRepository.findById(studySignupId)
-        .orElseThrow(() -> new CustomException(ErrorCode.SIGNUP_NOT_FOUND));
-
-    Long loggedInUserId = authService.getLoginUserId();
-    validateSignupOwnership(studySignup.getUser().getId(), loggedInUserId);
+    StudySignup studySignup = findSignupById(studySignupId);
+    validateOwnership(studySignup.getUser().getId(), authService.getLoginUserId());
 
     if (studySignup.getStatus() == StudySignupStatus.APPROVED) {
       StudyPost studyPost = studySignup.getStudyPost();
@@ -111,28 +93,42 @@ public class StudySignupService {
     studySignupRepository.delete(studySignup);
   }
 
-  // 신청자 권한 검증
-  private void validateSignupOwnership(Long userId, Long loggedInUserId) {
-    if (!userId.equals(loggedInUserId)) {
+  // ================================= Helper methods ================================= //
+
+  private StudyPost findStudyPostById(Long id) {
+    return studyPostRepository.findById(id)
+        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
+  }
+
+  private StudySignup findSignupById(Long id) {
+    return studySignupRepository.findById(id)
+        .orElseThrow(() -> new CustomException(ErrorCode.SIGNUP_NOT_FOUND));
+  }
+
+  private User findUserById(Long id) {
+    return userRepository.findById(id)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+  }
+
+  private void validateOwnership(Long ownerId, Long loggedInUserId) {
+    if (!ownerId.equals(loggedInUserId)) {
       throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
     }
   }
 
-  // 모집글 작성자 권한 검증
-  private void validateStudyPostOwnership(Long studyPostOwnerId, Long loggedInUserId) {
-    if (!studyPostOwnerId.equals(loggedInUserId)) {
-      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
-    }
-  }
-
-  // ================= 신청 상태 관리(승인/거절) 분리 메서드 =================
-
-  // 모집글 상태 검증
-  private void validateStudyPostStatus(StudyPost studyPost) {
+  private void validateRecruitingStatus(StudyPost studyPost) {
     if (studyPost.getStatus() != StudyPostStatus.RECRUITING) {
       throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
     }
   }
+
+  private void checkDuplicateSignup(StudyPost studyPost, User user) {
+    if (studySignupRepository.existsByStudyPostAndUser(studyPost, user)) {
+      throw new CustomException(ErrorCode.DUPLICATE_APPLICATION);
+    }
+  }
+
+  // ================= 신청 상태 관리(승인/거절) 분리 메서드 =================
 
   // 신청 상태 변경 처리
   private void processSignupStatusChange(StudySignup studySignup, StudyPost studyPost,
