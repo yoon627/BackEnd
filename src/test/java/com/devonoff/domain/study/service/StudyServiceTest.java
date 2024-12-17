@@ -73,6 +73,8 @@ class StudyServiceTest {
   void createStudyFromClosedPost_Success() {
     // Given
     Long studyPostId = 1L;
+    LocalDateTime now = LocalDateTime.of(2025, 12, 1, 9, 0);
+
     StudyPost studyPost = StudyPost.builder()
         .id(studyPostId)
         .studyName("Test Study")
@@ -88,6 +90,7 @@ class StudyServiceTest {
         .user(User.builder().id(2L).build())
         .build();
 
+    when(timeProvider.now()).thenReturn(now);
     when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
     when(studyRepository.save(any(Study.class))).thenAnswer(invocation -> invocation.getArgument(0));
     when(totalStudyTimeRepository.save(any(TotalStudyTime.class)))
@@ -111,6 +114,7 @@ class StudyServiceTest {
     assertEquals(studyPost.getUser(), result.getStudyLeader());
     assertEquals(StudyStatus.PENDING, result.getStatus());
 
+    verify(timeProvider, times(1)).now();
     verify(studyPostRepository, times(1)).findById(studyPostId);
     verify(studyRepository, times(1)).save(any(Study.class));
     verify(totalStudyTimeRepository, times(1)).save(any(TotalStudyTime.class));
