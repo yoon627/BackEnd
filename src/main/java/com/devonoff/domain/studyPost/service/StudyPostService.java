@@ -113,6 +113,8 @@ public class StudyPostService {
     String updatedImgUrl = handleFileUpload(request.getFile(), studyPost.getThumbnailImgUrl());
     studyPost.updateFields(request, updatedImgUrl);
 
+    studyPostRepository.save(studyPost);
+
     return StudyPostDto.fromEntity(studyPost);
   }
 
