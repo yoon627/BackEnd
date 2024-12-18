@@ -3,6 +3,7 @@ package com.devonoff.domain.qnapost.dto;
 
 import com.devonoff.domain.qnapost.entity.QnaPost;
 import com.devonoff.domain.user.dto.UserDto;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,7 +23,8 @@ public class QnaPostDto {
   private String title;
   private String content;
   private String thumbnailImgUrl;
-
+  private LocalDateTime createdAt;
+  private LocalDateTime updatedAt;
 
   public static QnaPostDto fromEntity(QnaPost qnaPost) {
     return QnaPostDto.builder()
@@ -31,6 +33,8 @@ public class QnaPostDto {
         .title(qnaPost.getTitle())
         .content(qnaPost.getContent())
         .thumbnailImgUrl(qnaPost.getThumbnailUrl())
+        .createdAt(qnaPost.getCreatedAt())
+        .updatedAt(qnaPost.getUpdatedAt())
         .build();
   }
 }
