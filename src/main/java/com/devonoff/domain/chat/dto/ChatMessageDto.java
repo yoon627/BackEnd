@@ -17,14 +17,14 @@ import lombok.NoArgsConstructor;
 public class ChatMessageDto {
 
   private Long id;
-  private UserDto sender;
+  private UserDto user;
   private String content;
   private LocalDateTime createdAt;
 
   public static ChatMessageDto fromEntity(ChatMessage chatMessage) {
     return ChatMessageDto.builder()
         .id(chatMessage.getId())
-        .sender(UserDto.fromEntity(chatMessage.getSender()))
+        .user(UserDto.fromEntity(chatMessage.getSender()))
         .content(chatMessage.getContent())
         .createdAt(getKoreaTime(chatMessage.getCreatedAt()))
         .build();
