@@ -13,8 +13,11 @@ import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
 import java.time.LocalDateTime;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -67,7 +70,7 @@ public class ChatMessageService {
    * @param chatRoomId
    * @return List<ChatMessageDto>
    */
-  public List<ChatMessageDto> getChatMessages(Long chatRoomId) {
+  public Page<ChatMessageDto> getChatMessages(Long chatRoomId, Integer page) {
     ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
         .orElseThrow(() -> new CustomException(ErrorCode.CHAT_ROOM_NOT_FOUND));
 
@@ -79,9 +82,9 @@ public class ChatMessageService {
       throw new CustomException(ErrorCode.DOES_NOT_STUDENT_OF_STUDY);
     }
 
-    return chatMessageRepository.findAllByChatRoomOrderByCreatedAtAsc(chatRoom)
-        .stream()
-        .map(ChatMessageDto::fromEntity)
-        .toList();
+    Pageable pageable = PageRequest.of(page, 20, Sort.by("createdAt").descending());
+
+    return chatMessageRepository.findAllByChatRoomOrderByCreatedAtAsc(chatRoom, pageable)
+        .map(ChatMessageDto::fromEntity);
   }
 }
