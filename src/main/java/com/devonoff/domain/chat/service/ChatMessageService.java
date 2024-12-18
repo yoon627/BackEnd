@@ -84,7 +84,7 @@ public class ChatMessageService {
 
     Pageable pageable = PageRequest.of(page, 20, Sort.by("createdAt").descending());
 
-    return chatMessageRepository.findAllByChatRoomOrderByCreatedAtAsc(chatRoom, pageable)
+    return chatMessageRepository.findAllByChatRoom(chatRoom, pageable)
         .map(ChatMessageDto::fromEntity);
   }
 }
