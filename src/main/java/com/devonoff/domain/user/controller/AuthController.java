@@ -9,6 +9,7 @@ import com.devonoff.domain.user.dto.auth.SignInRequest;
 import com.devonoff.domain.user.dto.auth.SignInResponse;
 import com.devonoff.domain.user.dto.auth.SignUpRequest;
 import com.devonoff.domain.user.dto.auth.SocialAuthRequest;
+import com.devonoff.domain.user.dto.auth.WithdrawalRequest;
 import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.domain.user.service.social.SocialAuthService;
 import jakarta.validation.Valid;
@@ -143,8 +144,10 @@ public class AuthController {
    * @return ResponseEntity<ResponseDto>
    */
   @PostMapping("/withdrawal")
-  public ResponseEntity<Void> withdrawalUser() {
-    authService.withdrawalUser();
+  public ResponseEntity<Void> withdrawalUser(
+      @RequestBody @Valid WithdrawalRequest withdrawalRequest
+  ) {
+    authService.withdrawalUser(withdrawalRequest);
     return ResponseEntity.ok().build();
   }
 
