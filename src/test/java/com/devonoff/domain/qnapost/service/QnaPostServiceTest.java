@@ -137,17 +137,15 @@ class QnaPostServiceTest {
     Pageable pageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAt"));
     Page<QnaPost> emptyPage = new PageImpl<>(Collections.emptyList()); // 빈 페이지 객체 생성
 
-    when(qnaPostRepository.findAll(pageable)).thenReturn(emptyPage);
+    when(qnaPostRepository.findAllByOrderByCreatedAtDesc(pageable)).thenReturn(emptyPage);
 
     // When
     Page<QnaPostDto> result = qnaPostService.getQnaPostList(pageable, "");
 
     // Then
     assertThat(result.getContent()).isEmpty(); // 결과가 빈 리스트인지 확인
-    verify(qnaPostRepository, times(1)).findAll(pageable);
+    verify(qnaPostRepository, times(1)).findAllByOrderByCreatedAtDesc(pageable);
   }
-
-
 
   // =======================================================================
   // getQnaPostByUserIdList 테스트
@@ -162,14 +160,14 @@ class QnaPostServiceTest {
 
     // Mock 설정
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(qnaPostRepository.findByUser(user, pageable)).thenReturn(Page.empty());
+    when(qnaPostRepository.findByUserOrderByCreatedAtDesc(user, pageable)).thenReturn(Page.empty());
 
     // When
     Page<QnaPostDto> result = qnaPostService.getQnaPostByUserIdList(userId, pageable, null);
 
     // Then
     assertNotNull(result);
-    verify(qnaPostRepository).findByUser(user, pageable); // 정렬 포함된 Pageable로 확인
+    verify(qnaPostRepository).findByUserOrderByCreatedAtDesc(user, pageable); // 정렬 포함된 Pageable로 확인
   }
 
   @DisplayName("getQnaPostByUserIdList 실패 - 사용자 없음")
