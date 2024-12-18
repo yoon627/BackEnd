@@ -1,6 +1,7 @@
 package com.devonoff.domain.studyPost.entity;
 
 import com.devonoff.common.entity.BaseTimeEntity;
+import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
@@ -8,6 +9,7 @@ import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySubject;
+import com.devonoff.util.DayTypeUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -102,6 +104,35 @@ public class StudyPost extends BaseTimeEntity {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
   private User user; // 작성자
+
+  public void cancelRecruitment() {
+    this.status = StudyPostStatus.CANCELED;
+  }
+
+  public void closeRecruitment() {
+    this.status = StudyPostStatus.CLOSED;
+  }
+
+  public void updateFields(StudyPostUpdateRequest request, String thumbnailImgUrl) {
+    this.title = request.getTitle();
+    this.studyName = request.getStudyName();
+    this.subject = request.getSubject();
+    this.difficulty = request.getDifficulty();
+    this.dayType = DayTypeUtils.encodeDaysFromRequest(request.getDayType());
+    this.startDate = request.getStartDate();
+    this.endDate = request.getEndDate();
+    this.startTime = request.getStartTime();
+    this.endTime = request.getEndTime();
+    this.meetingType = request.getMeetingType();
+    this.recruitmentPeriod = request.getRecruitmentPeriod();
+    this.description = request.getDescription();
+    this.latitude = request.getLatitude();
+    this.longitude = request.getLongitude();
+    this.address = request.getAddress();
+    this.status = request.getStatus();
+    this.thumbnailImgUrl = thumbnailImgUrl;
+    this.maxParticipants = request.getMaxParticipants();
+  }
 
   public boolean isFull() {
     return currentParticipants >= (maxParticipants - 1); // 스터디장 제외

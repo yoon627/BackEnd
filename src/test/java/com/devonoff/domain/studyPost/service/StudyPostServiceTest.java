@@ -16,15 +16,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.devonoff.domain.photo.service.PhotoService;
-import com.devonoff.domain.qnapost.dto.QnaCommentDto;
-import com.devonoff.domain.qnapost.dto.QnaCommentRequest;
-import com.devonoff.domain.qnapost.dto.QnaCommentResponse;
-import com.devonoff.domain.qnapost.dto.QnaReplyDto;
-import com.devonoff.domain.qnapost.dto.QnaReplyRequest;
-import com.devonoff.domain.qnapost.entity.QnaComment;
-import com.devonoff.domain.qnapost.entity.QnaPost;
-import com.devonoff.domain.qnapost.entity.QnaReply;
-import com.devonoff.domain.student.entity.Student;
 import com.devonoff.domain.student.repository.StudentRepository;
 import com.devonoff.domain.study.entity.Study;
 import com.devonoff.domain.study.service.StudyService;
@@ -114,27 +105,7 @@ class StudyPostServiceTest {
     // Given
     Long studyPostId = 1L;
 
-    User user = new User();
-    user.setId(11L);
-
-    StudyPost studyPost = new StudyPost();
-    studyPost.setId(studyPostId);
-    studyPost.setTitle("스터디 모집글! 상세 조회 테스트");
-    studyPost.setStudyName("코테");
-    studyPost.setSubject(StudySubject.JOB_PREPARATION);
-    studyPost.setDifficulty(StudyDifficulty.HIGH);
-    studyPost.setDayType(3);
-    studyPost.setStartDate(LocalDate.parse("2024-12-04"));
-    studyPost.setEndDate(LocalDate.parse("2024-12-22"));
-    studyPost.setStartTime(LocalTime.parse("19:00"));
-    studyPost.setEndTime(LocalTime.parse("21:00"));
-    studyPost.setMeetingType(StudyMeetingType.HYBRID);
-    studyPost.setRecruitmentPeriod(LocalDate.parse("2024-11-30"));
-    studyPost.setDescription("코테 공부할사람 모여");
-    studyPost.setLatitude(35.6895);
-    studyPost.setLongitude(139.6917);
-    studyPost.setMaxParticipants(5);
-    studyPost.setUser(user);
+    StudyPost studyPost = getStudyPost(studyPostId);
 
     when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
 
@@ -160,6 +131,31 @@ class StudyPostServiceTest {
     assertEquals(139.6917, result.getLongitude());
     assertEquals(5, result.getMaxParticipants());
     assertEquals(11L, result.getUser().getId());
+  }
+
+  private static StudyPost getStudyPost(Long studyPostId) {
+    User user = new User();
+    user.setId(11L);
+
+    StudyPost studyPost = new StudyPost();
+    studyPost.setId(studyPostId);
+    studyPost.setTitle("스터디 모집글! 상세 조회 테스트");
+    studyPost.setStudyName("코테");
+    studyPost.setSubject(StudySubject.JOB_PREPARATION);
+    studyPost.setDifficulty(StudyDifficulty.HIGH);
+    studyPost.setDayType(3);
+    studyPost.setStartDate(LocalDate.parse("2024-12-04"));
+    studyPost.setEndDate(LocalDate.parse("2024-12-22"));
+    studyPost.setStartTime(LocalTime.parse("19:00"));
+    studyPost.setEndTime(LocalTime.parse("21:00"));
+    studyPost.setMeetingType(StudyMeetingType.HYBRID);
+    studyPost.setRecruitmentPeriod(LocalDate.parse("2024-11-30"));
+    studyPost.setDescription("코테 공부할사람 모여");
+    studyPost.setLatitude(35.6895);
+    studyPost.setLongitude(139.6917);
+    studyPost.setMaxParticipants(5);
+    studyPost.setUser(user);
+    return studyPost;
   }
 
   @DisplayName("스터디 모집글 상세 조회 실패 - 모집글 없음")
@@ -188,21 +184,15 @@ class StudyPostServiceTest {
     User user = new User();
     user.setId(userId);
 
-    StudyPost studyPost1 = new StudyPost();
-    studyPost1.setId(1L);
-    studyPost1.setTitle("스터디 모집글 1");
-    studyPost1.setDayType(3); // 월, 화
-    studyPost1.setUser(user);
+    StudyPost studyPost1 = StudyPost.builder().id(1L).title("스터디 모집글 1").dayType(3).user(user)
+        .build();
 
-    StudyPost studyPost2 = new StudyPost();
-    studyPost2.setId(2L);
-    studyPost2.setTitle("스터디 모집글 2");
-    studyPost2.setDayType(2); // 화, 수
-    studyPost2.setUser(user);
+    StudyPost studyPost2 = StudyPost.builder().id(2L).title("스터디 모집글 2").dayType(2).user(user)
+        .build();
 
     Page<StudyPost> studyPostPage = new PageImpl<>(List.of(studyPost1, studyPost2), pageable, 2);
 
-    when(userRepository.existsById(userId)).thenReturn(true);
+    when(authService.getLoginUserId()).thenReturn(userId);
     when(studyPostRepository.findByUserId(userId, pageable)).thenReturn(studyPostPage);
 
     // When
@@ -211,13 +201,12 @@ class StudyPostServiceTest {
     // Then
     assertNotNull(result);
     assertEquals(2, result.getTotalElements());
-    assertEquals(2, result.getContent().size());
     assertEquals("스터디 모집글 1", result.getContent().get(0).getTitle());
     assertIterableEquals(List.of("월", "화"), result.getContent().get(0).getDayType());
     assertEquals("스터디 모집글 2", result.getContent().get(1).getTitle());
     assertIterableEquals(List.of("화"), result.getContent().get(1).getDayType());
 
-    verify(userRepository, times(1)).existsById(userId);
+    verify(authService, times(1)).getLoginUserId();
     verify(studyPostRepository, times(1)).findByUserId(userId, pageable);
   }
 
@@ -228,16 +217,17 @@ class StudyPostServiceTest {
     Long userId = 99L;
     Pageable pageable = PageRequest.of(0, 12);
 
-    when(userRepository.existsById(userId)).thenReturn(false);
+    when(authService.getLoginUserId()).thenReturn(100L);
 
     // When & Then
     CustomException exception = assertThrows(CustomException.class,
         () -> studyPostService.getStudyPostsByUserId(userId, pageable));
 
     // Assertions
-    assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+    assertEquals(ErrorCode.UNAUTHORIZED_ACCESS, exception.getErrorCode());
 
-    verify(userRepository, times(1)).existsById(userId);
+    verify(authService, times(1)).getLoginUserId();
+    verify(userRepository, never()).findById(any());
     verify(studyPostRepository, never()).findByUserId(any(), any());
   }
 
@@ -268,9 +258,8 @@ class StudyPostServiceTest {
 
     // When
     Mockito.when(
-            studyPostRepository.findStudyPostsByFilters(eq(meetingType), eq(title),
-                eq(subject), eq(difficulty), eq(dayType), eq(status),
-                eq(latitude), eq(longitude), eq(pageable)))
+            studyPostRepository.findStudyPostsByFilters(eq(meetingType), eq(title), eq(subject),
+                eq(difficulty), eq(dayType), eq(status), eq(latitude), eq(longitude), eq(pageable)))
         .thenReturn(mockPage);
 
     // When
@@ -280,10 +269,8 @@ class StudyPostServiceTest {
     // Then
     assertNotNull(result, "Result should not be null");
     assertEquals(1, result.getTotalElements(), "Total elements should match");
-    assertEquals("코딩 테스트 준비", result.getContent().get(0).getTitle(),
-        "Title should match");
-    assertEquals("코테", result.getContent().get(0).getStudyName(),
-        "Study name should match");
+    assertEquals("코딩 테스트 준비", result.getContent().get(0).getTitle(), "Title should match");
+    assertEquals("코테", result.getContent().get(0).getStudyName(), "Study name should match");
     assertEquals(StudySubject.JOB_PREPARATION, result.getContent().get(0).getSubject(),
         "Subject should match");
     assertEquals(StudyDifficulty.MEDIUM, result.getContent().get(0).getDifficulty(),
@@ -298,48 +285,27 @@ class StudyPostServiceTest {
     // 요청 사용자
     MultipartFile mockFile = mock(MultipartFile.class);
 
-    StudyPostCreateRequest request = StudyPostCreateRequest.builder()
-        .title("코딩 테스트 준비")
-        .studyName("코테")
-        .subject(StudySubject.JOB_PREPARATION)
-        .difficulty(StudyDifficulty.MEDIUM)
-        .dayType(List.of("월", "화"))
-        .startDate(LocalDate.of(2024, 12, 10))
-        .endDate(LocalDate.of(2024, 12, 20))
-        .startTime(LocalTime.of(18, 0))
-        .endTime(LocalTime.of(20, 0))
-        .meetingType(StudyMeetingType.ONLINE)
-        .recruitmentPeriod(LocalDate.of(2024, 12, 5))
-        .description("코딩 테스트 스터디 모집")
-        .latitude(null)
-        .longitude(null)
-        .maxParticipants(5)
-        .userId(loggedInUserId)
-        .file(mockFile)
-        .build();
+    StudyPostCreateRequest request = StudyPostCreateRequest.builder().title("코딩 테스트 준비")
+        .studyName("코테").subject(StudySubject.JOB_PREPARATION).difficulty(StudyDifficulty.MEDIUM)
+        .dayType(List.of("월", "화")).startDate(LocalDate.of(2024, 12, 10))
+        .endDate(LocalDate.of(2024, 12, 20)).startTime(LocalTime.of(18, 0))
+        .endTime(LocalTime.of(20, 0)).meetingType(StudyMeetingType.ONLINE)
+        .recruitmentPeriod(LocalDate.of(2024, 12, 5)).description("코딩 테스트 스터디 모집").latitude(null)
+        .longitude(null).maxParticipants(5).userId(loggedInUserId).file(mockFile).build();
 
     User user = new User();
     user.setId(loggedInUserId);
 
-    StudyPost studyPost = StudyPost.builder()
-        .id(1L)
-        .title(request.getTitle())
-        .studyName(request.getStudyName())
-        .subject(request.getSubject())
+    StudyPost studyPost = StudyPost.builder().id(1L).title(request.getTitle())
+        .studyName(request.getStudyName()).subject(request.getSubject())
         .difficulty(request.getDifficulty())
         .dayType(DayTypeUtils.encodeDaysFromRequest(request.getDayType()))
-        .startDate(request.getStartDate())
-        .endDate(request.getEndDate())
-        .startTime(request.getStartTime())
-        .endTime(request.getEndTime())
-        .meetingType(request.getMeetingType())
-        .recruitmentPeriod(request.getRecruitmentPeriod())
-        .description(request.getDescription())
-        .maxParticipants(request.getMaxParticipants())
-        .user(user)
-        .status(null) // 기본값
-        .thumbnailImgUrl("mock_thumbnail_url")
-        .build();
+        .startDate(request.getStartDate()).endDate(request.getEndDate())
+        .startTime(request.getStartTime()).endTime(request.getEndTime())
+        .meetingType(request.getMeetingType()).recruitmentPeriod(request.getRecruitmentPeriod())
+        .description(request.getDescription()).maxParticipants(request.getMaxParticipants())
+        .user(user).status(null) // 기본값
+        .thumbnailImgUrl("mock_thumbnail_url").build();
 
     Mockito.when(authService.getLoginUserId()).thenReturn(loggedInUserId);
 
@@ -381,30 +347,24 @@ class StudyPostServiceTest {
     MultipartFile mockFile = mock(MultipartFile.class);
 
     when(authService.getLoginUserId()).thenReturn(userId);
+    when(userRepository.findById(userId)).thenReturn(Optional.of(new User()));
 
-    StudyPostCreateRequest request = StudyPostCreateRequest.builder()
-        .title("코딩 테스트 준비")
-        .studyName("코테")
-        .subject(StudySubject.JOB_PREPARATION)
-        .difficulty(StudyDifficulty.MEDIUM)
-        .dayType(List.of("월", "화"))
-        .startDate(LocalDate.of(2024, 12, 10))
-        .endDate(LocalDate.of(2024, 12, 20))
-        .startTime(LocalTime.of(18, 0))
-        .endTime(LocalTime.of(20, 0))
-        .meetingType(StudyMeetingType.ONLINE)
-        .recruitmentPeriod(LocalDate.of(2024, 12, 5))
-        .description("코딩 테스트 스터디 모집")
+    StudyPostCreateRequest request = StudyPostCreateRequest.builder().title("코딩 테스트 준비")
+        .studyName("코테").subject(StudySubject.JOB_PREPARATION).difficulty(StudyDifficulty.MEDIUM)
+        .dayType(List.of("월", "화")).startDate(LocalDate.of(2024, 12, 10))
+        .endDate(LocalDate.of(2024, 12, 20)).startTime(LocalTime.of(18, 0))
+        .endTime(LocalTime.of(20, 0)).meetingType(StudyMeetingType.ONLINE)
+        .recruitmentPeriod(LocalDate.of(2024, 12, 5)).description("코딩 테스트 스터디 모집")
         .maxParticipants(15) // 잘못된 모집 인원
-        .userId(userId)
-        .file(mockFile)
-        .build();
+        .userId(userId).file(mockFile).build();
 
     // When & Then
     CustomException exception = assertThrows(CustomException.class,
         () -> studyPostService.createStudyPost(request));
 
     assertEquals(ErrorCode.INVALID_MAX_PARTICIPANTS, exception.getErrorCode());
+
+    verify(userRepository, times(1)).findById(userId);
   }
 
   @DisplayName("스터디 모집글 생성 실패 - 유저가 없는 경우")
@@ -414,25 +374,13 @@ class StudyPostServiceTest {
     Long userId = 1L;
     MultipartFile mockFile = mock(MultipartFile.class);
 
-    when(authService.getLoginUserId()).thenReturn(userId);
-
-    StudyPostCreateRequest request = StudyPostCreateRequest.builder()
-        .title("코딩 테스트 준비")
-        .studyName("코테")
-        .subject(StudySubject.JOB_PREPARATION)
-        .difficulty(StudyDifficulty.MEDIUM)
-        .dayType(List.of("월", "화"))
-        .startDate(LocalDate.of(2024, 12, 10))
-        .endDate(LocalDate.of(2024, 12, 20))
-        .startTime(LocalTime.of(18, 0))
-        .endTime(LocalTime.of(20, 0))
-        .meetingType(StudyMeetingType.ONLINE)
-        .recruitmentPeriod(LocalDate.of(2024, 12, 5))
-        .description("코딩 테스트 스터디 모집")
-        .maxParticipants(5)
-        .userId(userId)
-        .file(mockFile)
-        .build();
+    StudyPostCreateRequest request = StudyPostCreateRequest.builder().title("코딩 테스트 준비")
+        .studyName("코테").subject(StudySubject.JOB_PREPARATION).difficulty(StudyDifficulty.MEDIUM)
+        .dayType(List.of("월", "화")).startDate(LocalDate.of(2024, 12, 10))
+        .endDate(LocalDate.of(2024, 12, 20)).startTime(LocalTime.of(18, 0))
+        .endTime(LocalTime.of(20, 0)).meetingType(StudyMeetingType.ONLINE)
+        .recruitmentPeriod(LocalDate.of(2024, 12, 5)).description("코딩 테스트 스터디 모집")
+        .maxParticipants(5).userId(userId).file(mockFile).build();
 
     when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
@@ -441,6 +389,9 @@ class StudyPostServiceTest {
         () -> studyPostService.createStudyPost(request));
 
     assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+
+    verify(userRepository, times(1)).findById(userId);
+    verifyNoMoreInteractions(userRepository);
   }
 
   @DisplayName("스터디 모집글 생성 실패 - 병행 스터디에서 위도/경도 없음")
@@ -452,23 +403,13 @@ class StudyPostServiceTest {
 
     when(authService.getLoginUserId()).thenReturn(userId);
 
-    StudyPostCreateRequest request = StudyPostCreateRequest.builder()
-        .title("코딩 테스트 준비")
-        .studyName("코테")
-        .subject(StudySubject.JOB_PREPARATION)
-        .difficulty(StudyDifficulty.MEDIUM)
-        .dayType(List.of("월", "화"))
-        .startDate(LocalDate.of(2024, 12, 10))
-        .endDate(LocalDate.of(2024, 12, 20))
-        .startTime(LocalTime.of(18, 0))
-        .endTime(LocalTime.of(20, 0))
-        .meetingType(StudyMeetingType.HYBRID) // 병행 스터디
-        .recruitmentPeriod(LocalDate.of(2024, 12, 5))
-        .description("코딩 테스트 스터디 모집")
-        .maxParticipants(5)
-        .userId(userId)
-        .file(mockFile)
-        .build();
+    StudyPostCreateRequest request = StudyPostCreateRequest.builder().title("코딩 테스트 준비")
+        .studyName("코테").subject(StudySubject.JOB_PREPARATION).difficulty(StudyDifficulty.MEDIUM)
+        .dayType(List.of("월", "화")).startDate(LocalDate.of(2024, 12, 10))
+        .endDate(LocalDate.of(2024, 12, 20)).startTime(LocalTime.of(18, 0))
+        .endTime(LocalTime.of(20, 0)).meetingType(StudyMeetingType.HYBRID) // 병행 스터디
+        .recruitmentPeriod(LocalDate.of(2024, 12, 5)).description("코딩 테스트 스터디 모집")
+        .maxParticipants(5).userId(userId).file(mockFile).build();
 
     when(userRepository.findById(userId)).thenReturn(Optional.of(new User()));
 
@@ -490,30 +431,17 @@ class StudyPostServiceTest {
     User user = new User();
     user.setId(loggedInUserId);
 
-    StudyPost studyPost = new StudyPost();
-    studyPost.setId(studyPostId);
-    studyPost.setUser(user);
+    StudyPost studyPost = StudyPost.builder().id(studyPostId).user(user)
+        .thumbnailImgUrl("original_thumbnail_url").build();
 
-    StudyPostUpdateRequest updateRequest = StudyPostUpdateRequest.builder()
-        .title("Updated Title")
-        .studyName("Updated Study")
-        .subject(StudySubject.JOB_PREPARATION)
-        .difficulty(StudyDifficulty.HIGH)
-        .dayType(List.of("월", "화"))
-        .startDate(LocalDate.of(2024, 12, 10))
-        .endDate(LocalDate.of(2024, 12, 20))
-        .startTime(LocalTime.of(18, 0))
-        .endTime(LocalTime.of(20, 0))
-        .meetingType(StudyMeetingType.ONLINE)
-        .recruitmentPeriod(LocalDate.of(2024, 12, 5))
-        .description("Updated Description")
-        .latitude(37.5665)
-        .longitude(126.9780)
-        .status(StudyPostStatus.RECRUITING)
-        .file(file)
-        .thumbnailImgUrl("updated_thumbnail_url")
-        .maxParticipants(10)
-        .build();
+    StudyPostUpdateRequest updateRequest = StudyPostUpdateRequest.builder().title("Updated Title")
+        .studyName("Updated Study").subject(StudySubject.JOB_PREPARATION)
+        .difficulty(StudyDifficulty.HIGH).dayType(List.of("월", "화"))
+        .startDate(LocalDate.of(2024, 12, 10)).endDate(LocalDate.of(2024, 12, 20))
+        .startTime(LocalTime.of(18, 0)).endTime(LocalTime.of(20, 0))
+        .meetingType(StudyMeetingType.ONLINE).recruitmentPeriod(LocalDate.of(2024, 12, 5))
+        .description("Updated Description").latitude(37.5665).longitude(126.9780)
+        .status(StudyPostStatus.RECRUITING).file(file).maxParticipants(10).build();
 
     when(authService.getLoginUserId()).thenReturn(loggedInUserId);
     when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
@@ -527,6 +455,7 @@ class StudyPostServiceTest {
     // Then
     assertNotNull(result);
     assertEquals(updateRequest.getTitle(), result.getTitle());
+    assertEquals("updated_thumbnail_url", result.getThumbnailImgUrl());
     assertEquals(updateRequest.getStudyName(), result.getStudyName());
     assertEquals(updateRequest.getSubject(), result.getSubject());
     assertEquals(updateRequest.getDifficulty(), result.getDifficulty());
@@ -541,11 +470,11 @@ class StudyPostServiceTest {
     assertEquals(updateRequest.getLatitude(), result.getLatitude());
     assertEquals(updateRequest.getLongitude(), result.getLongitude());
     assertEquals(updateRequest.getStatus(), result.getStatus());
-    assertEquals(updateRequest.getThumbnailImgUrl(), result.getThumbnailImgUrl());
     assertEquals(updateRequest.getMaxParticipants(), result.getMaxParticipants());
 
     verify(authService, times(1)).getLoginUserId();
     verify(studyPostRepository, times(1)).findById(studyPostId);
+    verify(photoService, times(1)).save(file);
     verify(studyPostRepository, times(1)).save(any(StudyPost.class));
   }
 
@@ -575,21 +504,12 @@ class StudyPostServiceTest {
     Long leaderId = 1L;
 
     User leader = User.builder().id(leaderId).build();
-    StudyPost studyPost = StudyPost.builder()
-        .id(studyPostId)
-        .studyName("코딩 스터디")
-        .subject(StudySubject.JOB_PREPARATION)
-        .difficulty(StudyDifficulty.MEDIUM)
-        .dayType(3) // 월, 화
-        .startDate(LocalDate.of(2024, 12, 10))
-        .endDate(LocalDate.of(2024, 12, 20))
-        .startTime(LocalTime.of(18, 0))
-        .endTime(LocalTime.of(20, 0))
-        .meetingType(StudyMeetingType.ONLINE)
-        .status(StudyPostStatus.RECRUITING)
-        .user(leader)
-        .currentParticipants(2)
-        .build();
+    StudyPost studyPost = StudyPost.builder().id(studyPostId).studyName("코딩 스터디")
+        .subject(StudySubject.JOB_PREPARATION).difficulty(StudyDifficulty.MEDIUM).dayType(3) // 월, 화
+        .startDate(LocalDate.of(2024, 12, 10)).endDate(LocalDate.of(2024, 12, 20))
+        .startTime(LocalTime.of(18, 0)).endTime(LocalTime.of(20, 0))
+        .meetingType(StudyMeetingType.ONLINE).status(StudyPostStatus.RECRUITING).user(leader)
+        .currentParticipants(2).build();
 
     StudySignup approvedSignup = StudySignup.builder()
         .id(1L)
@@ -605,8 +525,8 @@ class StudyPostServiceTest {
 
     when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
     when(authService.getLoginUserId()).thenReturn(leaderId);
-    when(studySignupRepository.findByStudyPostAndStatus(studyPost, StudySignupStatus.APPROVED))
-        .thenReturn(List.of(approvedSignup));
+    when(studySignupRepository.findByStudyPostAndStatus(studyPost,
+        StudySignupStatus.APPROVED)).thenReturn(List.of(approvedSignup));
     when(studyService.createStudyFromClosedPost(studyPostId)).thenReturn(study);
 
     // When
@@ -614,7 +534,7 @@ class StudyPostServiceTest {
 
     // Then
     assertEquals(StudyPostStatus.CLOSED, studyPost.getStatus());
-    verify(studentRepository, times(1)).save(any(Student.class));
+
     verify(studentRepository, times(1)).saveAll(anyList());
     verify(studyService, times(1)).createStudyFromClosedPost(studyPostId);
   }
@@ -625,8 +545,7 @@ class StudyPostServiceTest {
     // Given
     Long studyPostId = 1L;
 
-    when(studyPostRepository.findById(studyPostId))
-        .thenReturn(Optional.empty());
+    when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.empty());
 
     // When & Then
     CustomException exception = assertThrows(CustomException.class,
@@ -643,14 +562,11 @@ class StudyPostServiceTest {
     Long studyPostId = 1L;
     Long leaderId = 1L;
 
-    StudyPost studyPost = StudyPost.builder()
-        .id(studyPostId)
+    StudyPost studyPost = StudyPost.builder().id(studyPostId)
         .status(StudyPostStatus.CLOSED) // 이미 모집이 마감된 상태
-        .user(User.builder().id(leaderId).build())
-        .build();
+        .user(User.builder().id(leaderId).build()).build();
 
-    when(studyPostRepository.findById(studyPostId))
-        .thenReturn(Optional.of(studyPost));
+    when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
     when(authService.getLoginUserId()).thenReturn(leaderId);
 
     // When & Then
@@ -668,17 +584,13 @@ class StudyPostServiceTest {
     Long studyPostId = 1L;
     Long leaderId = 1L;
 
-    StudyPost studyPost = StudyPost.builder()
-        .id(studyPostId)
-        .status(StudyPostStatus.RECRUITING)
-        .user(User.builder().id(leaderId).build())
-        .build();
+    StudyPost studyPost = StudyPost.builder().id(studyPostId).status(StudyPostStatus.RECRUITING)
+        .user(User.builder().id(leaderId).build()).build();
 
-    when(studyPostRepository.findById(studyPostId))
-        .thenReturn(Optional.of(studyPost));
+    when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
     when(authService.getLoginUserId()).thenReturn(leaderId);
-    when(studySignupRepository.findByStudyPostAndStatus(studyPost, StudySignupStatus.APPROVED))
-        .thenReturn(List.of()); // 승인된 신청자가 없음
+    when(studySignupRepository.findByStudyPostAndStatus(studyPost,
+        StudySignupStatus.APPROVED)).thenReturn(List.of()); // 승인된 신청자가 없음
 
     // When & Then
     CustomException exception = assertThrows(CustomException.class,
@@ -725,8 +637,8 @@ class StudyPostServiceTest {
     // Given
     Long studyPostId = 999L;
 
-    when(studyPostRepository.findById(studyPostId))
-        .thenThrow(new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
+    when(studyPostRepository.findById(studyPostId)).thenThrow(
+        new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
     // When & Then
     CustomException exception = assertThrows(CustomException.class,
@@ -769,21 +681,13 @@ class StudyPostServiceTest {
   void cancelStudyPostIfExpired_Success() {
     // Given
     List<StudyPost> expiredPosts = List.of(
-        StudyPost.builder()
-            .id(1L)
-            .status(StudyPostStatus.RECRUITING)
-            .recruitmentPeriod(LocalDate.now().minusDays(1))
-            .build(),
-        StudyPost.builder()
-            .id(2L)
-            .status(StudyPostStatus.RECRUITING)
-            .recruitmentPeriod(LocalDate.now().minusDays(2))
-            .build()
-    );
+        StudyPost.builder().id(1L).status(StudyPostStatus.RECRUITING)
+            .recruitmentPeriod(LocalDate.now().minusDays(1)).build(),
+        StudyPost.builder().id(2L).status(StudyPostStatus.RECRUITING)
+            .recruitmentPeriod(LocalDate.now().minusDays(2)).build());
 
-    when(studyPostRepository.findAllByRecruitmentPeriodBeforeAndStatus(
-        any(LocalDate.class), eq(StudyPostStatus.RECRUITING)))
-        .thenReturn(expiredPosts);
+    when(studyPostRepository.findAllByRecruitmentPeriodBeforeAndStatus(any(LocalDate.class),
+        eq(StudyPostStatus.RECRUITING))).thenReturn(expiredPosts);
 
     // When
     studyPostService.cancelStudyPostIfExpired();
@@ -792,9 +696,9 @@ class StudyPostServiceTest {
     assertEquals(StudyPostStatus.CANCELED, expiredPosts.get(0).getStatus());
     assertEquals(StudyPostStatus.CANCELED, expiredPosts.get(1).getStatus());
 
-    verify(studyPostRepository, times(1))
-        .findAllByRecruitmentPeriodBeforeAndStatus(any(LocalDate.class),
-            eq(StudyPostStatus.RECRUITING));
+    verify(studyPostRepository, times(1)).findAllByRecruitmentPeriodBeforeAndStatus(
+        any(LocalDate.class), eq(StudyPostStatus.RECRUITING));
+    verify(studyPostRepository, times(1)).saveAll(expiredPosts);
     verifyNoMoreInteractions(studyPostRepository);
   }
 
@@ -807,12 +711,9 @@ class StudyPostServiceTest {
     LocalDate originalRecruitmentPeriod = LocalDate.of(2024, 12, 5);
     LocalDate newRecruitmentPeriod = LocalDate.of(2024, 12, 20);
 
-    StudyPost studyPost = StudyPost.builder()
-        .id(studyPostId)
-        .status(StudyPostStatus.CANCELED)
+    StudyPost studyPost = StudyPost.builder().id(studyPostId).status(StudyPostStatus.CANCELED)
         .recruitmentPeriod(originalRecruitmentPeriod)
-        .user(User.builder().id(loggedInUserId).build())
-        .build();
+        .user(User.builder().id(loggedInUserId).build()).build();
 
     when(authService.getLoginUserId()).thenReturn(loggedInUserId);
     when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
@@ -858,12 +759,9 @@ class StudyPostServiceTest {
     LocalDate originalRecruitmentPeriod = LocalDate.of(2024, 12, 5);
     LocalDate newRecruitmentPeriod = LocalDate.of(2024, 12, 20);
 
-    StudyPost studyPost = StudyPost.builder()
-        .id(studyPostId)
-        .status(StudyPostStatus.RECRUITING)
+    StudyPost studyPost = StudyPost.builder().id(studyPostId).status(StudyPostStatus.RECRUITING)
         .recruitmentPeriod(originalRecruitmentPeriod)
-        .user(User.builder().id(loggedInUserId).build())
-        .build();
+        .user(User.builder().id(loggedInUserId).build()).build();
 
     when(authService.getLoginUserId()).thenReturn(loggedInUserId);
     when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
@@ -887,12 +785,9 @@ class StudyPostServiceTest {
     LocalDate originalRecruitmentPeriod = LocalDate.of(2024, 12, 5);
     LocalDate newRecruitmentPeriod = LocalDate.of(2025, 1, 10);
 
-    StudyPost studyPost = StudyPost.builder()
-        .id(studyPostId)
-        .status(StudyPostStatus.CANCELED)
+    StudyPost studyPost = StudyPost.builder().id(studyPostId).status(StudyPostStatus.CANCELED)
         .recruitmentPeriod(originalRecruitmentPeriod)
-        .user(User.builder().id(loggedInUserId).build())
-        .build();
+        .user(User.builder().id(loggedInUserId).build()).build();
 
     when(authService.getLoginUserId()).thenReturn(loggedInUserId);
     when(studyPostRepository.findById(studyPostId)).thenReturn(Optional.of(studyPost));
@@ -912,35 +807,23 @@ class StudyPostServiceTest {
   void testCreateQnaPostComment_Success() {
     // given
     Long studyPostId = 1L;
-    StudyCommentRequest studyCommentRequest = StudyCommentRequest.builder()
-        .isSecret(false)
-        .content("testComment")
-        .build();
+    StudyCommentRequest studyCommentRequest = StudyCommentRequest.builder().isSecret(false)
+        .content("testComment").build();
 
     User user = User.builder().id(1L).nickname("testUser").build();
-    StudyPost studyPost = StudyPost.builder()
-        .id(1L)
-        .title("Test Title")
-        .user(user)
-        .build();
+    StudyPost studyPost = StudyPost.builder().id(1L).title("Test Title").user(user).build();
 
-    StudyComment studyComment = StudyComment.builder()
-        .id(1L)
-        .studyPost(studyPost)
-        .isSecret(false)
-        .content("testComment")
-        .user(user)
-        .build();
+    StudyComment studyComment = StudyComment.builder().id(1L).studyPost(studyPost).isSecret(false)
+        .content("testComment").user(user).build();
 
     when(authService.getLoginUserId()).thenReturn(1L);
     when(userRepository.findById(eq(1L))).thenReturn(Optional.of(user));
-    when(studyPostRepository.findById(eq(studyPostId)))
-        .thenReturn(Optional.of(studyPost));
+    when(studyPostRepository.findById(eq(studyPostId))).thenReturn(Optional.of(studyPost));
     when(studyCommentRepository.save(any(StudyComment.class))).thenReturn(studyComment);
 
     // when
-    StudyCommentDto studyPostComment = studyPostService.createStudyPostComment(
-        studyPostId, studyCommentRequest);
+    StudyCommentDto studyPostComment = studyPostService.createStudyPostComment(studyPostId,
+        studyCommentRequest);
 
     // then
     verify(authService, times(1)).getLoginUserId();
@@ -960,10 +843,8 @@ class StudyPostServiceTest {
   void testCreateQnaPostComment_Fail_UserNotFound() {
     // given
     Long studyPostId = 1L;
-    StudyCommentRequest studyCommentRequest = StudyCommentRequest.builder()
-        .isSecret(false)
-        .content("testComment")
-        .build();
+    StudyCommentRequest studyCommentRequest = StudyCommentRequest.builder().isSecret(false)
+        .content("testComment").build();
 
     when(authService.getLoginUserId()).thenReturn(1L);
     when(userRepository.findById(eq(1L))).thenReturn(Optional.empty());
@@ -985,10 +866,8 @@ class StudyPostServiceTest {
   void testCreateQnaPostComment_Fail_PostNotFound() {
     // given
     Long qnaPostId = 1L;
-    StudyCommentRequest studyCommentRequest = StudyCommentRequest.builder()
-        .isSecret(false)
-        .content("testComment")
-        .build();
+    StudyCommentRequest studyCommentRequest = StudyCommentRequest.builder().isSecret(false)
+        .content("testComment").build();
 
     User user = User.builder().id(1L).nickname("testUser").build();
 
@@ -1019,41 +898,27 @@ class StudyPostServiceTest {
 
     User user1 = User.builder().id(1L).nickname("testUser1").build();
     User user2 = User.builder().id(2L).nickname("testUser2").build();
-    StudyPost studyPost = StudyPost.builder()
-        .id(1L)
-        .title("Test Title")
-        .user(user1)
-        .build();
+    StudyPost studyPost = StudyPost.builder().id(1L).title("Test Title").user(user1).build();
 
     List<StudyComment> commentList = List.of(
-        StudyComment.builder()
-            .id(1L)
-            .studyPost(studyPost)
-            .user(user1)
-            .replies(Collections.emptyList())
-            .build(),
-        StudyComment.builder()
-            .id(2L)
-            .studyPost(studyPost)
-            .user(user2)
-            .replies(Collections.emptyList())
-            .build()
-    );
+        StudyComment.builder().id(1L).studyPost(studyPost).user(user1)
+            .replies(Collections.emptyList()).build(),
+        StudyComment.builder().id(2L).studyPost(studyPost).user(user2)
+            .replies(Collections.emptyList()).build());
 
     Page<StudyComment> responseCommentList = new PageImpl<>(commentList);
 
-    when(studyPostRepository.findById(eq(qnaPostId)))
-        .thenReturn(Optional.of(studyPost));
-    when(studyCommentRepository.findAllByStudyPost(eq(studyPost), eq(pageable)))
-        .thenReturn(responseCommentList);
+    when(studyPostRepository.findById(eq(qnaPostId))).thenReturn(Optional.of(studyPost));
+    when(studyCommentRepository.findAllByStudyPost(eq(studyPost), eq(pageable))).thenReturn(
+        responseCommentList);
 
     // when
-    Page<StudyCommentResponse> qnaPostComments = studyPostService.getStudyPostComments(qnaPostId, 0);
+    Page<StudyCommentResponse> qnaPostComments = studyPostService.getStudyPostComments(qnaPostId,
+        0);
 
     // then
     verify(studyPostRepository, times(1)).findById(eq(qnaPostId));
-    verify(studyCommentRepository, times(1))
-        .findAllByStudyPost(eq(studyPost), eq(pageable));
+    verify(studyCommentRepository, times(1)).findAllByStudyPost(eq(studyPost), eq(pageable));
 
     Assertions.assertNotNull(qnaPostComments);
     assertEquals(2, qnaPostComments.getSize());
@@ -1083,33 +948,22 @@ class StudyPostServiceTest {
   void testUpdateQnaPostComment_Success() {
     // given
     Long studyCommentId = 1L;
-    StudyCommentRequest studyCommentRequest = StudyCommentRequest.builder()
-        .isSecret(true)
-        .content("updateComment")
-        .build();
+    StudyCommentRequest studyCommentRequest = StudyCommentRequest.builder().isSecret(true)
+        .content("updateComment").build();
 
     User user = User.builder().id(1L).nickname("testUser").build();
-    StudyPost studyPost = StudyPost.builder()
-        .id(1L)
-        .title("Test Title")
-        .user(user)
-        .build();
+    StudyPost studyPost = StudyPost.builder().id(1L).title("Test Title").user(user).build();
 
-    StudyComment studyComment = StudyComment.builder()
-        .id(1L)
-        .studyPost(studyPost)
-        .isSecret(false)
-        .content("testComment")
-        .user(user)
-        .build();
+    StudyComment studyComment = StudyComment.builder().id(1L).studyPost(studyPost).isSecret(false)
+        .content("testComment").user(user).build();
 
     when(studyCommentRepository.findById(eq(studyCommentId))).thenReturn(Optional.of(studyComment));
     when(authService.getLoginUserId()).thenReturn(1L);
     when(studyCommentRepository.save(any(StudyComment.class))).thenReturn(studyComment);
 
     // when
-    StudyCommentDto studyCommentDto =
-        studyPostService.updateStudyPostComment(studyCommentId, studyCommentRequest);
+    StudyCommentDto studyCommentDto = studyPostService.updateStudyPostComment(studyCommentId,
+        studyCommentRequest);
 
     // then
     verify(studyCommentRepository, times(1)).findById(eq(studyCommentId));
@@ -1128,10 +982,8 @@ class StudyPostServiceTest {
   void testUpdateQnaPostComment_Fail_CommentNotFound() {
     // given
     Long studyCommentId = 1L;
-    StudyCommentRequest studyCommentRequest = StudyCommentRequest.builder()
-        .isSecret(true)
-        .content("updateComment")
-        .build();
+    StudyCommentRequest studyCommentRequest = StudyCommentRequest.builder().isSecret(true)
+        .content("updateComment").build();
 
     when(studyCommentRepository.findById(eq(studyCommentId))).thenReturn(Optional.empty());
 
@@ -1151,25 +1003,14 @@ class StudyPostServiceTest {
   void testUpdateQnaPostComment_Fail_UuAuthorizedAccess() {
     // given
     Long studyCommentId = 1L;
-    StudyCommentRequest studyCommentRequest = StudyCommentRequest.builder()
-        .isSecret(true)
-        .content("updateComment")
-        .build();
+    StudyCommentRequest studyCommentRequest = StudyCommentRequest.builder().isSecret(true)
+        .content("updateComment").build();
 
     User user = User.builder().id(1L).nickname("testUser").build();
-    StudyPost studyPost = StudyPost.builder()
-        .id(1L)
-        .title("Test Title")
-        .user(user)
-        .build();
+    StudyPost studyPost = StudyPost.builder().id(1L).title("Test Title").user(user).build();
 
-    StudyComment studyComment = StudyComment.builder()
-        .id(1L)
-        .studyPost(studyPost)
-        .isSecret(false)
-        .content("testComment")
-        .user(user)
-        .build();
+    StudyComment studyComment = StudyComment.builder().id(1L).studyPost(studyPost).isSecret(false)
+        .content("testComment").user(user).build();
 
     when(studyCommentRepository.findById(eq(studyCommentId))).thenReturn(Optional.of(studyComment));
     when(authService.getLoginUserId()).thenReturn(2L);
@@ -1192,19 +1033,10 @@ class StudyPostServiceTest {
     Long studyCommentId = 1L;
 
     User user = User.builder().id(1L).nickname("testUser").build();
-    StudyPost studyPost = StudyPost.builder()
-        .id(1L)
-        .title("Test Title")
-        .user(user)
-        .build();
+    StudyPost studyPost = StudyPost.builder().id(1L).title("Test Title").user(user).build();
 
-    StudyComment studyComment = StudyComment.builder()
-        .id(1L)
-        .studyPost(studyPost)
-        .isSecret(false)
-        .content("testComment")
-        .user(user)
-        .build();
+    StudyComment studyComment = StudyComment.builder().id(1L).studyPost(studyPost).isSecret(false)
+        .content("testComment").user(user).build();
 
     when(studyCommentRepository.findById(eq(studyCommentId))).thenReturn(Optional.of(studyComment));
     when(authService.getLoginUserId()).thenReturn(1L);
@@ -1212,7 +1044,7 @@ class StudyPostServiceTest {
     doNothing().when(studyCommentRepository).delete(eq(studyComment));
 
     // when
-    StudyCommentDto studyCommentDto = studyPostService.deleteStudyPostComment(studyCommentId);
+    studyPostService.deleteStudyPostComment(studyCommentId);
 
     // then
     verify(studyCommentRepository, times(1)).findById(eq(studyCommentId));
@@ -1247,19 +1079,10 @@ class StudyPostServiceTest {
     Long qnaCommentId = 1L;
 
     User user = User.builder().id(1L).nickname("testUser").build();
-    StudyPost studyPost = StudyPost.builder()
-        .id(1L)
-        .title("Test Title")
-        .user(user)
-        .build();
+    StudyPost studyPost = StudyPost.builder().id(1L).title("Test Title").user(user).build();
 
-    StudyComment studyComment = StudyComment.builder()
-        .id(1L)
-        .studyPost(studyPost)
-        .isSecret(false)
-        .content("testComment")
-        .user(user)
-        .build();
+    StudyComment studyComment = StudyComment.builder().id(1L).studyPost(studyPost).isSecret(false)
+        .content("testComment").user(user).build();
 
     when(studyCommentRepository.findById(eq(qnaCommentId))).thenReturn(Optional.of(studyComment));
     when(authService.getLoginUserId()).thenReturn(2L);
@@ -1281,27 +1104,16 @@ class StudyPostServiceTest {
   void testCreateQnaPostReply_Success() {
     // given
     Long qnaCommentId = 1L;
-    StudyReplyRequest studyReplyRequest = StudyReplyRequest.builder()
-        .isSecret(false)
-        .content("testCommentReply")
-        .build();
+    StudyReplyRequest studyReplyRequest = StudyReplyRequest.builder().isSecret(false)
+        .content("testCommentReply").build();
 
     User user = User.builder().id(1L).nickname("testUser").build();
 
-    StudyComment studyComment = StudyComment.builder()
-        .id(1L)
-        .isSecret(false)
-        .content("testComment")
-        .user(user)
-        .build();
+    StudyComment studyComment = StudyComment.builder().id(1L).isSecret(false).content("testComment")
+        .user(user).build();
 
-    StudyReply studyReply = StudyReply.builder()
-        .id(1L)
-        .isSecret(false)
-        .content("testReply")
-        .user(user)
-        .comment(studyComment)
-        .build();
+    StudyReply studyReply = StudyReply.builder().id(1L).isSecret(false).content("testReply")
+        .user(user).comment(studyComment).build();
 
     when(authService.getLoginUserId()).thenReturn(1L);
     when(userRepository.findById(eq(1L))).thenReturn(Optional.of(user));
@@ -1309,7 +1121,8 @@ class StudyPostServiceTest {
     when(studyReplyRepository.save(any(StudyReply.class))).thenReturn(studyReply);
 
     // when
-    StudyReplyDto studyPostReply = studyPostService.createStudyPostReply(qnaCommentId, studyReplyRequest);
+    StudyReplyDto studyPostReply = studyPostService.createStudyPostReply(qnaCommentId,
+        studyReplyRequest);
 
     // then
     verify(authService, times(1)).getLoginUserId();
@@ -1329,10 +1142,8 @@ class StudyPostServiceTest {
   void testCreateQnaPostReply_Fail_UserNotFound() {
     // given
     Long qnaCommentId = 1L;
-    StudyReplyRequest studyReplyRequest = StudyReplyRequest.builder()
-        .isSecret(false)
-        .content("testCommentReply")
-        .build();
+    StudyReplyRequest studyReplyRequest = StudyReplyRequest.builder().isSecret(false)
+        .content("testCommentReply").build();
 
     when(authService.getLoginUserId()).thenReturn(1L);
     when(userRepository.findById(eq(1L))).thenReturn(Optional.empty());
@@ -1354,10 +1165,8 @@ class StudyPostServiceTest {
   void testCreateQnaPostReply_Fail_CommentNotFound() {
     // given
     Long qnaCommentId = 1L;
-    StudyReplyRequest studyReplyRequest = StudyReplyRequest.builder()
-        .isSecret(false)
-        .content("testCommentReply")
-        .build();
+    StudyReplyRequest studyReplyRequest = StudyReplyRequest.builder().isSecret(false)
+        .content("testCommentReply").build();
 
     User user = User.builder().id(1L).nickname("testUser").build();
 
@@ -1382,27 +1191,16 @@ class StudyPostServiceTest {
   void testUpdateQnaPostReply_Success() {
     // given
     Long replyId = 1L;
-    StudyReplyRequest studyReplyRequest = StudyReplyRequest.builder()
-        .isSecret(true)
-        .content("updateReply")
-        .build();
+    StudyReplyRequest studyReplyRequest = StudyReplyRequest.builder().isSecret(true)
+        .content("updateReply").build();
 
     User user = User.builder().id(1L).nickname("testUser").build();
 
-    StudyComment studyComment = StudyComment.builder()
-        .id(1L)
-        .isSecret(false)
-        .content("testComment")
-        .user(user)
-        .build();
+    StudyComment studyComment = StudyComment.builder().id(1L).isSecret(false).content("testComment")
+        .user(user).build();
 
-    StudyReply studyReply = StudyReply.builder()
-        .id(1L)
-        .isSecret(false)
-        .content("testCommentReply")
-        .user(user)
-        .comment(studyComment)
-        .build();
+    StudyReply studyReply = StudyReply.builder().id(1L).isSecret(false).content("testCommentReply")
+        .user(user).comment(studyComment).build();
 
     when(studyReplyRepository.findById(eq(replyId))).thenReturn(Optional.of(studyReply));
     when(authService.getLoginUserId()).thenReturn(1L);
@@ -1428,10 +1226,8 @@ class StudyPostServiceTest {
   void testUpdateQnaPostReply_Fail_ReplyNotFound() {
     // given
     Long replyId = 1L;
-    StudyReplyRequest studyReplyRequest = StudyReplyRequest.builder()
-        .isSecret(false)
-        .content("testCommentReply")
-        .build();
+    StudyReplyRequest studyReplyRequest = StudyReplyRequest.builder().isSecret(false)
+        .content("testCommentReply").build();
 
     when(studyReplyRepository.findById(eq(replyId))).thenReturn(Optional.empty());
 
@@ -1451,27 +1247,16 @@ class StudyPostServiceTest {
   void testUpdateQnaPostReply_Fail_UnAuthorizeAccess() {
     // given
     Long replyId = 1L;
-    StudyReplyRequest studyReplyRequest = StudyReplyRequest.builder()
-        .isSecret(false)
-        .content("testCommentReply")
-        .build();
+    StudyReplyRequest studyReplyRequest = StudyReplyRequest.builder().isSecret(false)
+        .content("testCommentReply").build();
 
     User user = User.builder().id(1L).nickname("testUser").build();
 
-    StudyComment studyComment = StudyComment.builder()
-        .id(1L)
-        .isSecret(false)
-        .content("testComment")
-        .user(user)
-        .build();
+    StudyComment studyComment = StudyComment.builder().id(1L).isSecret(false).content("testComment")
+        .user(user).build();
 
-    StudyReply studyReply = StudyReply.builder()
-        .id(1L)
-        .isSecret(false)
-        .content("testReply")
-        .user(user)
-        .comment(studyComment)
-        .build();
+    StudyReply studyReply = StudyReply.builder().id(1L).isSecret(false).content("testReply")
+        .user(user).comment(studyComment).build();
 
     when(studyReplyRepository.findById(eq(replyId))).thenReturn(Optional.of(studyReply));
     when(authService.getLoginUserId()).thenReturn(2L);
@@ -1481,8 +1266,7 @@ class StudyPostServiceTest {
         () -> studyPostService.updateStudyPostReply(replyId, studyReplyRequest));
 
     // then
-    verify(studyReplyRepository, times(1))
-        .findById(eq(replyId));
+    verify(studyReplyRepository, times(1)).findById(eq(replyId));
     verify(authService, times(1)).getLoginUserId();
 
     assertEquals(ErrorCode.UNAUTHORIZED_ACCESS, customException.getErrorCode());
@@ -1497,27 +1281,18 @@ class StudyPostServiceTest {
 
     User user = User.builder().id(1L).nickname("testUser").build();
 
-    StudyComment studyComment = StudyComment.builder()
-        .id(1L)
-        .isSecret(false)
-        .content("testComment")
-        .user(user)
-        .build();
+    StudyComment studyComment = StudyComment.builder().id(1L).isSecret(false).content("testComment")
+        .user(user).build();
 
-    StudyReply studyReply = StudyReply.builder()
-        .id(1L)
-        .isSecret(false)
-        .content("testReply")
-        .user(user)
-        .comment(studyComment)
-        .build();
+    StudyReply studyReply = StudyReply.builder().id(1L).isSecret(false).content("testReply")
+        .user(user).comment(studyComment).build();
 
     when(studyReplyRepository.findById(eq(replyId))).thenReturn(Optional.of(studyReply));
     when(authService.getLoginUserId()).thenReturn(1L);
     doNothing().when(studyReplyRepository).delete(eq(studyReply));
 
     // when
-    StudyReplyDto studyReplyDto = studyPostService.deleteStudyPostReply(replyId);
+    studyPostService.deleteStudyPostReply(replyId);
 
     // then
     verify(studyReplyRepository, times(1)).findById(eq(replyId));
@@ -1552,20 +1327,11 @@ class StudyPostServiceTest {
 
     User user = User.builder().id(1L).nickname("testUser").build();
 
-    StudyComment studyComment = StudyComment.builder()
-        .id(1L)
-        .isSecret(false)
-        .content("testComment")
-        .user(user)
-        .build();
+    StudyComment studyComment = StudyComment.builder().id(1L).isSecret(false).content("testComment")
+        .user(user).build();
 
-    StudyReply studyReply = StudyReply.builder()
-        .id(1L)
-        .isSecret(false)
-        .content("testReply")
-        .user(user)
-        .comment(studyComment)
-        .build();
+    StudyReply studyReply = StudyReply.builder().id(1L).isSecret(false).content("testReply")
+        .user(user).comment(studyComment).build();
 
     when(studyReplyRepository.findById(eq(replyId))).thenReturn(Optional.of(studyReply));
     when(authService.getLoginUserId()).thenReturn(2L);
@@ -1575,8 +1341,7 @@ class StudyPostServiceTest {
         () -> studyPostService.deleteStudyPostReply(replyId));
 
     // then
-    verify(studyReplyRepository, times(1))
-        .findById(eq(replyId));
+    verify(studyReplyRepository, times(1)).findById(eq(replyId));
     verify(authService, times(1)).getLoginUserId();
 
     assertEquals(ErrorCode.UNAUTHORIZED_ACCESS, customException.getErrorCode());

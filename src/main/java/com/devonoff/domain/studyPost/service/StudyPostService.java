@@ -13,9 +13,9 @@ import com.devonoff.domain.studyPost.dto.StudyCommentRequest;
 import com.devonoff.domain.studyPost.dto.StudyCommentResponse;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
+import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
 import com.devonoff.domain.studyPost.dto.StudyReplyDto;
 import com.devonoff.domain.studyPost.dto.StudyReplyRequest;
-import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
 import com.devonoff.domain.studyPost.entity.StudyComment;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.entity.StudyReply;
@@ -36,6 +36,7 @@ import com.devonoff.type.StudySignupStatus;
 import com.devonoff.type.StudySubject;
 import com.devonoff.util.DayTypeUtils;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -61,23 +62,33 @@ public class StudyPostService {
   private final PhotoService photoService;
   private final StudyCommentRepository studyCommentRepository;
   private final StudyReplyRepository studyReplyRepository;
+
   @Value("${cloud.aws.s3.default-thumbnail-image-url}")
   private String defaultThumbnailImageUrl;
 
+  // 생성
+  @Transactional
+  public StudyPostDto createStudyPost(StudyPostCreateRequest request) {
+    User user = validateAndGetUser(request.getUserId());
+    validateOwnership(request.getUserId());
+    validateMaxParticipants(request.getMaxParticipants());
+    validateMeetingType(request);
+
+    String thumbnailImgUrl = handleFileUpload(request.getFile(), null);
+    StudyPost studyPost = buildStudyPost(request, user, thumbnailImgUrl);
+
+    studyPostRepository.save(studyPost);
+    return StudyPostDto.fromEntity(studyPost);
+  }
+
   // 상세 조회
   public StudyPostDto getStudyPostDetail(Long studyPostId) {
-    StudyPost studyPost = studyPostRepository.findById(studyPostId)
-        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
-
-    return StudyPostDto.fromEntity(studyPost);
+    return StudyPostDto.fromEntity(validateAndGetStudyPost(studyPostId));
   }
 
   // 상세 조회(userId)
   public Page<StudyPostDto> getStudyPostsByUserId(Long userId, Pageable pageable) {
-    if (!userRepository.existsById(userId)) {
-      throw new CustomException(ErrorCode.USER_NOT_FOUND);
-    }
-
+    validateOwnership(userId);
     Page<StudyPost> studyPosts = studyPostRepository.findByUserId(userId, pageable);
 
     return studyPosts.map(StudyPostDto::fromEntity);
@@ -92,128 +103,54 @@ public class StudyPostService {
         dayType, status, latitude, longitude, pageable);
   }
 
-  // 생성
-  @Transactional
-  public StudyPostDto createStudyPost(StudyPostCreateRequest request) {
-    validateUserRequestOwnership(request.getUserId());
-
-    if (request.getMaxParticipants() < 2 || request.getMaxParticipants() > 10) {
-      throw new CustomException(ErrorCode.INVALID_MAX_PARTICIPANTS);
-    }
-
-    User user = userRepository.findById(request.getUserId())
-        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-    if (request.getMeetingType() == StudyMeetingType.HYBRID && (request.getLatitude() == null
-        || request.getLongitude() == null || request.getAddress() == null)) {
-      throw new CustomException(ErrorCode.LOCATION_REQUIRED_FOR_HYBRID);
-    }
-    MultipartFile file = request.getFile();
-    if (file != null && !file.isEmpty()) {
-      String savedImgUrl = photoService.save(file);
-      request.setThumbnailImgUrl(savedImgUrl);
-    } else {
-      request.setThumbnailImgUrl(defaultThumbnailImageUrl);
-    }
-
-    StudyPost studyPost = buildStudyPost(request, user);
-    studyPostRepository.save(studyPost);
-
-    return StudyPostDto.fromEntity(studyPost);
-  }
-
   // 수정
   @Transactional
   public StudyPostDto updateStudyPost(Long studyPostId, StudyPostUpdateRequest request) {
-    StudyPost studyPost = studyPostRepository.findById(studyPostId)
-        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
+    StudyPost studyPost = validateAndGetStudyPost(studyPostId);
+    validateOwnership(studyPost.getUser().getId());
+    validateMaxParticipants(request.getMaxParticipants());
 
-    validateStudyPostOwnership(studyPost.getUser().getId());
-
-    MultipartFile file = request.getFile();
-    String originImgUrl = studyPost.getThumbnailImgUrl();
-    String requestImgUrl = request.getThumbnailImgUrl();
-
-    studyPost.setTitle(request.getTitle());
-    studyPost.setStudyName(request.getStudyName());
-    studyPost.setSubject(request.getSubject());
-    studyPost.setDifficulty(request.getDifficulty());
-    studyPost.setDayType(DayTypeUtils.encodeDaysFromRequest(request.getDayType()));
-    studyPost.setStartDate(request.getStartDate());
-    studyPost.setEndDate(request.getEndDate());
-    studyPost.setStartTime(request.getStartTime());
-    studyPost.setEndTime(request.getEndTime());
-    studyPost.setMeetingType(request.getMeetingType());
-    studyPost.setRecruitmentPeriod(request.getRecruitmentPeriod());
-    studyPost.setDescription(request.getDescription());
-    studyPost.setLatitude(request.getLatitude());
-    studyPost.setLongitude(request.getLongitude());
-    studyPost.setStatus(request.getStatus());
-    //파일이 있는 경우
-    if (file != null && !file.isEmpty()) {
-      photoService.delete(originImgUrl);
-      studyPost.setThumbnailImgUrl(photoService.save(file));
-    } else {
-      //파일이 없는 경우
-      if (requestImgUrl != null && !requestImgUrl.isEmpty() && requestImgUrl.equals(
-          defaultThumbnailImageUrl)) {
-        photoService.delete(originImgUrl);
-        studyPost.setThumbnailImgUrl(defaultThumbnailImageUrl);
-      }
-    }
-
-    studyPost.setMaxParticipants(request.getMaxParticipants());
+    String updatedImgUrl = handleFileUpload(request.getFile(), studyPost.getThumbnailImgUrl());
+    studyPost.updateFields(request, updatedImgUrl);
 
     studyPostRepository.save(studyPost);
 
     return StudyPostDto.fromEntity(studyPost);
   }
 
-  // 모집 마감 -> 스터디 진행 시작
+  // 모집 마감 및 스터디 진행 시작
   @Transactional
   public void closeStudyPost(Long studyPostId) {
-    StudyPost studyPost = studyPostRepository.findById(studyPostId)
-        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
-
-    validateStudyPostOwnership(studyPost.getUser().getId());
+    StudyPost studyPost = validateAndGetStudyPost(studyPostId);
+    validateOwnership(studyPost.getUser().getId());
 
     if (studyPost.getStatus() != StudyPostStatus.RECRUITING) {
       throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
     }
 
-    studyPost.setStatus(StudyPostStatus.CLOSED);
+    studyPost.closeRecruitment();
 
-    List<StudySignup> approvedSignups = studySignupRepository.findByStudyPostAndStatus(studyPost,
-        StudySignupStatus.APPROVED);
+    List<StudySignup> approvedSignups = studySignupRepository.findByStudyPostAndStatus(
+        studyPost, StudySignupStatus.APPROVED);
 
     if (approvedSignups.isEmpty()) {
       throw new CustomException(ErrorCode.NO_APPROVED_SIGNUPS);
     }
 
     Study study = studyService.createStudyFromClosedPost(studyPostId);
-
-    Student leader = Student.builder().study(study).user(studyPost.getUser()).isLeader(true)
-        .build();
-    studentRepository.save(leader);
-
-    List<Student> students = approvedSignups.stream().map(
-            signup -> Student.builder().study(study).user(signup.getUser()).isLeader(false).build())
-        .toList();
-    studentRepository.saveAll(students);
+    studentRepository.saveAll(buildStudents(approvedSignups, study, studyPost.getUser()));
   }
 
   // 모집 취소 -> 사용자가 직접 취소
   public void cancelStudyPost(Long studyPostId) {
-    StudyPost studyPost = studyPostRepository.findById(studyPostId)
-        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
-
-    validateStudyPostOwnership(studyPost.getUser().getId());
+    StudyPost studyPost = validateAndGetStudyPost(studyPostId);
+    validateOwnership(studyPost.getUser().getId());
 
     if (studyPost.getStatus() == StudyPostStatus.CLOSED) {
       throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
     }
 
-    studyPost.setStatus(StudyPostStatus.CANCELED);
+    studyPost.cancelRecruitment();
     studyPostRepository.save(studyPost);
   }
 
@@ -222,12 +159,11 @@ public class StudyPostService {
   public void cancelStudyPostIfExpired() {
     LocalDate currentDate = LocalDate.now();
 
-    List<StudyPost> studyPosts = studyPostRepository.findAllByRecruitmentPeriodBeforeAndStatus(
+    List<StudyPost> expiredPosts = studyPostRepository.findAllByRecruitmentPeriodBeforeAndStatus(
         currentDate, StudyPostStatus.RECRUITING);
 
-    for (StudyPost studyPost : studyPosts) {
-      studyPost.setStatus(StudyPostStatus.CANCELED);
-    }
+    expiredPosts.forEach(StudyPost::cancelRecruitment);
+    studyPostRepository.saveAll(expiredPosts);
   }
 
   // 모집 취소된 스터디 모집 기간 연장
@@ -235,7 +171,7 @@ public class StudyPostService {
     StudyPost studyPost = studyPostRepository.findById(studyPostId)
         .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
 
-    validateStudyPostOwnership(studyPost.getUser().getId());
+    validateOwnership(studyPost.getUser().getId());
 
     if (!StudyPostStatus.CANCELED.equals(studyPost.getStatus())) {
       throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
@@ -250,52 +186,8 @@ public class StudyPostService {
     studyPostRepository.save(studyPost);
   }
 
-  // 모집글 작성자 검증
-  private void validateStudyPostOwnership(Long studyPostOwnerId) {
-    Long loggedInUserId = authService.getLoginUserId();
-    if (!studyPostOwnerId.equals(loggedInUserId)) {
-      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
-    }
-  }
-
-  // 생성 요청 사용자 검증
-  private void validateUserRequestOwnership(Long requestUserId) {
-    Long loggedInUserId = authService.getLoginUserId();
-    System.out.println("requestUserId: " + requestUserId);
-    System.out.println("loggedInUserId: " + loggedInUserId);
-    if (!requestUserId.equals(loggedInUserId)) {
-      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
-    }
-  }
-
-  // 스터디 모집글 엔티티 생성
-  private StudyPost buildStudyPost(StudyPostCreateRequest request, User user) {
-    int dayType = DayTypeUtils.encodeDaysFromRequest(request.getDayType());
-    return StudyPost.builder()
-        .title(request.getTitle())
-        .studyName(request.getStudyName())
-        .subject(request.getSubject())
-        .difficulty(request.getDifficulty())
-        .dayType(dayType)
-        .startDate(request.getStartDate())
-        .endDate(request.getEndDate())
-        .startTime(request.getStartTime())
-        .endTime(request.getEndTime())
-        .meetingType(request.getMeetingType())
-        .recruitmentPeriod(request.getRecruitmentPeriod())
-        .description(request.getDescription())
-        .latitude(request.getLatitude())
-        .longitude(request.getLongitude())
-        .address(request.getAddress())
-        .status(StudyPostStatus.RECRUITING) // 기본값 설정
-        .thumbnailImgUrl(request.getThumbnailImgUrl())
-        .maxParticipants(request.getMaxParticipants())
-        .currentParticipants(0) // 기본값: 0명
-        .user(user)
-        .build();
-  }
-
   // 댓글
+
   /**
    * 댓글 작성
    *
@@ -381,6 +273,7 @@ public class StudyPostService {
   }
 
   // 대댓글
+
   /**
    * 대댓글 작성
    *
@@ -445,5 +338,89 @@ public class StudyPostService {
     studyReplyRepository.delete(studyReply);
 
     return StudyReplyDto.fromEntity(studyReply);
+  }
+
+  // ================================= Helper methods ================================= //
+
+  // 사용자 검증
+  private User validateAndGetUser(Long userId) {
+    return userRepository.findById(userId)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+  }
+
+  // 모집글 검증
+  private StudyPost validateAndGetStudyPost(Long studyPostId) {
+    return studyPostRepository.findById(studyPostId)
+        .orElseThrow(() -> new CustomException(ErrorCode.STUDY_POST_NOT_FOUND));
+  }
+
+  // 로그인한 사용자와 소유자 일치 여부 검증
+  private void validateOwnership(Long ownerId) {
+    if (!ownerId.equals(authService.getLoginUserId())) {
+      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+    }
+  }
+
+  // 최대 참가자 수(2~10) 검증
+  private void validateMaxParticipants(Integer maxParticipants) {
+    if (maxParticipants < 2 || maxParticipants > 10) {
+      throw new CustomException(ErrorCode.INVALID_MAX_PARTICIPANTS);
+    }
+  }
+
+  // HYBRID 타입인 경우 위치 정보 존재 여부 검증
+  private void validateMeetingType(StudyPostCreateRequest request) {
+    if (request.getMeetingType() == StudyMeetingType.HYBRID &&
+        (request.getLatitude() == null || request.getLongitude() == null
+            || request.getAddress() == null)) {
+      throw new CustomException(ErrorCode.LOCATION_REQUIRED_FOR_HYBRID);
+    }
+  }
+
+  // 파일 존재 여부 검증
+  private String handleFileUpload(MultipartFile file, String existingUrl) {
+    if (file != null && !file.isEmpty()) {
+      if (existingUrl != null) {
+        photoService.delete(existingUrl);
+      }
+      return photoService.save(file);
+    }
+    return (existingUrl != null) ? existingUrl : defaultThumbnailImageUrl;
+  }
+
+  // 스터디 참가자 목록 생성
+  private List<Student> buildStudents(List<StudySignup> signups, Study study, User leader) {
+    List<Student> members = new ArrayList<>();
+    members.add(Student.builder().study(study).user(leader).isLeader(true).build());
+    signups.forEach(signup -> members.add(
+        Student.builder().study(study).user(signup.getUser()).isLeader(false).build()));
+    return members;
+  }
+
+  // 스터디 모집글 엔티티 생성
+  private StudyPost buildStudyPost(
+      StudyPostCreateRequest request, User user, String thumbnailImgUrl) {
+    return StudyPost.builder()
+        .title(request.getTitle())
+        .studyName(request.getStudyName())
+        .subject(request.getSubject())
+        .difficulty(request.getDifficulty())
+        .dayType(DayTypeUtils.encodeDaysFromRequest(request.getDayType()))
+        .startDate(request.getStartDate())
+        .endDate(request.getEndDate())
+        .startTime(request.getStartTime())
+        .endTime(request.getEndTime())
+        .meetingType(request.getMeetingType())
+        .recruitmentPeriod(request.getRecruitmentPeriod())
+        .description(request.getDescription())
+        .latitude(request.getLatitude())
+        .longitude(request.getLongitude())
+        .address(request.getAddress())
+        .status(StudyPostStatus.RECRUITING) // 기본값 설정
+        .thumbnailImgUrl(thumbnailImgUrl)
+        .maxParticipants(request.getMaxParticipants())
+        .currentParticipants(0) // 기본값: 0명
+        .user(user)
+        .build();
   }
 }
