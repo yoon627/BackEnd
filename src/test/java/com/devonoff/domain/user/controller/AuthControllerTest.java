@@ -19,6 +19,7 @@ import com.devonoff.domain.user.dto.auth.SignInRequest;
 import com.devonoff.domain.user.dto.auth.SignInResponse;
 import com.devonoff.domain.user.dto.auth.SignUpRequest;
 import com.devonoff.domain.user.dto.auth.SocialAuthRequest;
+import com.devonoff.domain.user.dto.auth.WithdrawalRequest;
 import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.domain.user.service.social.SocialAuthService;
 import com.devonoff.util.JwtAuthenticationFilter;
@@ -319,10 +320,33 @@ class AuthControllerTest {
   @DisplayName("회원 탈퇴 - 성공")
   void testWithdrawalUser_Success() throws Exception {
     // given
-    willDoNothing().given(authService).withdrawalUser();
+    WithdrawalRequest withdrawalRequest = WithdrawalRequest.builder()
+        .password("userPassword1234!!")
+        .build();
+
+    willDoNothing().given(authService).withdrawalUser(withdrawalRequest);
 
     // when, then
-    mockMvc.perform(post("/api/auth/withdrawal"))
+    mockMvc.perform(post("/api/auth/withdrawal")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(withdrawalRequest)))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("회원 탈퇴 - 실패 (유효성 검증 실패)")
+  void testWithdrawalUser_Fail() throws Exception {
+    // given
+    WithdrawalRequest withdrawalRequest = WithdrawalRequest.builder()
+        .password("userPassword")
+        .build();
+
+    willDoNothing().given(authService).withdrawalUser(withdrawalRequest);
+
+    // when, then
+    mockMvc.perform(post("/api/auth/withdrawal")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(withdrawalRequest)))
+        .andExpect(status().isBadRequest());
   }
 }

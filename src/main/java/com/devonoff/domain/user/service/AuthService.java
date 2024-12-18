@@ -15,6 +15,7 @@ import com.devonoff.domain.user.dto.auth.ReissueTokenResponse;
 import com.devonoff.domain.user.dto.auth.SignInRequest;
 import com.devonoff.domain.user.dto.auth.SignInResponse;
 import com.devonoff.domain.user.dto.auth.SignUpRequest;
+import com.devonoff.domain.user.dto.auth.WithdrawalRequest;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
@@ -218,10 +219,15 @@ public class AuthService {
    * 회원 탈퇴
    */
   @Transactional
-  public void withdrawalUser() {
+  public void withdrawalUser(WithdrawalRequest withdrawalRequest) {
     Long loginUserId = getLoginUserId();
     User user = userRepository.findById(loginUserId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+    boolean isMatch = passwordEncoder.matches(withdrawalRequest.getPassword(), user.getPassword());
+    if (!isMatch) {
+      throw new CustomException(ErrorCode.INVALID_PASSWORD);
+    }
 
     // 탈퇴한 사용자가 속한 모든 스터디에서 스터디 참가자 제거
     List<Student> userStudents = studentRepository.findByUser(user);
