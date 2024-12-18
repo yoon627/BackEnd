@@ -89,7 +89,7 @@ public class StudyPostService {
   // 상세 조회(userId)
   public Page<StudyPostDto> getStudyPostsByUserId(Long userId, Pageable pageable) {
     validateOwnership(userId);
-    Page<StudyPost> studyPosts = studyPostRepository.findByUserId(userId, pageable);
+    Page<StudyPost> studyPosts = studyPostRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
 
     return studyPosts.map(StudyPostDto::fromEntity);
   }

@@ -193,7 +193,7 @@ class StudyPostServiceTest {
     Page<StudyPost> studyPostPage = new PageImpl<>(List.of(studyPost1, studyPost2), pageable, 2);
 
     when(authService.getLoginUserId()).thenReturn(userId);
-    when(studyPostRepository.findByUserId(userId, pageable)).thenReturn(studyPostPage);
+    when(studyPostRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)).thenReturn(studyPostPage);
 
     // When
     Page<StudyPostDto> result = studyPostService.getStudyPostsByUserId(userId, pageable);
@@ -207,7 +207,7 @@ class StudyPostServiceTest {
     assertIterableEquals(List.of("화"), result.getContent().get(1).getDayType());
 
     verify(authService, times(1)).getLoginUserId();
-    verify(studyPostRepository, times(1)).findByUserId(userId, pageable);
+    verify(studyPostRepository, times(1)).findByUserIdOrderByCreatedAtDesc(userId, pageable);
   }
 
   @DisplayName("스터디 모집글 상세 조회(userId) 실패 - 유저 없음")
