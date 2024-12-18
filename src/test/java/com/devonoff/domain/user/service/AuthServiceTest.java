@@ -26,6 +26,7 @@ import com.devonoff.domain.user.dto.auth.ReissueTokenResponse;
 import com.devonoff.domain.user.dto.auth.SignInRequest;
 import com.devonoff.domain.user.dto.auth.SignInResponse;
 import com.devonoff.domain.user.dto.auth.SignUpRequest;
+import com.devonoff.domain.user.dto.auth.WithdrawalRequest;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
@@ -736,6 +737,9 @@ class AuthServiceTest {
   void testWithdrawalUser_Success() {
     // given
     Long userId = 1L;
+    WithdrawalRequest withdrawalRequest = WithdrawalRequest.builder()
+        .password("userPassword")
+        .build();
 
     User user = User.builder()
         .nickname("testNickname")
@@ -756,25 +760,28 @@ class AuthServiceTest {
     );
 
     given(userRepository.findById(eq(userId))).willReturn(Optional.of(user));
+    given(passwordEncoder.matches(eq(withdrawalRequest.getPassword()), eq(user.getPassword())))
+        .willReturn(true);
     given(studentRepository.findByUser(eq(user))).willReturn(userStudents);
 
     willDoNothing().given(studentService).removeStudent(anyLong());
     willDoNothing().given(studySignupRepository).deleteAllByUser(user);
     given(studyPostRepository.findAllByUser(eq(user))).willReturn(studyPosts);
     willDoNothing().given(authRedisRepository)
-        .deleteData(eq(user.getEmail() + "-refreshToken")); // 기존 이메일
+        .deleteData(eq(user.getEmail() + "-refreshToken"));
 
     // when
-    authService.withdrawalUser();
+    authService.withdrawalUser(withdrawalRequest);
 
     // then
     verify(userRepository, times(1)).findById(eq(userId));
+    verify(passwordEncoder, times(1)).matches(anyString(), anyString());
     verify(studentRepository, times(1)).findByUser(eq(user));
     verify(studentService, times(2)).removeStudent(anyLong());
     verify(studySignupRepository, times(1)).deleteAllByUser(eq(user));
     verify(studyPostRepository, times(1)).findAllByUser(eq(user));
     verify(authRedisRepository, times(1))
-        .deleteData(eq("test@email.com-refreshToken")); // 기존 이메일 검증
+        .deleteData(eq("test@email.com-refreshToken"));
     verify(userRepository, times(1)).save(eq(user));
 
     assertThat(user.getNickname()).isEqualTo("탈퇴한 유저");
@@ -787,16 +794,52 @@ class AuthServiceTest {
   void testWithdrawalUser_Fail_UserNotFound() {
     // given
     Long userId = 1L;
+    WithdrawalRequest withdrawalRequest = WithdrawalRequest.builder()
+        .password("userPassword")
+        .build();
 
     given(userRepository.findById(eq(userId))).willReturn(Optional.empty());
 
     // when
     CustomException customException = assertThrows(CustomException.class,
-        () -> authService.withdrawalUser());
+        () -> authService.withdrawalUser(withdrawalRequest));
 
     // then
     verify(userRepository, times(1)).findById(eq(userId));
 
     assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+  }
+
+  @Test
+  @DisplayName("회원 탈퇴 - 실패 (비밀번호 불일치)")
+  void testWithdrawalUser_Fail_PasswordUnMatched() {
+    // given
+    Long userId = 1L;
+    WithdrawalRequest withdrawalRequest = WithdrawalRequest.builder()
+        .password("userPassword")
+        .build();
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email("test@email.com")
+        .password("encodedPassword")
+        .isActive(true)
+        .loginType(LoginType.GENERAL)
+        .build();
+
+    given(userRepository.findById(eq(userId))).willReturn(Optional.of(user));
+    given(passwordEncoder.matches(eq(withdrawalRequest.getPassword()), eq(user.getPassword())))
+        .willReturn(false);
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> authService.withdrawalUser(withdrawalRequest));
+
+    // then
+    verify(userRepository, times(1)).findById(eq(userId));
+    verify(passwordEncoder, times(1))
+        .matches(eq(withdrawalRequest.getPassword()), eq(user.getPassword()));
+
+    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.INVALID_PASSWORD);
   }
 }
