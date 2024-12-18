@@ -21,7 +21,8 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
     registry.addEndpoint("/signaling").setAllowedOriginPatterns("*")
         .withSockJS();
 
-    registry.addEndpoint("/ws").setAllowedOriginPatterns("*")
+    registry.addEndpoint("/ws")
+        .setAllowedOriginPatterns("http://localhost:3000")
         .withSockJS();
   }
 }
