@@ -4,14 +4,15 @@ import com.devonoff.domain.chat.dto.ChatMessageDto;
 import com.devonoff.domain.chat.dto.ChatRoomDto;
 import com.devonoff.domain.chat.service.ChatMessageService;
 import com.devonoff.domain.chat.service.ChatRoomService;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
@@ -44,8 +45,11 @@ public class ChatRoomController {
    * @return ResponseEntity<List<ChatMessageDto>>
    */
   @GetMapping("/{chatRoomId}/messages")
-  public ResponseEntity<List<ChatMessageDto>> getChatMessages(@PathVariable Long chatRoomId) {
-    return ResponseEntity.ok(chatMessageService.getChatMessages(chatRoomId));
+  public ResponseEntity<Page<ChatMessageDto>> getChatMessages(
+      @PathVariable Long chatRoomId,
+      @RequestParam(required = false, defaultValue = "0") Integer page
+  ) {
+    return ResponseEntity.ok(chatMessageService.getChatMessages(chatRoomId, page));
   }
 
 }
