@@ -22,4 +22,6 @@ public interface StudyPostRepository extends JpaRepository<StudyPost, Long>,
 
   Page<StudyPost> findByUserId(Long userId, Pageable pageable);
   List<StudyPost> findAllByUser(User user);
+
+  List<StudyPost> findAllByStatusAndUpdatedAtBefore(StudyPostStatus status, LocalDateTime updatedAt);
 }

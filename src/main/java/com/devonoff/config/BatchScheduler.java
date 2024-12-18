@@ -41,7 +41,7 @@ public class BatchScheduler {
   @Scheduled(cron = "0 0 0 * * *") // 매일 00시에 실행
   public void updateStudyStatuses() {
     try {
-      studyService.updateStudyStatuses();
+      studyService.updateStudyStatusBatch();
       log.info("스터디 상태 업데이트 성공: 모든 스터디 상태가 갱신되었습니다. (실행 시간: {})", LocalDateTime.now());
     } catch (Exception e) {
       log.error("스터디 상태 업데이트 실패: 상태 갱신 중 오류 발생 (실행 시간: {}, 에러: {})", LocalDateTime.now(), e.getMessage(), e);
