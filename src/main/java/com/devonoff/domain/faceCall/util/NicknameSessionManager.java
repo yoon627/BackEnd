@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class UserIdSessionManager {
+public class NicknameSessionManager {
 
   private final ConcurrentHashMap<String, String> userSessions = new ConcurrentHashMap<>();
 
@@ -22,7 +22,7 @@ public class UserIdSessionManager {
     log.info("after disconnection UserIdSessionManager : " + userSessions);
   }
 
-  public String getUserId(String sessionId) {
+  public String getNickname(String sessionId) {
     return userSessions.get(sessionId);
   }
 }

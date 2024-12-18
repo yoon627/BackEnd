@@ -1,6 +1,6 @@
 package com.devonoff.domain.faceCall.controller;
 
-import com.devonoff.domain.faceCall.util.UserIdSessionManager;
+import com.devonoff.domain.faceCall.util.NicknameSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class SignalingController {
 
-  private final UserIdSessionManager userIdSessionManager;
+  private final NicknameSessionManager nicknameSessionManager;
 
   @MessageMapping("/peer/offer/{nickname}/{studyId}")
   @SendTo("/topic/peer/offer/{nickname}/{studyId}")
