@@ -95,11 +95,11 @@ public class QnaPostService {
 
     // 검색 조건에 따라 전체 게시물 또는 검색 결과 반환
     if (search == null || search.isBlank() || search.equals("")) {
-      return qnaPostRepository.findAll(pageable)
+      return qnaPostRepository.findAllByOrderByCreatedAtDesc(pageable)
           .map(QnaPostDto::fromEntity);
     }
 
-    return qnaPostRepository.findByTitleContaining(search.trim(), pageable)
+    return qnaPostRepository.findByTitleContainingOrderByCreatedAtDesc(search.trim(), pageable)
         .map(QnaPostDto::fromEntity);
   }
 
@@ -117,8 +117,8 @@ public class QnaPostService {
 
     // 검색어가 없을 경우와 있을 경우 구분
     Page<QnaPost> posts = (search != null && !search.isBlank())
-        ? qnaPostRepository.findByUserAndTitleContaining(user, search, pageable)
-        : qnaPostRepository.findByUser(user, pageable);
+        ? qnaPostRepository.findByUserAndTitleContainingOrderByCreatedAtDesc(user, search, pageable)
+        : qnaPostRepository.findByUserOrderByCreatedAtDesc(user, pageable);
 
     // posts가 null인 경우 처리
     if (posts == null) {
