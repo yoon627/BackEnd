@@ -16,7 +16,7 @@ public class ChatController {
 
   private final ChatMessageService chatMessageService;
 
-  @MessageMapping("/chat/{chatRoomId}/sendMessage")
+  @MessageMapping("/chat/{chatRoomId}/send-messages")
   @SendTo("/topic/chat/{chatRoomId}")
   public ChatMessageDto sendMessage(
       @DestinationVariable Long chatRoomId,

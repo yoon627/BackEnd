@@ -1,6 +1,7 @@
 package com.devonoff.domain.user.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -18,9 +19,11 @@ import com.devonoff.domain.student.service.StudentService;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
 import com.devonoff.domain.studySignup.repository.StudySignupRepository;
+import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.dto.auth.CertificationRequest;
 import com.devonoff.domain.user.dto.auth.EmailRequest;
 import com.devonoff.domain.user.dto.auth.NickNameCheckRequest;
+import com.devonoff.domain.user.dto.auth.PasswordChangeRequest;
 import com.devonoff.domain.user.dto.auth.ReissueTokenRequest;
 import com.devonoff.domain.user.dto.auth.ReissueTokenResponse;
 import com.devonoff.domain.user.dto.auth.SignInRequest;
@@ -596,6 +599,101 @@ class AuthServiceTest {
   }
 
   @Test
+  @DisplayName("비밀번호 변경 - 성공")
+  void testChangePassword_Success() {
+    // given
+    Long userId = 1L;
+    PasswordChangeRequest passwordChangeRequest = PasswordChangeRequest.builder()
+        .currentPassword("currentPassword")
+        .newPassword("newPassword")
+        .build();
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email("test@email.com")
+        .password("encodedPassword")
+        .isActive(true)
+        .loginType(LoginType.GENERAL)
+        .build();
+
+    given(userRepository.findById(eq(userId))).willReturn(Optional.of(user));
+    given(passwordEncoder.matches(eq(passwordChangeRequest.getCurrentPassword()), eq(user.getPassword())))
+        .willReturn(true);
+    given(passwordEncoder.encode(eq(passwordChangeRequest.getNewPassword())))
+        .willReturn("newEncodedPassword");
+    given(userRepository.save(any(User.class))).willReturn(user);
+
+    // when
+    UserDto userDto = authService.changePassword(userId, passwordChangeRequest);
+
+    // then
+    verify(userRepository, times(1)).findById(eq(userId));
+    verify(passwordEncoder, times(1))
+        .matches(eq(passwordChangeRequest.getCurrentPassword()), eq("encodedPassword"));
+    verify(passwordEncoder, times(1))
+        .encode(eq(passwordChangeRequest.getNewPassword()));
+    verify(userRepository, times(1)).save(any(User.class));
+
+    assertThat(user.getPassword()).isEqualTo("newEncodedPassword");
+  }
+
+  @Test
+  @DisplayName("비밀번호 변경 - 실패 (존재하지 않는 유저)")
+  void testChangePassword_Fail_UserNotFound() {
+    // given
+    Long userId = 1L;
+    PasswordChangeRequest passwordChangeRequest = PasswordChangeRequest.builder()
+        .currentPassword("currentPassword")
+        .newPassword("newPassword")
+        .build();
+
+    given(userRepository.findById(eq(userId))).willReturn(Optional.empty());
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> authService.changePassword(userId, passwordChangeRequest));
+
+    // then
+    verify(userRepository, times(1)).findById(eq(userId));
+
+    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+  }
+
+  @Test
+  @DisplayName("비밀번호 변경 - 실패 (비밀번호 불일치)")
+  void testChangePassword_Fail_PasswordUnMatched() {
+    // given
+    Long userId = 1L;
+    PasswordChangeRequest passwordChangeRequest = PasswordChangeRequest.builder()
+        .currentPassword("currentPassword")
+        .newPassword("newPassword")
+        .build();
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email("test@email.com")
+        .password("encodedPassword")
+        .isActive(true)
+        .loginType(LoginType.GENERAL)
+        .build();
+
+    given(userRepository.findById(eq(userId))).willReturn(Optional.of(user));
+    given(passwordEncoder.matches(eq(passwordChangeRequest.getCurrentPassword()), eq(user.getPassword())))
+        .willReturn(false);
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> authService.changePassword(userId, passwordChangeRequest));
+
+    // then
+    verify(userRepository, times(1)).findById(eq(userId));
+    verify(passwordEncoder, times(1))
+        .matches(eq(passwordChangeRequest.getCurrentPassword()), eq("encodedPassword"));
+
+    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.INVALID_PASSWORD);
+  }
+
+  @Test
   @DisplayName("AccessToken 재발급 - 성공")
   void testReissueToken_Success() {
     // given
@@ -733,7 +831,7 @@ class AuthServiceTest {
   }
 
   @Test
-  @DisplayName("회원 탈퇴 - 성공")
+  @DisplayName("회원 탈퇴 - 성공 (이메일 로그인 유저)")
   void testWithdrawalUser_Success() {
     // given
     Long userId = 1L;
@@ -743,7 +841,7 @@ class AuthServiceTest {
 
     User user = User.builder()
         .nickname("testNickname")
-        .email("test@email.com") // 기존 이메일
+        .email("test@email.com")
         .password("encodedPassword")
         .isActive(true)
         .loginType(LoginType.GENERAL)
@@ -790,6 +888,60 @@ class AuthServiceTest {
   }
 
   @Test
+  @DisplayName("회원 탈퇴 - 성공 (소셜 로그인 유저)")
+  void testWithdrawalUser_Success_SocialLogin() {
+    // given
+    Long userId = 1L;
+    WithdrawalRequest withdrawalRequest = WithdrawalRequest.builder()
+        .password("userPassword")
+        .build();
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email("test@email.com")
+        .password("encodedPassword")
+        .isActive(true)
+        .loginType(LoginType.KAKAO)
+        .build();
+
+    List<Student> userStudents = List.of(
+        Student.builder().id(1L).user(user).build(),
+        Student.builder().id(2L).user(user).build()
+    );
+
+    List<StudyPost> studyPosts = List.of(
+        StudyPost.builder().id(1L).user(user).build(),
+        StudyPost.builder().id(2L).user(user).build()
+    );
+
+    given(userRepository.findById(eq(userId))).willReturn(Optional.of(user));
+    given(studentRepository.findByUser(eq(user))).willReturn(userStudents);
+
+    willDoNothing().given(studentService).removeStudent(anyLong());
+    willDoNothing().given(studySignupRepository).deleteAllByUser(user);
+    given(studyPostRepository.findAllByUser(eq(user))).willReturn(studyPosts);
+    willDoNothing().given(authRedisRepository)
+        .deleteData(eq(user.getEmail() + "-refreshToken"));
+
+    // when
+    authService.withdrawalUser(withdrawalRequest);
+
+    // then
+    verify(userRepository, times(1)).findById(eq(userId));
+    verify(studentRepository, times(1)).findByUser(eq(user));
+    verify(studentService, times(2)).removeStudent(anyLong());
+    verify(studySignupRepository, times(1)).deleteAllByUser(eq(user));
+    verify(studyPostRepository, times(1)).findAllByUser(eq(user));
+    verify(authRedisRepository, times(1))
+        .deleteData(eq("test@email.com-refreshToken"));
+    verify(userRepository, times(1)).save(eq(user));
+
+    assertThat(user.getNickname()).isEqualTo("탈퇴한 유저");
+    assertThat(user.getEmail()).isEqualTo("deleted@email.com");
+    assertThat(user.getIsActive()).isFalse();
+  }
+
+  @Test
   @DisplayName("회원 탈퇴 - 실패 (존재하지 않는 유저)")
   void testWithdrawalUser_Fail_UserNotFound() {
     // given
@@ -808,6 +960,33 @@ class AuthServiceTest {
     verify(userRepository, times(1)).findById(eq(userId));
 
     assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+  }
+
+  @Test
+  @DisplayName("회원 탈퇴 - 실패 (비밀번호 없음)")
+  void testWithdrawalUser_Fail_PasswordIsNull() {
+    // given
+    Long userId = 1L;
+    WithdrawalRequest withdrawalRequest = null;
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email("test@email.com")
+        .password("encodedPassword")
+        .isActive(true)
+        .loginType(LoginType.GENERAL)
+        .build();
+
+    given(userRepository.findById(eq(userId))).willReturn(Optional.of(user));
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> authService.withdrawalUser(withdrawalRequest));
+
+    // then
+    verify(userRepository, times(1)).findById(eq(userId));
+
+    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.PASSWORD_IS_NULL);
   }
 
   @Test

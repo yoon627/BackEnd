@@ -1,6 +1,7 @@
 package com.devonoff.domain.user.dto;
 
 import com.devonoff.domain.user.entity.User;
+import com.devonoff.type.LoginType;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,6 +21,7 @@ public class UserDto {
   private String email;
   private String profileImageUrl;
   private Boolean isActive;
+  private LoginType signinType;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
@@ -30,6 +32,7 @@ public class UserDto {
         .email(user.getEmail())
         .profileImageUrl(user.getProfileImage())
         .isActive(user.getIsActive())
+        .signinType(user.getLoginType())
         .createdAt(user.getCreatedAt())
         .updatedAt(user.getUpdatedAt())
         .build();
