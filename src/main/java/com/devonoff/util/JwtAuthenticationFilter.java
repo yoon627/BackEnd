@@ -2,9 +2,11 @@ package com.devonoff.util;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,9 +36,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
       FilterChain filterChain) throws ServletException, IOException {
-
+    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    System.out.println("requests: " + request.toString());
+    System.out.println("requests: " + Arrays.toString(request.getCookies()));
+    Cookie[] cookies = request.getCookies();
+    if (cookies != null) {
+      for (Cookie cookie : cookies) {
+        System.out.println("@@@@@");
+        System.out.println("cookie: " + cookie.getName());
+        System.out.println("cookie: " + cookie.getValue());
+        System.out.println("@@@@@");
+      }
+    }
+    System.out.println("requests header: " + request.getHeader(TOKEN_HEADER));
+    System.out.println("requests: " + request.getHeader("Authorization"));
+    System.out.println("requests: " + request.getHeader("Authorization"));
+    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     String token = this.resolveTokenFromRequest(request);
-
+    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    System.out.println("token: " + token);
+    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    if (token == null && cookies != null) {
+      token = cookies[0].getValue();
+    }
     if (StringUtils.hasText(token) && jwtProvider.validateToken(token)) {
       Authentication auth = jwtProvider.getAuthentication(token);
       SecurityContextHolder.getContext().setAuthentication(auth);

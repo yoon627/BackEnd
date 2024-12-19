@@ -40,13 +40,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthService {
 
-  @Value("${cloud.aws.s3.default-profile-image-url}")
-  private String defaultProfileImageUrl;
-
   private final UserRepository userRepository;
-
   private final AuthRedisRepository authRedisRepository;
-
   private final EmailProvider emailProvider;
   private final JwtProvider jwtProvider;
   private final PasswordEncoder passwordEncoder;
@@ -54,6 +49,8 @@ public class AuthService {
   private final StudentService studentService;
   private final StudySignupRepository studySignupRepository;
   private final StudyPostRepository studyPostRepository;
+  @Value("${cloud.aws.s3.default-profile-image-url}")
+  private String defaultProfileImageUrl;
 
   /**
    * 사용자 Nickname 중복 체크
@@ -279,9 +276,16 @@ public class AuthService {
    */
   public Long getLoginUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    System.out.println("authentication: " + authentication);
+    System.out.println("authentication principal: " + authentication.getPrincipal());
+    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    System.out.println("userDetail: " + userDetails);
+    System.out.println("userDetail username: " + userDetails.getUsername());
+    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     return Long.parseLong(userDetails.getUsername());
   }
-
 
 }

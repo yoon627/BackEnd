@@ -1,5 +1,6 @@
 package com.devonoff.config;
 
+import com.devonoff.util.CustomCorsFilter;
 import com.devonoff.util.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -28,6 +29,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final CustomCorsFilter customCorsFilter;
 
   /**
    * Security Filter Chain 설정
@@ -38,10 +40,9 @@ public class SecurityConfig {
    */
   @Bean
   protected SecurityFilterChain configure(HttpSecurity httpSecurity) throws Exception {
-
     httpSecurity
         .cors(cors -> cors
-            .configurationSource(corsConfigurationSorce())
+            .configurationSource(corsConfigurationSource())
         )
         .csrf(CsrfConfigurer::disable)
         .httpBasic(HttpBasicConfigurer::disable)
@@ -78,7 +79,8 @@ public class SecurityConfig {
             .permitAll()
             .anyRequest().authenticated()
         )
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(customCorsFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterAfter(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return httpSecurity.build();
 
@@ -90,15 +92,17 @@ public class SecurityConfig {
    * @return CorsConfigurationSource
    */
   @Bean
-  protected CorsConfigurationSource corsConfigurationSorce() {
+  protected CorsConfigurationSource corsConfigurationSource() {
 
     CorsConfiguration corsConfigurationV1 = new CorsConfiguration();
-    corsConfigurationV1.addAllowedOrigin("http://localhost:3000"); // 명확한 Origin 명시
-    corsConfigurationV1.setAllowCredentials(true);
+    corsConfigurationV1.addAllowedOrigin("*"); // 명확한 Origin 명시
+//    corsConfigurationV1.addAllowedOriginPattern("https://devonoffdoo.vercel.app/**"); // 명확한 Origin 명시
+//    corsConfigurationV1.setAllowCredentials(true);
     corsConfigurationV1.addAllowedMethod("*");
     corsConfigurationV1.addAllowedHeader("*");
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", corsConfigurationV1);
     source.registerCorsConfiguration("/api/**", corsConfigurationV1);
     source.registerCorsConfiguration("/signaling", corsConfigurationV1);
     source.registerCorsConfiguration("/ws/**", corsConfigurationV1);
