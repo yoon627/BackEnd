@@ -217,6 +217,8 @@ public class AuthService {
 
   /**
    * 회원 탈퇴
+   *
+   * @param withdrawalRequest
    */
   @Transactional
   public void withdrawalUser(WithdrawalRequest withdrawalRequest) {
@@ -224,9 +226,15 @@ public class AuthService {
     User user = userRepository.findById(loginUserId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-    boolean isMatch = passwordEncoder.matches(withdrawalRequest.getPassword(), user.getPassword());
-    if (!isMatch) {
-      throw new CustomException(ErrorCode.INVALID_PASSWORD);
+    if (user.getLoginType() == LoginType.GENERAL) {
+      if (withdrawalRequest == null) {
+        throw new CustomException(ErrorCode.PASSWORD_IS_NULL);
+      }
+
+      boolean isMatch = passwordEncoder.matches(withdrawalRequest.getPassword(), user.getPassword());
+      if (!isMatch) {
+        throw new CustomException(ErrorCode.INVALID_PASSWORD);
+      }
     }
 
     // 탈퇴한 사용자가 속한 모든 스터디에서 스터디 참가자 제거
@@ -288,6 +296,5 @@ public class AuthService {
     UserDetails userDetails = (UserDetails) authentication.getPrincipal();
     return Long.parseLong(userDetails.getUsername());
   }
-
 
 }

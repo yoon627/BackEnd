@@ -145,7 +145,7 @@ public class AuthController {
    */
   @PostMapping("/withdrawal")
   public ResponseEntity<Void> withdrawalUser(
-      @RequestBody @Valid WithdrawalRequest withdrawalRequest
+      @RequestBody(required = false) @Valid WithdrawalRequest withdrawalRequest
   ) {
     authService.withdrawalUser(withdrawalRequest);
     return ResponseEntity.ok().build();
