@@ -114,6 +114,8 @@ public class StudyPost extends BaseTimeEntity {
   }
 
   public void updateFields(StudyPostUpdateRequest request, String thumbnailImgUrl) {
+    validateDates(request.getStartDate(), request.getEndDate());
+    validateTimes(request.getStartTime(), request.getEndTime());
     this.title = request.getTitle();
     this.studyName = request.getStudyName();
     this.subject = request.getSubject();
@@ -148,6 +150,18 @@ public class StudyPost extends BaseTimeEntity {
   public void decrementParticipants() {
     if (currentParticipants > 0) {
       this.currentParticipants--;
+    }
+  }
+
+  private void validateDates(LocalDate startDate, LocalDate endDate) {
+    if (startDate.isAfter(endDate)) {
+      throw new CustomException(ErrorCode.INVALID_DATE_RANGE);
+    }
+  }
+
+  private void validateTimes(LocalTime startTime, LocalTime endTime) {
+    if (startTime.isAfter(endTime)) {
+      throw new CustomException(ErrorCode.INVALID_TIME_RANGE);
     }
   }
 }
