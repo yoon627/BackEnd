@@ -7,9 +7,11 @@ import com.devonoff.domain.student.service.StudentService;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
 import com.devonoff.domain.studySignup.repository.StudySignupRepository;
+import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.dto.auth.CertificationRequest;
 import com.devonoff.domain.user.dto.auth.EmailRequest;
 import com.devonoff.domain.user.dto.auth.NickNameCheckRequest;
+import com.devonoff.domain.user.dto.auth.PasswordChangeRequest;
 import com.devonoff.domain.user.dto.auth.ReissueTokenRequest;
 import com.devonoff.domain.user.dto.auth.ReissueTokenResponse;
 import com.devonoff.domain.user.dto.auth.SignInRequest;
@@ -183,6 +185,32 @@ public class AuthService {
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
     authRedisRepository.deleteData(user.getEmail() + "-refreshToken");
+  }
+
+  /**
+   * 비밀번호 변경
+   *
+   * @param userId
+   * @param passwordChangeRequest
+   * @return UserDto
+   */
+  public UserDto changePassword(Long userId, PasswordChangeRequest passwordChangeRequest) {
+    Long loginUserId = getLoginUserId();
+    if (!loginUserId.equals(userId)) {
+      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+    }
+
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+    String currentPassword = passwordChangeRequest.getCurrentPassword();
+    if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+      throw new CustomException(ErrorCode.INVALID_PASSWORD);
+    }
+
+    user.setPassword(passwordEncoder.encode(passwordChangeRequest.getNewPassword()));
+
+    return UserDto.fromEntity(userRepository.save(user));
   }
 
   /**
