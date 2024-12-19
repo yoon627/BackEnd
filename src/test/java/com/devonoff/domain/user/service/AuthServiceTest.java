@@ -1,6 +1,7 @@
 package com.devonoff.domain.user.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -18,9 +19,11 @@ import com.devonoff.domain.student.service.StudentService;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
 import com.devonoff.domain.studySignup.repository.StudySignupRepository;
+import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.dto.auth.CertificationRequest;
 import com.devonoff.domain.user.dto.auth.EmailRequest;
 import com.devonoff.domain.user.dto.auth.NickNameCheckRequest;
+import com.devonoff.domain.user.dto.auth.PasswordChangeRequest;
 import com.devonoff.domain.user.dto.auth.ReissueTokenRequest;
 import com.devonoff.domain.user.dto.auth.ReissueTokenResponse;
 import com.devonoff.domain.user.dto.auth.SignInRequest;
@@ -593,6 +596,101 @@ class AuthServiceTest {
     verify(userRepository, times(1)).findById(eq(userId));
 
     assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+  }
+
+  @Test
+  @DisplayName("비밀번호 변경 - 성공")
+  void testChangePassword_Success() {
+    // given
+    Long userId = 1L;
+    PasswordChangeRequest passwordChangeRequest = PasswordChangeRequest.builder()
+        .currentPassword("currentPassword")
+        .newPassword("newPassword")
+        .build();
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email("test@email.com")
+        .password("encodedPassword")
+        .isActive(true)
+        .loginType(LoginType.GENERAL)
+        .build();
+
+    given(userRepository.findById(eq(userId))).willReturn(Optional.of(user));
+    given(passwordEncoder.matches(eq(passwordChangeRequest.getCurrentPassword()), eq(user.getPassword())))
+        .willReturn(true);
+    given(passwordEncoder.encode(eq(passwordChangeRequest.getNewPassword())))
+        .willReturn("newEncodedPassword");
+    given(userRepository.save(any(User.class))).willReturn(user);
+
+    // when
+    UserDto userDto = authService.changePassword(userId, passwordChangeRequest);
+
+    // then
+    verify(userRepository, times(1)).findById(eq(userId));
+    verify(passwordEncoder, times(1))
+        .matches(eq(passwordChangeRequest.getCurrentPassword()), eq("encodedPassword"));
+    verify(passwordEncoder, times(1))
+        .encode(eq(passwordChangeRequest.getNewPassword()));
+    verify(userRepository, times(1)).save(any(User.class));
+
+    assertThat(user.getPassword()).isEqualTo("newEncodedPassword");
+  }
+
+  @Test
+  @DisplayName("비밀번호 변경 - 실패 (존재하지 않는 유저)")
+  void testChangePassword_Fail_UserNotFound() {
+    // given
+    Long userId = 1L;
+    PasswordChangeRequest passwordChangeRequest = PasswordChangeRequest.builder()
+        .currentPassword("currentPassword")
+        .newPassword("newPassword")
+        .build();
+
+    given(userRepository.findById(eq(userId))).willReturn(Optional.empty());
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> authService.changePassword(userId, passwordChangeRequest));
+
+    // then
+    verify(userRepository, times(1)).findById(eq(userId));
+
+    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+  }
+
+  @Test
+  @DisplayName("비밀번호 변경 - 실패 (비밀번호 불일치)")
+  void testChangePassword_Fail_PasswordUnMatched() {
+    // given
+    Long userId = 1L;
+    PasswordChangeRequest passwordChangeRequest = PasswordChangeRequest.builder()
+        .currentPassword("currentPassword")
+        .newPassword("newPassword")
+        .build();
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email("test@email.com")
+        .password("encodedPassword")
+        .isActive(true)
+        .loginType(LoginType.GENERAL)
+        .build();
+
+    given(userRepository.findById(eq(userId))).willReturn(Optional.of(user));
+    given(passwordEncoder.matches(eq(passwordChangeRequest.getCurrentPassword()), eq(user.getPassword())))
+        .willReturn(false);
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> authService.changePassword(userId, passwordChangeRequest));
+
+    // then
+    verify(userRepository, times(1)).findById(eq(userId));
+    verify(passwordEncoder, times(1))
+        .matches(eq(passwordChangeRequest.getCurrentPassword()), eq("encodedPassword"));
+
+    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.INVALID_PASSWORD);
   }
 
   @Test

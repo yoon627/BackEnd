@@ -10,9 +10,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.devonoff.config.SecurityConfig;
+import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.dto.auth.CertificationRequest;
 import com.devonoff.domain.user.dto.auth.EmailRequest;
 import com.devonoff.domain.user.dto.auth.NickNameCheckRequest;
+import com.devonoff.domain.user.dto.auth.PasswordChangeRequest;
 import com.devonoff.domain.user.dto.auth.ReissueTokenRequest;
 import com.devonoff.domain.user.dto.auth.ReissueTokenResponse;
 import com.devonoff.domain.user.dto.auth.SignInRequest;
@@ -277,6 +279,68 @@ class AuthControllerTest {
     // when, then
     mockMvc.perform(post("/api/auth/sign-out"))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("비밀번호 변경 - 성공")
+  void testChangePassword_Success() throws Exception {
+    // given
+    Long userId = 1L;
+    PasswordChangeRequest passwordChangeRequest = PasswordChangeRequest.builder()
+        .currentPassword("currentPassword1234!!!")
+        .newPassword("newPassword1234!!!")
+        .build();
+
+    UserDto userDto = UserDto.builder().id(1L).build();
+
+    given(authService.changePassword(userId, passwordChangeRequest)).willReturn(userDto);
+
+    // when , then
+    mockMvc.perform(post("/api/auth/change-password/1")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(passwordChangeRequest)))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("비밀번호 변경 - 실패 (유효성 검증 실패)")
+  void testChangePassword_Fail() throws Exception {
+    // given
+    Long userId = 1L;
+    PasswordChangeRequest passwordChangeRequest = PasswordChangeRequest.builder()
+        .newPassword("newPassword1234!!!")
+        .build();
+
+    UserDto userDto = UserDto.builder().id(1L).build();
+
+    given(authService.changePassword(userId, passwordChangeRequest)).willReturn(userDto);
+
+    // when , then
+    mockMvc.perform(post("/api/auth/change-password/1")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(passwordChangeRequest)))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @DisplayName("비밀번호 변경 - 실패 (비밀번호 패턴 불일치)")
+  void testChangePassword_Fail_PatternUnMatched() throws Exception {
+    // given
+    Long userId = 1L;
+    PasswordChangeRequest passwordChangeRequest = PasswordChangeRequest.builder()
+        .currentPassword("currentPassword")
+        .newPassword("newPassword")
+        .build();
+
+    UserDto userDto = UserDto.builder().id(1L).build();
+
+    given(authService.changePassword(userId, passwordChangeRequest)).willReturn(userDto);
+
+    // when , then
+    mockMvc.perform(post("/api/auth/change-password/1")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(passwordChangeRequest)))
+        .andExpect(status().isBadRequest());
   }
 
   @Test
