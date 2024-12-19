@@ -733,7 +733,7 @@ class AuthServiceTest {
   }
 
   @Test
-  @DisplayName("회원 탈퇴 - 성공")
+  @DisplayName("회원 탈퇴 - 성공 (이메일 로그인 유저)")
   void testWithdrawalUser_Success() {
     // given
     Long userId = 1L;
@@ -743,7 +743,7 @@ class AuthServiceTest {
 
     User user = User.builder()
         .nickname("testNickname")
-        .email("test@email.com") // 기존 이메일
+        .email("test@email.com")
         .password("encodedPassword")
         .isActive(true)
         .loginType(LoginType.GENERAL)
@@ -790,6 +790,60 @@ class AuthServiceTest {
   }
 
   @Test
+  @DisplayName("회원 탈퇴 - 성공 (소셜 로그인 유저)")
+  void testWithdrawalUser_Success_SocialLogin() {
+    // given
+    Long userId = 1L;
+    WithdrawalRequest withdrawalRequest = WithdrawalRequest.builder()
+        .password("userPassword")
+        .build();
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email("test@email.com")
+        .password("encodedPassword")
+        .isActive(true)
+        .loginType(LoginType.KAKAO)
+        .build();
+
+    List<Student> userStudents = List.of(
+        Student.builder().id(1L).user(user).build(),
+        Student.builder().id(2L).user(user).build()
+    );
+
+    List<StudyPost> studyPosts = List.of(
+        StudyPost.builder().id(1L).user(user).build(),
+        StudyPost.builder().id(2L).user(user).build()
+    );
+
+    given(userRepository.findById(eq(userId))).willReturn(Optional.of(user));
+    given(studentRepository.findByUser(eq(user))).willReturn(userStudents);
+
+    willDoNothing().given(studentService).removeStudent(anyLong());
+    willDoNothing().given(studySignupRepository).deleteAllByUser(user);
+    given(studyPostRepository.findAllByUser(eq(user))).willReturn(studyPosts);
+    willDoNothing().given(authRedisRepository)
+        .deleteData(eq(user.getEmail() + "-refreshToken"));
+
+    // when
+    authService.withdrawalUser(withdrawalRequest);
+
+    // then
+    verify(userRepository, times(1)).findById(eq(userId));
+    verify(studentRepository, times(1)).findByUser(eq(user));
+    verify(studentService, times(2)).removeStudent(anyLong());
+    verify(studySignupRepository, times(1)).deleteAllByUser(eq(user));
+    verify(studyPostRepository, times(1)).findAllByUser(eq(user));
+    verify(authRedisRepository, times(1))
+        .deleteData(eq("test@email.com-refreshToken"));
+    verify(userRepository, times(1)).save(eq(user));
+
+    assertThat(user.getNickname()).isEqualTo("탈퇴한 유저");
+    assertThat(user.getEmail()).isEqualTo("deleted@email.com");
+    assertThat(user.getIsActive()).isFalse();
+  }
+
+  @Test
   @DisplayName("회원 탈퇴 - 실패 (존재하지 않는 유저)")
   void testWithdrawalUser_Fail_UserNotFound() {
     // given
@@ -808,6 +862,33 @@ class AuthServiceTest {
     verify(userRepository, times(1)).findById(eq(userId));
 
     assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+  }
+
+  @Test
+  @DisplayName("회원 탈퇴 - 실패 (비밀번호 없음)")
+  void testWithdrawalUser_Fail_PasswordIsNull() {
+    // given
+    Long userId = 1L;
+    WithdrawalRequest withdrawalRequest = null;
+
+    User user = User.builder()
+        .nickname("testNickname")
+        .email("test@email.com")
+        .password("encodedPassword")
+        .isActive(true)
+        .loginType(LoginType.GENERAL)
+        .build();
+
+    given(userRepository.findById(eq(userId))).willReturn(Optional.of(user));
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> authService.withdrawalUser(withdrawalRequest));
+
+    // then
+    verify(userRepository, times(1)).findById(eq(userId));
+
+    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.PASSWORD_IS_NULL);
   }
 
   @Test
