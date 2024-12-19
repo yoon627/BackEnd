@@ -10,15 +10,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.devonoff.config.SecurityConfig;
+import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.dto.auth.CertificationRequest;
 import com.devonoff.domain.user.dto.auth.EmailRequest;
 import com.devonoff.domain.user.dto.auth.NickNameCheckRequest;
+import com.devonoff.domain.user.dto.auth.PasswordChangeRequest;
 import com.devonoff.domain.user.dto.auth.ReissueTokenRequest;
 import com.devonoff.domain.user.dto.auth.ReissueTokenResponse;
 import com.devonoff.domain.user.dto.auth.SignInRequest;
 import com.devonoff.domain.user.dto.auth.SignInResponse;
 import com.devonoff.domain.user.dto.auth.SignUpRequest;
 import com.devonoff.domain.user.dto.auth.SocialAuthRequest;
+import com.devonoff.domain.user.dto.auth.WithdrawalRequest;
 import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.domain.user.service.social.SocialAuthService;
 import com.devonoff.util.JwtAuthenticationFilter;
@@ -279,6 +282,68 @@ class AuthControllerTest {
   }
 
   @Test
+  @DisplayName("비밀번호 변경 - 성공")
+  void testChangePassword_Success() throws Exception {
+    // given
+    Long userId = 1L;
+    PasswordChangeRequest passwordChangeRequest = PasswordChangeRequest.builder()
+        .currentPassword("currentPassword1234!!!")
+        .newPassword("newPassword1234!!!")
+        .build();
+
+    UserDto userDto = UserDto.builder().id(1L).build();
+
+    given(authService.changePassword(userId, passwordChangeRequest)).willReturn(userDto);
+
+    // when , then
+    mockMvc.perform(post("/api/auth/change-password/1")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(passwordChangeRequest)))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("비밀번호 변경 - 실패 (유효성 검증 실패)")
+  void testChangePassword_Fail() throws Exception {
+    // given
+    Long userId = 1L;
+    PasswordChangeRequest passwordChangeRequest = PasswordChangeRequest.builder()
+        .newPassword("newPassword1234!!!")
+        .build();
+
+    UserDto userDto = UserDto.builder().id(1L).build();
+
+    given(authService.changePassword(userId, passwordChangeRequest)).willReturn(userDto);
+
+    // when , then
+    mockMvc.perform(post("/api/auth/change-password/1")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(passwordChangeRequest)))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @DisplayName("비밀번호 변경 - 실패 (비밀번호 패턴 불일치)")
+  void testChangePassword_Fail_PatternUnMatched() throws Exception {
+    // given
+    Long userId = 1L;
+    PasswordChangeRequest passwordChangeRequest = PasswordChangeRequest.builder()
+        .currentPassword("currentPassword")
+        .newPassword("newPassword")
+        .build();
+
+    UserDto userDto = UserDto.builder().id(1L).build();
+
+    given(authService.changePassword(userId, passwordChangeRequest)).willReturn(userDto);
+
+    // when , then
+    mockMvc.perform(post("/api/auth/change-password/1")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(passwordChangeRequest)))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
   @DisplayName("Access Token 재발급 - 성공")
   void testReissueToken_Success() throws Exception {
     // given
@@ -319,10 +384,33 @@ class AuthControllerTest {
   @DisplayName("회원 탈퇴 - 성공")
   void testWithdrawalUser_Success() throws Exception {
     // given
-    willDoNothing().given(authService).withdrawalUser();
+    WithdrawalRequest withdrawalRequest = WithdrawalRequest.builder()
+        .password("userPassword1234!!")
+        .build();
+
+    willDoNothing().given(authService).withdrawalUser(withdrawalRequest);
 
     // when, then
-    mockMvc.perform(post("/api/auth/withdrawal"))
+    mockMvc.perform(post("/api/auth/withdrawal")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(withdrawalRequest)))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("회원 탈퇴 - 실패 (유효성 검증 실패)")
+  void testWithdrawalUser_Fail() throws Exception {
+    // given
+    WithdrawalRequest withdrawalRequest = WithdrawalRequest.builder()
+        .password("userPassword")
+        .build();
+
+    willDoNothing().given(authService).withdrawalUser(withdrawalRequest);
+
+    // when, then
+    mockMvc.perform(post("/api/auth/withdrawal")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(withdrawalRequest)))
+        .andExpect(status().isBadRequest());
   }
 }

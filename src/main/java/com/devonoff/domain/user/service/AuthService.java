@@ -7,14 +7,17 @@ import com.devonoff.domain.student.service.StudentService;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
 import com.devonoff.domain.studySignup.repository.StudySignupRepository;
+import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.dto.auth.CertificationRequest;
 import com.devonoff.domain.user.dto.auth.EmailRequest;
 import com.devonoff.domain.user.dto.auth.NickNameCheckRequest;
+import com.devonoff.domain.user.dto.auth.PasswordChangeRequest;
 import com.devonoff.domain.user.dto.auth.ReissueTokenRequest;
 import com.devonoff.domain.user.dto.auth.ReissueTokenResponse;
 import com.devonoff.domain.user.dto.auth.SignInRequest;
 import com.devonoff.domain.user.dto.auth.SignInResponse;
 import com.devonoff.domain.user.dto.auth.SignUpRequest;
+import com.devonoff.domain.user.dto.auth.WithdrawalRequest;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.exception.CustomException;
@@ -182,6 +185,32 @@ public class AuthService {
   }
 
   /**
+   * 비밀번호 변경
+   *
+   * @param userId
+   * @param passwordChangeRequest
+   * @return UserDto
+   */
+  public UserDto changePassword(Long userId, PasswordChangeRequest passwordChangeRequest) {
+    Long loginUserId = getLoginUserId();
+    if (!loginUserId.equals(userId)) {
+      throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+    }
+
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+    String currentPassword = passwordChangeRequest.getCurrentPassword();
+    if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+      throw new CustomException(ErrorCode.INVALID_PASSWORD);
+    }
+
+    user.setPassword(passwordEncoder.encode(passwordChangeRequest.getNewPassword()));
+
+    return UserDto.fromEntity(userRepository.save(user));
+  }
+
+  /**
    * refresh 토큰 확인 후 accessToken 재 발행
    *
    * @param reissueTokenRequest
@@ -213,12 +242,25 @@ public class AuthService {
 
   /**
    * 회원 탈퇴
+   *
+   * @param withdrawalRequest
    */
   @Transactional
-  public void withdrawalUser() {
+  public void withdrawalUser(WithdrawalRequest withdrawalRequest) {
     Long loginUserId = getLoginUserId();
     User user = userRepository.findById(loginUserId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+    if (user.getLoginType() == LoginType.GENERAL) {
+      if (withdrawalRequest == null) {
+        throw new CustomException(ErrorCode.PASSWORD_IS_NULL);
+      }
+
+      boolean isMatch = passwordEncoder.matches(withdrawalRequest.getPassword(), user.getPassword());
+      if (!isMatch) {
+        throw new CustomException(ErrorCode.INVALID_PASSWORD);
+      }
+    }
 
     // 탈퇴한 사용자가 속한 모든 스터디에서 스터디 참가자 제거
     List<Student> userStudents = studentRepository.findByUser(user);

@@ -1,14 +1,17 @@
 package com.devonoff.domain.user.controller;
 
+import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.dto.auth.CertificationRequest;
 import com.devonoff.domain.user.dto.auth.EmailRequest;
 import com.devonoff.domain.user.dto.auth.NickNameCheckRequest;
+import com.devonoff.domain.user.dto.auth.PasswordChangeRequest;
 import com.devonoff.domain.user.dto.auth.ReissueTokenRequest;
 import com.devonoff.domain.user.dto.auth.ReissueTokenResponse;
 import com.devonoff.domain.user.dto.auth.SignInRequest;
 import com.devonoff.domain.user.dto.auth.SignInResponse;
 import com.devonoff.domain.user.dto.auth.SignUpRequest;
 import com.devonoff.domain.user.dto.auth.SocialAuthRequest;
+import com.devonoff.domain.user.dto.auth.WithdrawalRequest;
 import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.domain.user.service.social.SocialAuthService;
 import jakarta.validation.Valid;
@@ -125,6 +128,22 @@ public class AuthController {
   }
 
   /**
+   * 비밀번호 변경
+   *
+   * @param userId
+   * @param passwordChangeRequest
+   * @return ResponseEntity<UserDto>
+   */
+  @PostMapping("/change-password/{userId}")
+  public ResponseEntity<UserDto> changePassword(
+      @PathVariable Long userId,
+      @RequestBody @Valid PasswordChangeRequest passwordChangeRequest
+  ) {
+    UserDto userDto = authService.changePassword(userId, passwordChangeRequest);
+    return ResponseEntity.ok().build();
+  }
+
+  /**
    * 엑세스 토큰 재발행
    *
    * @param reissueTokenRequest
@@ -143,8 +162,10 @@ public class AuthController {
    * @return ResponseEntity<ResponseDto>
    */
   @PostMapping("/withdrawal")
-  public ResponseEntity<Void> withdrawalUser() {
-    authService.withdrawalUser();
+  public ResponseEntity<Void> withdrawalUser(
+      @RequestBody(required = false) @Valid WithdrawalRequest withdrawalRequest
+  ) {
+    authService.withdrawalUser(withdrawalRequest);
     return ResponseEntity.ok().build();
   }
 

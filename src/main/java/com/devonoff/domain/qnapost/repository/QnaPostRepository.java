@@ -10,10 +10,11 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface QnaPostRepository extends JpaRepository<QnaPost, Long> {
 
-  Page<QnaPost> findByTitleContaining(String search, Pageable pageable);
+  Page<QnaPost> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
-  Page<QnaPost> findByUserAndTitleContaining(User user, String title, Pageable pageable);
+  Page<QnaPost> findByTitleContainingOrderByCreatedAtDesc(String search, Pageable pageable);
 
+  Page<QnaPost> findByUserAndTitleContainingOrderByCreatedAtDesc(User user, String title, Pageable pageable);
 
-  Page<QnaPost> findByUser(User user, Pageable pageable);
+  Page<QnaPost> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
 }
