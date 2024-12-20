@@ -13,6 +13,7 @@ public enum ErrorCode {
   INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED.value(), "이메일 또는 비밀번호가 잘못되었습니다."), // 401
   INVALID_PASSWORD(HttpStatus.BAD_REQUEST.value(), "비밀번호가 잘못되었습니다."), // 400
   PASSWORD_IS_NULL(HttpStatus.BAD_REQUEST.value(), "비밀번호를 입력해주세요."), // 400
+  SAME_PASSWORD(HttpStatus.BAD_REQUEST.value(), "기존 비밀번호와 동일합니다."), // 400
   SOCIAL_LOGIN_FAILED(HttpStatus.UNAUTHORIZED.value(), "소셜 로그인에 실패했습니다."), // 401
   ACCOUNT_PENDING_DELETION(HttpStatus.FORBIDDEN.value(), "해당 계정은 탈퇴 예정 상태입니다."), // 403 -> 필요한가?
   EMAIL_CERTIFICATION_FAILED(HttpStatus.BAD_REQUEST.value(),
