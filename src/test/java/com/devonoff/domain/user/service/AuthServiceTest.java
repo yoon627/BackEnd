@@ -638,6 +638,24 @@ class AuthServiceTest {
   }
 
   @Test
+  @DisplayName("비밀번호 변경 - 실패 (동일한 패스워드)")
+  void testChangePassword_Fail_SamePassword() {
+    // given
+    Long userId = 1L;
+    PasswordChangeRequest passwordChangeRequest = PasswordChangeRequest.builder()
+        .currentPassword("currentPassword")
+        .newPassword("currentPassword")
+        .build();
+
+    // when
+    CustomException customException = assertThrows(CustomException.class,
+        () -> authService.changePassword(userId, passwordChangeRequest));
+
+    // then
+    assertThat(customException.getErrorCode()).isEqualTo(ErrorCode.SAME_PASSWORD);
+  }
+
+  @Test
   @DisplayName("비밀번호 변경 - 실패 (존재하지 않는 유저)")
   void testChangePassword_Fail_UserNotFound() {
     // given
