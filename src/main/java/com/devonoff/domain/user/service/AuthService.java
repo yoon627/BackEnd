@@ -200,15 +200,20 @@ public class AuthService {
       throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
     }
 
+    String currentPassword = passwordChangeRequest.getCurrentPassword();
+    String newPassword = passwordChangeRequest.getNewPassword();
+    if (currentPassword.equals(newPassword)) {
+      throw new CustomException(ErrorCode.SAME_PASSWORD);
+    }
+
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-    String currentPassword = passwordChangeRequest.getCurrentPassword();
     if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
       throw new CustomException(ErrorCode.INVALID_PASSWORD);
     }
 
-    user.setPassword(passwordEncoder.encode(passwordChangeRequest.getNewPassword()));
+    user.setPassword(passwordEncoder.encode(newPassword));
 
     return UserDto.fromEntity(userRepository.save(user));
   }
