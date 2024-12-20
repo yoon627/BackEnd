@@ -146,7 +146,7 @@ public class StudyPostService {
     StudyPost studyPost = validateAndGetStudyPost(studyPostId);
     validateOwnership(studyPost.getUser().getId());
 
-    if (studyPost.getStatus() == StudyPostStatus.CLOSED) {
+    if (studyPost.getStatus() != StudyPostStatus.RECRUITING) {
       throw new CustomException(ErrorCode.INVALID_STUDY_STATUS);
     }
 
