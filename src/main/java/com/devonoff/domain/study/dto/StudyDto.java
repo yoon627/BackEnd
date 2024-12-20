@@ -3,7 +3,6 @@ package com.devonoff.domain.study.dto;
 import com.devonoff.domain.study.entity.Study;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
-import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudyStatus;
 import com.devonoff.type.StudySubject;
 import com.devonoff.util.DayTypeUtils;
@@ -14,7 +13,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
 @Builder
@@ -33,6 +31,7 @@ public class StudyDto {
   private LocalTime endTime;
   private StudyMeetingType meetingType;
   private StudyStatus status;
+  private String thumbnailImgUrl;
   private Long studyPostId;
   private Long studyLeaderId;
   private Integer totalParticipants;
@@ -50,6 +49,7 @@ public class StudyDto {
         .endTime(study.getEndTime())
         .meetingType(study.getMeetingType())
         .status(study.getStatus())
+        .thumbnailImgUrl(study.getStudyPost().getThumbnailImgUrl())
         .studyPostId(study.getStudyPost().getId())
         .studyLeaderId(study.getStudyLeader().getId())
         .totalParticipants(study.getTotalParticipants())
