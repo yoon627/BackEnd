@@ -1,11 +1,13 @@
 package com.devonoff.domain.studyPost.entity;
 
 import com.devonoff.common.entity.BaseTimeEntity;
-import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
+import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
 import com.devonoff.domain.user.entity.User;
+import com.devonoff.exception.CustomException;
+import com.devonoff.type.ErrorCode;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
-import com.devonoff.type.StudyStatus;
+import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySubject;
 import com.devonoff.util.DayTypeUtils;
 import jakarta.persistence.Column;
@@ -74,7 +76,7 @@ public class StudyPost extends BaseTimeEntity {
   @Column(nullable = false)
   private LocalDate recruitmentPeriod; // 모집 기한
 
-  @Column(nullable = false)
+  @Column(columnDefinition = "TEXT", nullable = false)
   private String description; // 본문
 
   @Column
@@ -83,38 +85,83 @@ public class StudyPost extends BaseTimeEntity {
   @Column
   private Double longitude; // 경도
 
+  @Column
+  private String address; // 주소 정보
+
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  private StudyStatus status; // 모집글 상태
+  private StudyPostStatus status; // 모집글 상태
 
   @Column
   private String thumbnailImgUrl; // 썸네일 이미지 URL
+
+  @Column(nullable = false)
+  private Integer maxParticipants; // 모집 최대 인원
+
+  @Column(nullable = false)
+  private Integer currentParticipants; // 현재 승인된 참가자 수
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
   private User user; // 작성자
 
-  public static StudyPost createFromRequest(StudyPostCreateRequest request, User user) {
-    int dayType = DayTypeUtils.encodeDaysFromRequest(request.getDayType());
+  public void cancelRecruitment() {
+    this.status = StudyPostStatus.CANCELED;
+  }
 
-    return StudyPost.builder()
-        .title(request.getTitle())
-        .studyName(request.getStudyName())
-        .subject(request.getSubject())
-        .difficulty(request.getDifficulty())
-        .dayType(dayType)
-        .startDate(request.getStartDate())
-        .endDate(request.getEndDate())
-        .startTime(request.getStartTime())
-        .endTime(request.getEndTime())
-        .meetingType(request.getMeetingType())
-        .recruitmentPeriod(request.getRecruitmentPeriod())
-        .description(request.getDescription())
-        .latitude(request.getLatitude())
-        .longitude(request.getLongitude())
-        .status(StudyStatus.RECRUITING) // 기본값 설정
-        .thumbnailImgUrl(request.getThumbnailImgUrl())
-        .user(user)
-        .build();
+  public void closeRecruitment() {
+    this.status = StudyPostStatus.CLOSED;
+  }
+
+  public void updateFields(StudyPostUpdateRequest request, String thumbnailImgUrl) {
+    validateDates(request.getStartDate(), request.getEndDate());
+    validateTimes(request.getStartTime(), request.getEndTime());
+    this.title = request.getTitle();
+    this.studyName = request.getStudyName();
+    this.subject = request.getSubject();
+    this.difficulty = request.getDifficulty();
+    this.dayType = DayTypeUtils.encodeDaysFromRequest(request.getDayType());
+    this.startDate = request.getStartDate();
+    this.endDate = request.getEndDate();
+    this.startTime = request.getStartTime();
+    this.endTime = request.getEndTime();
+    this.meetingType = request.getMeetingType();
+    this.recruitmentPeriod = request.getRecruitmentPeriod();
+    this.description = request.getDescription();
+    this.latitude = request.getLatitude();
+    this.longitude = request.getLongitude();
+    this.address = request.getAddress();
+    this.status = request.getStatus();
+    this.thumbnailImgUrl = thumbnailImgUrl;
+    this.maxParticipants = request.getMaxParticipants();
+  }
+
+  public boolean isFull() {
+    return currentParticipants >= (maxParticipants - 1); // 스터디장 제외
+  }
+
+  public void incrementParticipants() {
+    if (isFull()) {
+      throw new CustomException(ErrorCode.STUDY_POST_FULL);
+    }
+    this.currentParticipants++;
+  }
+
+  public void decrementParticipants() {
+    if (currentParticipants > 0) {
+      this.currentParticipants--;
+    }
+  }
+
+  private void validateDates(LocalDate startDate, LocalDate endDate) {
+    if (startDate.isAfter(endDate)) {
+      throw new CustomException(ErrorCode.INVALID_DATE_RANGE);
+    }
+  }
+
+  private void validateTimes(LocalTime startTime, LocalTime endTime) {
+    if (startTime.isAfter(endTime)) {
+      throw new CustomException(ErrorCode.INVALID_TIME_RANGE);
+    }
   }
 }

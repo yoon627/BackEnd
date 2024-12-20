@@ -1,13 +1,16 @@
 package com.devonoff.domain.studyTimeline.service;
 
 import static com.devonoff.type.ErrorCode.STUDY_NOT_FOUND;
+import static com.devonoff.type.ErrorCode.UNAUTHORIZED_ACCESS;
 
+import com.devonoff.domain.student.repository.StudentRepository;
 import com.devonoff.domain.study.repository.StudyRepository;
 import com.devonoff.domain.studyTimeline.dto.StudyTimelineDto;
 import com.devonoff.domain.studyTimeline.entity.StudyTimeline;
 import com.devonoff.domain.studyTimeline.repository.StudyTimelineRepository;
 import com.devonoff.domain.totalstudytime.entity.TotalStudyTime;
 import com.devonoff.domain.totalstudytime.repository.TotalStudyTimeRepository;
+import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import jakarta.transaction.Transactional;
 import java.time.Duration;
@@ -15,9 +18,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -27,12 +27,13 @@ public class StudyTimelineService {
   private final StudyTimelineRepository studyTimelineRepository;
   private final TotalStudyTimeRepository totalStudyTimeRepository;
   private final StudyRepository studyRepository;
+  private final StudentRepository studentRepository;
+  private final AuthService authService;
 
   public List<StudyTimelineDto> findAllStudyTimelines(Long studyId) {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-    Long userId = Long.parseLong(userDetails.getUsername());
-    //TODO userId와 student 연동해서 로그인된 유저가 해당 스터디에 속하는지 확인해야함
+    if (!studentRepository.existsByUserIdAndStudyId(authService.getLoginUserId(), studyId)) {
+      throw new CustomException(UNAUTHORIZED_ACCESS);
+    }
     String studyName = studyRepository.findById(studyId)
         .orElseThrow(() -> new CustomException(STUDY_NOT_FOUND)).getStudyName();
     return this.studyTimelineRepository.findAllByStudyIdAndEndedAtIsNotNull(studyId).stream()

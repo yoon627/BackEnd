@@ -13,10 +13,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -33,8 +31,10 @@ public class StudyDto {
   private LocalTime endTime;
   private StudyMeetingType meetingType;
   private StudyStatus status;
+  private String thumbnailImgUrl;
   private Long studyPostId;
   private Long studyLeaderId;
+  private Integer totalParticipants;
 
   public static StudyDto fromEntity(Study study) {
     return StudyDto.builder()
@@ -49,8 +49,10 @@ public class StudyDto {
         .endTime(study.getEndTime())
         .meetingType(study.getMeetingType())
         .status(study.getStatus())
+        .thumbnailImgUrl(study.getStudyPost().getThumbnailImgUrl())
         .studyPostId(study.getStudyPost().getId())
         .studyLeaderId(study.getStudyLeader().getId())
+        .totalParticipants(study.getTotalParticipants())
         .build();
   }
 }

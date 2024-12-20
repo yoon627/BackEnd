@@ -2,12 +2,14 @@ package com.devonoff.domain.studyPost.dto;
 
 
 import com.devonoff.domain.studyPost.entity.StudyPost;
+import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
-import com.devonoff.type.StudyStatus;
+import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySubject;
 import com.devonoff.util.DayTypeUtils;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -38,9 +40,14 @@ public class StudyPostDto {
   private String description;
   private Double latitude;
   private Double longitude;
-  private StudyStatus status;
+  private String address;
+  private StudyPostStatus status;
   private String thumbnailImgUrl;
-  private Long userId;
+  private Integer maxParticipants;
+  private Integer currentParticipants;
+  private UserDto user;
+  private LocalDateTime createdAt;
+  private LocalDateTime updatedAt;
 
   public static StudyPostDto fromEntity(StudyPost studyPost) {
     return StudyPostDto.builder()
@@ -59,9 +66,14 @@ public class StudyPostDto {
         .description(studyPost.getDescription())
         .latitude(studyPost.getLatitude())
         .longitude(studyPost.getLongitude())
+        .address(studyPost.getAddress())
         .status(studyPost.getStatus())
         .thumbnailImgUrl(studyPost.getThumbnailImgUrl())
-        .userId(studyPost.getUser().getId())
+        .maxParticipants(studyPost.getMaxParticipants())
+        .currentParticipants(studyPost.getCurrentParticipants())
+        .user(UserDto.fromEntity(studyPost.getUser()))
+        .createdAt(studyPost.getCreatedAt())
+        .updatedAt(studyPost.getUpdatedAt())
         .build();
   }
 }

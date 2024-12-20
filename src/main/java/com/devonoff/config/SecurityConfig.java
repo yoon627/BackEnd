@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -27,8 +28,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
-//  private final DefaultOAuth2UserService oAuth2UserService;
-//  private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
   /**
    * Security Filter Chain 설정
@@ -57,21 +56,25 @@ public class SecurityConfig {
                 "/api/auth/email-send",
                 "/api/auth/email-certification",
                 "/api/auth/sign-up",
-                "/api/auth/sign-in",
+                "/api/auth/sign-in/**",
                 "/api/auth/token-reissue",
-                "/api/qna-posts/**",
-                "/api/comments/**",
-                "/oauth2/**"
+                "/oauth2/**",
+                "/ws/**"
+            )
+            .permitAll()
+            .requestMatchers(HttpMethod.GET,
+                "/api/study-posts",
+                "/api/study-posts/**",
+                "/api/study-posts/search",
+                "/api/study-posts/search-by-id",
+                "/api/info-posts",
+                "/api/info-posts/**",
+                "/api/qna-posts",
+                "/api/qna-posts/**"
             )
             .permitAll()
             .anyRequest().authenticated()
         )
-//        .oauth2Login(oauth2 -> oauth2
-//            .authorizationEndpoint(endpoint -> endpoint.baseUri("/api/v1/auth/oauth2"))
-//            .redirectionEndpoint(endpoint -> endpoint.baseUri("/oauth2/callback/*"))
-//            .userInfoEndpoint(endpoint -> endpoint.userService(oAuth2UserService))
-//            .successHandler(oAuth2SuccessHandler)
-//        )
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return httpSecurity.build();
@@ -87,12 +90,14 @@ public class SecurityConfig {
   protected CorsConfigurationSource corsConfigurationSorce() {
 
     CorsConfiguration corsConfigurationV1 = new CorsConfiguration();
-    corsConfigurationV1.addAllowedOrigin("*");
+    corsConfigurationV1.addAllowedOrigin("http://localhost:3000"); // 명확한 Origin 명시
+    corsConfigurationV1.setAllowCredentials(true);
     corsConfigurationV1.addAllowedMethod("*");
     corsConfigurationV1.addAllowedHeader("*");
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/api/v1/**", corsConfigurationV1);
+    source.registerCorsConfiguration("/api/**", corsConfigurationV1);
+    source.registerCorsConfiguration("/ws/**", corsConfigurationV1);
 
     return source;
   }

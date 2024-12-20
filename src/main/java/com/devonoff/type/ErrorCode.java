@@ -11,11 +11,14 @@ public enum ErrorCode {
   EMAIL_ALREADY_REGISTERED(HttpStatus.BAD_REQUEST.value(), "이미 사용 중인 이메일입니다."), // 400
   NICKNAME_ALREADY_REGISTERED(HttpStatus.BAD_REQUEST.value(), "이미 사용 중인 닉네임입니다."), // 400
   INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED.value(), "이메일 또는 비밀번호가 잘못되었습니다."), // 401
+  INVALID_PASSWORD(HttpStatus.BAD_REQUEST.value(), "비밀번호가 잘못되었습니다."), // 400
+  PASSWORD_IS_NULL(HttpStatus.BAD_REQUEST.value(), "비밀번호를 입력해주세요."), // 400
+  SAME_PASSWORD(HttpStatus.BAD_REQUEST.value(), "기존 비밀번호와 동일합니다."), // 400
   SOCIAL_LOGIN_FAILED(HttpStatus.UNAUTHORIZED.value(), "소셜 로그인에 실패했습니다."), // 401
   ACCOUNT_PENDING_DELETION(HttpStatus.FORBIDDEN.value(), "해당 계정은 탈퇴 예정 상태입니다."), // 403 -> 필요한가?
-  EMAIL_VERIFICATION_FAILED(HttpStatus.BAD_REQUEST.value(),
+  EMAIL_CERTIFICATION_FAILED(HttpStatus.BAD_REQUEST.value(),
       "이메일 인증에 실패했습니다."), // 400 -> 이거쓸지 아래 두개 쓸지 고려
-  EMAIL_VERIFICATION_UNCOMPLETED(HttpStatus.BAD_REQUEST.value(),
+  EMAIL_CERTIFICATION_UNCOMPLETED(HttpStatus.BAD_REQUEST.value(),
       "이메일 인증이 완료되지 않았습니다."),
   INVALID_EMAIL_CODE(HttpStatus.BAD_REQUEST.value(), "이메일 인증 코드가 유효하지 않습니다."), // 400
   EXPIRED_EMAIL_CODE(HttpStatus.BAD_REQUEST.value(), "이메일 인증 코드가 만료되었습니다."), // 400
@@ -25,6 +28,7 @@ public enum ErrorCode {
   INVALID_PROFILE_IMAGE_FORMAT(HttpStatus.BAD_REQUEST.value(), "유효하지 않은 프로필 이미지 형식입니다."), // 400
   PROFILE_IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR.value(),
       "프로필 이미지를 업로드하는 데 실패했습니다."), // 500
+  UNAUTHORIZED_USER(HttpStatus.UNAUTHORIZED.value(), "로그인 된 사용자와 일치하지 않습니다."),
   // 스터디 관련
   STUDY_POST_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 모집글을 찾을 수 없습니다."), // 404
   STUDY_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디를 찾을 수 없습니다."), // 404
@@ -33,12 +37,18 @@ public enum ErrorCode {
   SIGNUP_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 신청 내역을 찾을 수 없습니다."), // 404
   SIGNUP_STATUS_ALREADY_FINALIZED(HttpStatus.BAD_REQUEST.value(), "이미 확정된 신청 상태입니다."), // 400
   NO_APPROVED_SIGNUPS(HttpStatus.BAD_REQUEST.value(), "승인된 신청자가 없습니다."), // 400
+  STUDY_POST_FULL(HttpStatus.BAD_REQUEST.value(), "스터디 모집 인원이 가득 찼습니다."), // 400
+  INVALID_MAX_PARTICIPANTS(HttpStatus.BAD_REQUEST.value(), "모집 인원은 최소 2명, 최대 10명까지 설정할 수 있습니다."), // 400
   APPLICATION_PERIOD_CLOSED(HttpStatus.BAD_REQUEST.value(), "스터디 신청 기간이 종료되었습니다."), // 400
   STUDY_EXTENSION_FAILED(HttpStatus.BAD_REQUEST.value(), "스터디 모집 기한 연장은 최대 1개월입니다."), // 400
   INVALID_STUDY_STATUS(HttpStatus.BAD_REQUEST.value(), "잘못된 스터디 상태값입니다."), // 400
   MAP_API_REQUEST_FAILED(HttpStatus.INTERNAL_SERVER_ERROR.value(), "지도 API 요청에 실패했습니다."), // 500
   LOCATION_REQUIRED_FOR_HYBRID(HttpStatus.BAD_REQUEST.value(),
       "온/오프라인 병행 스터디의 경우 위치 정보가 필수입니다."), // 400
+  DOES_NOT_STUDENT_OF_STUDY(HttpStatus.BAD_REQUEST.value(), "해당 스터디 참가자가 아닙니다."), // 400
+  INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST.value(), "종료일은 시작일보다 빠를 수 없습니다."), // 400
+  INVALID_TIME_RANGE(HttpStatus.BAD_REQUEST.value(), "종료 시간은 시작 시간보다 빠를 수 없습니다."), // 400
+
   // QnA 게시글
   INVALID_INPUT_VALUE(HttpStatus.NOT_FOUND.value(), "입력이 정상적으로 되지 않았습니다."),
 
@@ -49,8 +59,9 @@ public enum ErrorCode {
   UNAUTHORIZED_SHARED_POST_ACCESS(HttpStatus.FORBIDDEN.value(), "정보 공유 게시글에 접근할 권한이 없습니다."), // 403
   // 댓글
   INVALID_COMMENT_CONTENT(HttpStatus.BAD_REQUEST.value(), "댓글 내용이 유효하지 않습니다"),
-  COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "댓글을 찾을 수 없습니다."), // 404
   UNAUTHORIZED_COMMENT_ACCESS(HttpStatus.FORBIDDEN.value(), "댓글에 접근할 권한이 없습니다."), // 403
+  COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "댓글을 찾을 수 없습니다."), // 404
+
   // 채팅
   CHAT_MESSAGE_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR.value(), "채팅 메시지 송신에 실패했습니다."), // 500
   CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "채팅방을 찾을 수 없습니다."), // 404

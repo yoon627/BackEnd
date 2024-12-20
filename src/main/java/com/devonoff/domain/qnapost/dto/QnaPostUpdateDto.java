@@ -1,5 +1,6 @@
 package com.devonoff.domain.qnapost.dto;
 
+import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,7 +15,10 @@ import org.springframework.web.multipart.MultipartFile;
 @Builder
 public class QnaPostUpdateDto {
 
-  private MultipartFile thumbnail;
+  private String author;
+  @Nullable
+  private MultipartFile file;
   private String title;
   private String content;
+  private String thumbnailImgUrl;
 }

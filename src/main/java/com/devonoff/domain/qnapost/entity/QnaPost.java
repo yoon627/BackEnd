@@ -46,8 +46,4 @@ public class QnaPost extends BaseTimeEntity {
   @JoinColumn(name = "user_id", nullable = false)
   private User user;
 
-  @Column(name = "post_type", nullable = false)
-  @Enumerated(EnumType.STRING)
-  private PostType postType;
-
 }

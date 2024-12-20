@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,14 +16,14 @@ public class StudySignupDto {
 
   private Long signupId;
   private Long userId;
-  private String nickName;
+  private String nickname;
   private StudySignupStatus status;
 
   public static StudySignupDto fromEntity(StudySignup signup) {
     return StudySignupDto.builder()
         .signupId(signup.getId())
         .userId(signup.getUser().getId())
-        .nickName(signup.getUser().getNickname())
+        .nickname(signup.getUser().getNickname())
         .status(signup.getStatus())
         .build();
   }
