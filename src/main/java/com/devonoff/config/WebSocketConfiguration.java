@@ -20,16 +20,17 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
   public void registerStompEndpoints(StompEndpointRegistry registry) {
     registry.addEndpoint("/signaling")
 //        .setAllowedOriginPatterns("*")
-        .setAllowedOrigins("https://devonoff-develop-test.vercel.app")
+        .setAllowedOrigins("https://devonoff-develop-test.vercel.app",
+            "https://devonoff-test.vercel.app")
 //        .setAllowedOrigins("*")
         .withSockJS();
 
     registry.addEndpoint("/ws")
 //        .setAllowedOrigins("https://devonoff-develop-test.vercel.app", "https://doanything.shop")
 //        .setAllowedOrigins("*")
-        .setAllowedOrigins("https://devonoff-develop-test.vercel.app")
+        .setAllowedOrigins("https://devonoff-develop-test.vercel.app",
+            "https://devonoff-test.vercel.app")
         .withSockJS();
   }
-
 
 }
