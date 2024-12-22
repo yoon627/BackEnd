@@ -13,6 +13,7 @@ public enum ErrorCode {
   INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED.value(), "이메일 또는 비밀번호가 잘못되었습니다."), // 401
   INVALID_PASSWORD(HttpStatus.BAD_REQUEST.value(), "비밀번호가 잘못되었습니다."), // 400
   PASSWORD_IS_NULL(HttpStatus.BAD_REQUEST.value(), "비밀번호를 입력해주세요."), // 400
+  SAME_PASSWORD(HttpStatus.BAD_REQUEST.value(), "기존 비밀번호와 동일합니다."), // 400
   SOCIAL_LOGIN_FAILED(HttpStatus.UNAUTHORIZED.value(), "소셜 로그인에 실패했습니다."), // 401
   ACCOUNT_PENDING_DELETION(HttpStatus.FORBIDDEN.value(), "해당 계정은 탈퇴 예정 상태입니다."), // 403 -> 필요한가?
   EMAIL_CERTIFICATION_FAILED(HttpStatus.BAD_REQUEST.value(),
@@ -45,6 +46,9 @@ public enum ErrorCode {
   LOCATION_REQUIRED_FOR_HYBRID(HttpStatus.BAD_REQUEST.value(),
       "온/오프라인 병행 스터디의 경우 위치 정보가 필수입니다."), // 400
   DOES_NOT_STUDENT_OF_STUDY(HttpStatus.BAD_REQUEST.value(), "해당 스터디 참가자가 아닙니다."), // 400
+  INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST.value(), "종료일은 시작일보다 빠를 수 없습니다."), // 400
+  INVALID_TIME_RANGE(HttpStatus.BAD_REQUEST.value(), "종료 시간은 시작 시간보다 빠를 수 없습니다."), // 400
+
   // QnA 게시글
   INVALID_INPUT_VALUE(HttpStatus.NOT_FOUND.value(), "입력이 정상적으로 되지 않았습니다."),
 
