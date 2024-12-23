@@ -900,7 +900,7 @@ class AuthServiceTest {
         .deleteData(eq("test@email.com-refreshToken"));
     verify(userRepository, times(1)).save(eq(user));
 
-    assertThat(user.getNickname()).isEqualTo("탈퇴한 유저");
+    assertThat(user.getNickname()).isEqualTo("탈퇴한 회원");
     assertThat(user.getEmail()).isEqualTo("deleted@email.com");
     assertThat(user.getIsActive()).isFalse();
   }
@@ -954,7 +954,7 @@ class AuthServiceTest {
         .deleteData(eq("test@email.com-refreshToken"));
     verify(userRepository, times(1)).save(eq(user));
 
-    assertThat(user.getNickname()).isEqualTo("탈퇴한 유저");
+    assertThat(user.getNickname()).isEqualTo("탈퇴한 회원");
     assertThat(user.getEmail()).isEqualTo("deleted@email.com");
     assertThat(user.getIsActive()).isFalse();
   }
