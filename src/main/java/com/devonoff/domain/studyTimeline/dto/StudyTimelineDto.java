@@ -15,7 +15,6 @@ import lombok.Setter;
 @Builder
 public class StudyTimelineDto {
 
-  // TODO 프론트엔드로 보낼때 필요한 것들 추가해야함
   private Long studyId;
   private String studyName;
   private LocalDateTime startedAt;

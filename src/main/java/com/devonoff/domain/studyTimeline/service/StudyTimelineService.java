@@ -44,7 +44,6 @@ public class StudyTimelineService {
             Collectors.toList());
   }
 
-  //TODO 화상채팅과 연동시 작동하도록 확인
   @Transactional
   public StudyTimeline saveStudyTimeline(Long studyId, LocalDateTime startedAt,
       LocalDateTime endedAt) {

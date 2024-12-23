@@ -37,7 +37,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       FilterChain filterChain) throws ServletException, IOException {
     Cookie[] cookies = request.getCookies();
     String token = this.resolveTokenFromRequest(request);
-    //TODO refresh 토큰 사용시 문제 될 수 있음
     if (token == null && cookies != null) {
       token = cookies[0].getValue();
     }

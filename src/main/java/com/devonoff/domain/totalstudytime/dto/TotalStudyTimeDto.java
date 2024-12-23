@@ -25,7 +25,6 @@ public class TotalStudyTimeDto {
 
   public static TotalStudyTimeDto fromEntityWithStudyNameAndRanking(TotalStudyTime totalStudyTime,
       String studyName, Long ranking, Double percent) {
-    //TODO 나중에 timeUtil이나 다른 곳을 빼주고 최적화하기
     StringBuffer sb = new StringBuffer();
     long seconds = totalStudyTime.getTotalStudyTime();
     for (int i = 0; i < timeUnit.length; i++) {

@@ -33,7 +33,7 @@ public class WebSocketEventListener {
     // 연결된 사용자 정보 가져오기
     String sessionId = headerAccessor.getSessionId();
     String nickname = String.valueOf(
-        headerAccessor.getNativeHeader("nickname").get(0)); // TODO 필요하면 쓰기
+        headerAccessor.getNativeHeader("nickname").get(0));
     String studyId = String.valueOf(headerAccessor.getNativeHeader("studyId").get(0));
     nicknameSessionManager.addUser(sessionId, nickname);
     studyIdSessionManager.addUser(sessionId, studyId);
@@ -41,7 +41,7 @@ public class WebSocketEventListener {
     LocalTime endTime = studyRepository.findById(Long.parseLong(studyId))
         .orElseThrow(() -> new CustomException(
             ErrorCode.STUDY_NOT_FOUND)).getEndTime();
-    LocalTime now = LocalTime.now().plusHours(9);
+    LocalTime now = LocalTime.now();
     long durationSeconds = Duration.between(now, endTime).toSeconds();
     if (!alarmService.isAlarmPresent(studyId)) {
       if (durationSeconds > 600) {
