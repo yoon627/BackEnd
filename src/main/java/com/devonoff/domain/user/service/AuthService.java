@@ -288,7 +288,7 @@ public class AuthService {
     authRedisRepository.deleteData(user.getEmail() + "-refreshToken");
 
     // 삭제 하지 않고 탈퇴한유저 처리
-    user.setNickname("탈퇴한 유저");
+    user.setNickname("탈퇴한 회원");
     user.setEmail("deleted@email.com");
     user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
     user.setProfileImage(defaultProfileImageUrl);
