@@ -1,6 +1,12 @@
 package com.devonoff.domain.faceCall.util;
 
+import com.devonoff.domain.faceCall.service.AlarmService;
+import com.devonoff.domain.study.repository.StudyRepository;
 import com.devonoff.domain.user.repository.UserRepository;
+import com.devonoff.exception.CustomException;
+import com.devonoff.type.ErrorCode;
+import java.time.Duration;
+import java.time.LocalTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -18,6 +24,8 @@ public class WebSocketEventListener {
   private final StudyManager studyManager;
   private final StudyIdSessionManager studyIdSessionManager;
   private final UserRepository userRepository;
+  private final AlarmService alarmService;
+  private final StudyRepository studyRepository;
 
   @EventListener
   public void handleSessionConnect(SessionConnectEvent event) {
@@ -38,6 +46,27 @@ public class WebSocketEventListener {
     nicknameSessionManager.addUser(sessionId, nickname);
     studyIdSessionManager.addUser(sessionId, studyId);
     studyManager.addUser(studyId, nickname, sessionId);
+    System.out.println("key: " + alarmService.isAlarmPresent(studyId));
+    LocalTime endTime = studyRepository.findById(Long.parseLong(studyId))
+        .orElseThrow(() -> new CustomException(
+            ErrorCode.STUDY_NOT_FOUND)).getEndTime();
+    LocalTime now = LocalTime.now().plusHours(9);
+    System.out.println("endTime: " + endTime);
+    System.out.println("now: " + now);
+    long durationSeconds = Duration.between(now, endTime).toSeconds();
+    System.out.println("durationSeconds -> " + durationSeconds);
+    if (!alarmService.isAlarmPresent(studyId)) {
+      if (durationSeconds > 600) {
+        alarmService.setAlarm(studyId, durationSeconds - 600);
+        System.out.println("@@@@@@@@@@@@@@@@@@");
+        System.out.println("Alarm Set");
+        System.out.println("@@@@@@@@@@@@@@@@@@");
+      }
+      alarmService.setEnd(studyId, durationSeconds);
+      System.out.println("@@@@@@@@@@@@@@@@@@");
+      System.out.println("End Set");
+      System.out.println("@@@@@@@@@@@@@@@@@@");
+    }
   }
 
   @EventListener

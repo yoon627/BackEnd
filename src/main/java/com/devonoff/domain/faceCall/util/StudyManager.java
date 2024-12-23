@@ -1,6 +1,7 @@
 package com.devonoff.domain.faceCall.util;
 
 import com.devonoff.domain.study.repository.StudyRepository;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,9 +12,13 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class StudyManager {
 
-  private final ConcurrentHashMap<String, ConcurrentHashMap<String, ConcurrentHashMap<String, String>>> studySessions = new ConcurrentHashMap<>();
+  private static final ConcurrentHashMap<String, ConcurrentHashMap<String, ConcurrentHashMap<String, String>>> studySessions = new ConcurrentHashMap<>();
   private final StudyRepository studyRepository;
   private final TimeManager timeManager;
+
+  public static ArrayList<String> getStudyMembers(String studyId) {
+    return new ArrayList<>(studySessions.get(studyId).keySet());
+  }
 
   // 방마다 사용자 세션 추가
   public void addUser(String roomId, String userId, String sessionId) {
