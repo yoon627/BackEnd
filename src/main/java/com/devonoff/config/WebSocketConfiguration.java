@@ -21,7 +21,7 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
     registry.addEndpoint("/signaling")
 //        .setAllowedOriginPatterns("*")
         .setAllowedOrigins("https://devonoff-develop-test.vercel.app",
-            "https://devonoff-test.vercel.app")
+            "https://devonoff-test.vercel.app", "https://devonoff-topaz.vercel.app")
 //        .setAllowedOrigins("*")
         .withSockJS();
 
@@ -29,7 +29,7 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
 //        .setAllowedOrigins("https://devonoff-develop-test.vercel.app", "https://doanything.shop")
 //        .setAllowedOrigins("*")
         .setAllowedOrigins("https://devonoff-develop-test.vercel.app",
-            "https://devonoff-test.vercel.app")
+            "https://devonoff-test.vercel.app", "https://devonoff-topaz.vercel.app")
         .withSockJS();
   }
 

@@ -74,7 +74,8 @@ public class SecurityConfig {
                 "/api/info-posts",
                 "/api/info-posts/**",
                 "/api/qna-posts",
-                "/api/qna-posts/**"
+                "/api/qna-posts/**",
+                "/api/total-study-time/ranking"
             )
             .permitAll()
             .anyRequest().authenticated()
