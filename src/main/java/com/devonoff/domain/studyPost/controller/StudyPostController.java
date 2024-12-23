@@ -5,9 +5,9 @@ import com.devonoff.domain.studyPost.dto.StudyCommentRequest;
 import com.devonoff.domain.studyPost.dto.StudyCommentResponse;
 import com.devonoff.domain.studyPost.dto.StudyPostCreateRequest;
 import com.devonoff.domain.studyPost.dto.StudyPostDto;
+import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
 import com.devonoff.domain.studyPost.dto.StudyReplyDto;
 import com.devonoff.domain.studyPost.dto.StudyReplyRequest;
-import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
 import com.devonoff.domain.studyPost.service.StudyPostService;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
@@ -85,7 +85,6 @@ public class StudyPostController {
   public ResponseEntity<StudyPostDto> updateStudyPost(
       @PathVariable Long studyPostId,
       @ModelAttribute StudyPostUpdateRequest request) {
-    System.out.println(request.toString());
     StudyPostDto response = studyPostService.updateStudyPost(studyPostId, request);
     return ResponseEntity.ok(response);
   }
@@ -113,6 +112,7 @@ public class StudyPostController {
   }
 
   // 댓글
+
   /**
    * 댓글 작성
    *
@@ -135,7 +135,7 @@ public class StudyPostController {
    *
    * @param studyPostId
    * @param page
-   * @return ResponseEntity<Page<StudyCommentResponse>>
+   * @return ResponseEntity<Page < StudyCommentResponse>>
    */
   @GetMapping("/{studyPostId}/comments")
   public ResponseEntity<Page<StudyCommentResponse>> getStudyPostComments(
@@ -157,7 +157,8 @@ public class StudyPostController {
       @PathVariable Long commentId,
       @RequestBody @Valid StudyCommentRequest studyCommentRequest
   ) {
-    return ResponseEntity.ok(studyPostService.updateStudyPostComment(commentId, studyCommentRequest));
+    return ResponseEntity.ok(
+        studyPostService.updateStudyPostComment(commentId, studyCommentRequest));
   }
 
   /**
@@ -175,6 +176,7 @@ public class StudyPostController {
   }
 
   // 대댓글
+
   /**
    * 대댓글 작성
    *

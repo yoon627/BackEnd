@@ -13,13 +13,11 @@ public class NicknameSessionManager {
   // 사용자 세션 추가
   public void addUser(String sessionId, String userId) {
     userSessions.put(sessionId, userId);
-    log.info("after connection UserIdSessionManager : " + userSessions);
   }
 
   // 사용자 세션 제거
   public void removeUser(String sessionId) {
     userSessions.remove(sessionId);
-    log.info("after disconnection UserIdSessionManager : " + userSessions);
   }
 
   public String getNickname(String sessionId) {

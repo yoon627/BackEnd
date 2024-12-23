@@ -13,13 +13,11 @@ public class StudyIdSessionManager {
   // 방마다 사용자 세션 추가
   public void addUser(String sessionId, String roomId) {
     studySessions.put(sessionId, roomId);
-    log.info("after connection StudyIdManager : " + studySessions);
   }
 
   // 사용자 세션 제거
   public void removeUser(String sessionId) {
     studySessions.remove(sessionId);
-    log.info("after disconnection StudyIdManager : " + studySessions);
   }
 
   public String getStudyId(String sessionId) {

@@ -35,44 +35,25 @@ public class WebSocketEventListener {
     String nickname = String.valueOf(
         headerAccessor.getNativeHeader("nickname").get(0)); // TODO 필요하면 쓰기
     String studyId = String.valueOf(headerAccessor.getNativeHeader("studyId").get(0));
-    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-    System.out.println("nickname: " + nickname);
-    System.out.println("studyId: " + studyId);
-    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-//    String userId = String.valueOf(userRepository.findByNickname(nickname).get().getId());
-    //TODO 프론트엔드에서 jwt 보내줘야함 안보내주면 contextholder나 다른 방법 찾아야함
-//    String jwt = (String) headerAccessor.getNativeHeader("jwt").get(0);
-//    String userId = String.valueOf(jwtProvider.getUserId(jwt));
     nicknameSessionManager.addUser(sessionId, nickname);
     studyIdSessionManager.addUser(sessionId, studyId);
     studyManager.addUser(studyId, nickname, sessionId);
-    System.out.println("key: " + alarmService.isAlarmPresent(studyId));
     LocalTime endTime = studyRepository.findById(Long.parseLong(studyId))
         .orElseThrow(() -> new CustomException(
             ErrorCode.STUDY_NOT_FOUND)).getEndTime();
     LocalTime now = LocalTime.now().plusHours(9);
-    System.out.println("endTime: " + endTime);
-    System.out.println("now: " + now);
     long durationSeconds = Duration.between(now, endTime).toSeconds();
-    System.out.println("durationSeconds -> " + durationSeconds);
     if (!alarmService.isAlarmPresent(studyId)) {
       if (durationSeconds > 600) {
         alarmService.setAlarm(studyId, durationSeconds - 600);
-        System.out.println("@@@@@@@@@@@@@@@@@@");
-        System.out.println("Alarm Set");
-        System.out.println("@@@@@@@@@@@@@@@@@@");
       }
       alarmService.setEnd(studyId, durationSeconds);
-      System.out.println("@@@@@@@@@@@@@@@@@@");
-      System.out.println("End Set");
-      System.out.println("@@@@@@@@@@@@@@@@@@");
     }
   }
 
   @EventListener
   public void handleSessionDisconnect(SessionDisconnectEvent event) {
     StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
-    log.info("Disconnected sessionId: {}", headerAccessor.getSessionId());
     // 연결 종료된 사용자 정보 가져오기
     String sessionId = headerAccessor.getSessionId();
     String studyId = studyIdSessionManager.getStudyId(sessionId);

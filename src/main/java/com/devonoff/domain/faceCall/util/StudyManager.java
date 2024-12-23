@@ -28,7 +28,6 @@ public class StudyManager {
       studySessions.put(roomId, new ConcurrentHashMap<>());
       manageRoom(roomId, userId, sessionId);
     }
-    log.info("after connection RoomManager : " + studySessions);
   }
 
   // 사용자 세션 제거
@@ -46,7 +45,6 @@ public class StudyManager {
       studySessions.remove(roomId);
     }
 
-    log.info("after disconnection RoomManager : " + studySessions);
   }
 
   private void manageRoom(String roomId, String userId, String sessionId) {

@@ -21,7 +21,6 @@ public class SignalingController {
   public String PeerHandleOffer(@Payload String offer,
       @DestinationVariable(value = "studyId") String studyId,
       @DestinationVariable(value = "nickname") String nickname) {
-    log.info("[OFFER] {} {} : {}", studyId, nickname, offer);
     return offer;
   }
 
@@ -32,7 +31,6 @@ public class SignalingController {
   public String PeerHandleIceCandidate(@Payload String candidate,
       @DestinationVariable(value = "studyId") String studyId,
       @DestinationVariable(value = "nickname") String nickname) {
-    log.info("[ICECANDIDATE] {} {} : {}", studyId, nickname, candidate);
     return candidate;
   }
 
@@ -41,7 +39,6 @@ public class SignalingController {
   public String PeerHandleAnswer(@Payload String answer,
       @DestinationVariable(value = "studyId") String studyId,
       @DestinationVariable(value = "nickname") String nickname) {
-    log.info("[ANSWER] {} {} : {}", studyId, nickname, answer);
     return answer;
   }
 
@@ -49,7 +46,6 @@ public class SignalingController {
   @MessageMapping("/call/key")
   @SendTo("/topic/call/key")
   public String callKey(@Payload String message) {
-    log.info("[Key] : {}", message);
     return message;
   }
 
@@ -65,7 +61,6 @@ public class SignalingController {
   public String endCallSignal(@Payload String message,
       @DestinationVariable(value = "studyId") String studyId,
       @DestinationVariable(value = "nickname") String nickname) {
-    log.info("[END CALL] {} {} : {}", studyId, nickname, message);
     return message;
   }
 }

@@ -261,7 +261,8 @@ public class AuthService {
         throw new CustomException(ErrorCode.PASSWORD_IS_NULL);
       }
 
-      boolean isMatch = passwordEncoder.matches(withdrawalRequest.getPassword(), user.getPassword());
+      boolean isMatch = passwordEncoder.matches(withdrawalRequest.getPassword(),
+          user.getPassword());
       if (!isMatch) {
         throw new CustomException(ErrorCode.INVALID_PASSWORD);
       }
@@ -323,15 +324,7 @@ public class AuthService {
    */
   public Long getLoginUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-    System.out.println("authentication: " + authentication);
-    System.out.println("authentication principal: " + authentication.getPrincipal());
-    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-    System.out.println("userDetail: " + userDetails);
-    System.out.println("userDetail username: " + userDetails.getUsername());
-    System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
     return Long.parseLong(userDetails.getUsername());
   }
 

@@ -22,9 +22,6 @@ public class RedisKeyExpirationListener implements MessageListener {
           "{\"type\": \"ALARM\", \"message\": \"스터디룸이 10분뒤 종료됩니다.\"}";
       for (String nickname : StudyManager.getStudyMembers(studyId)) {
         messagingTemplate.convertAndSend("/topic/alarm/" + studyId + "/" + nickname, alarmMessage);
-        System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@");
-        System.out.println("Alert Alarm sent for room: " + studyId);
-        System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@");
       }
     } else if (expiredKey.startsWith("End:")) {
       String studyId = expiredKey.split(":")[1];
@@ -32,9 +29,6 @@ public class RedisKeyExpirationListener implements MessageListener {
           "{\"type\": \"END\", \"message\": \"스터디룸의 종료 시간이 되었습니다.\"}";
       for (String nickname : StudyManager.getStudyMembers(studyId)) {
         messagingTemplate.convertAndSend("/topic/alarm/" + studyId + "/" + nickname, alarmMessage);
-        System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@");
-        System.out.println("End Alarm sent for room: " + studyId);
-        System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@");
       }
     }
   }
