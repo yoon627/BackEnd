@@ -35,7 +35,7 @@ public class StudyReply extends BaseTimeEntity {
   @Column(nullable = false)
   private String content;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
   private User user;
 

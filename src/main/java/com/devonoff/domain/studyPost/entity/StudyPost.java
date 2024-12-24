@@ -1,7 +1,9 @@
 package com.devonoff.domain.studyPost.entity;
 
 import com.devonoff.common.entity.BaseTimeEntity;
+import com.devonoff.domain.study.entity.Study;
 import com.devonoff.domain.studyPost.dto.StudyPostUpdateRequest;
+import com.devonoff.domain.studySignup.entity.StudySignup;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
@@ -10,6 +12,7 @@ import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySubject;
 import com.devonoff.util.DayTypeUtils;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -20,8 +23,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -104,6 +109,12 @@ public class StudyPost extends BaseTimeEntity {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
   private User user; // 작성자
+
+  @OneToMany(mappedBy = "studyPost", cascade = CascadeType.REMOVE, orphanRemoval = true)
+  private List<StudySignup> signups;
+
+  @OneToMany(mappedBy = "studyPost", cascade = CascadeType.REMOVE, orphanRemoval = true)
+  private List<Study> studies;
 
   public void cancelRecruitment() {
     this.status = StudyPostStatus.CANCELED;
