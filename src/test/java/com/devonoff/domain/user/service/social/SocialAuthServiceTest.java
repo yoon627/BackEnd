@@ -6,10 +6,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import com.devonoff.domain.redis.repository.AuthRedisRepository;
 import com.devonoff.domain.user.dto.auth.SignInResponse;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
@@ -20,6 +22,7 @@ import com.devonoff.util.JwtProvider;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,6 +50,9 @@ class SocialAuthServiceTest {
   @Mock
   private PasswordEncoder passwordEncoder;
 
+  @Mock
+  private AuthRedisRepository authRedisRepository;
+
   @Test
   @DisplayName("소셜 로그인 - 성공")
   void testSocialSignIn_Success() {
@@ -67,7 +73,7 @@ class SocialAuthServiceTest {
     given(mockProvider.getLoginType()).willReturn(LoginType.KAKAO);
     given(mockProvider.getAccessToken(eq(mockCode))).willReturn(mockAccessToken);
     given(mockProvider.getUserInfo(eq(mockAccessToken))).willReturn(
-        Map.of("id", "12345", "email", "test@email.com") // 오타 수정
+        Map.of("id", "12345", "email", "test@email.com")
     );
 
     given(userRepository.findByEmail(eq("test@email.com"))).willReturn(Optional.empty());
@@ -76,6 +82,9 @@ class SocialAuthServiceTest {
 
     given(jwtProvider.createAccessToken(eq(1L))).willReturn("AccessToken");
     given(jwtProvider.createRefreshToken(eq(1L))).willReturn("RefreshToken");
+
+    willDoNothing().given(authRedisRepository)
+        .setData(eq("test@email.com-refreshToken"), eq("RefreshToken"), eq(3L), eq(TimeUnit.DAYS));
 
     // when
     SignInResponse signInResponse = socialAuthService.socialSignIn("kakao", mockCode);
