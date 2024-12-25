@@ -1,5 +1,6 @@
 package com.devonoff.domain.user.service.social;
 
+import com.devonoff.domain.redis.repository.AuthRedisRepository;
 import com.devonoff.domain.user.dto.auth.SignInResponse;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
@@ -9,6 +10,7 @@ import com.devonoff.util.JwtProvider;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ public class SocialAuthService {
   private final UserRepository userRepository;
   private final JwtProvider jwtProvider;
   private final PasswordEncoder passwordEncoder;
+  private final AuthRedisRepository authRedisRepository;
 
   public SignInResponse socialSignIn(String providerName, String code) {
     SocialAuthProviderService provider = getProvider(providerName);
@@ -53,9 +56,12 @@ public class SocialAuthService {
             .build()
     ));
 
+    String refreshToken = jwtProvider.createRefreshToken(user.getId());
+    authRedisRepository.setData(email + "-refreshToken", refreshToken, 3, TimeUnit.DAYS);
+
     return SignInResponse.builder()
         .accessToken(jwtProvider.createAccessToken(user.getId()))
-        .refreshToken(jwtProvider.createRefreshToken(user.getId()))
+        .refreshToken(refreshToken)
         .build();
   }
 
