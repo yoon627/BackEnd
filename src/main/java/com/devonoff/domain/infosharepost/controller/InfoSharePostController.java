@@ -45,7 +45,6 @@ public class InfoSharePostController {
     return ResponseEntity.ok(result);
   }
 
-  //TODO userId -> nickname으로 변경해야함, InfoSharePost 테이블에 nickname추가?
   @GetMapping("/author/{userId}")
   public ResponseEntity<Page<InfoSharePostDto>> getInfoSharePostsByUserId(@PathVariable Long userId,
       @RequestParam(required = false, defaultValue = "0") Integer page,
@@ -74,6 +73,7 @@ public class InfoSharePostController {
   }
 
   // 댓글
+
   /**
    * 댓글 생성
    *
@@ -95,7 +95,7 @@ public class InfoSharePostController {
    * 댓글 조회
    *
    * @param infoPostId
-   * @return ResponseEntity<Page<InfoShareCommentDto>>
+   * @return ResponseEntity<Page < InfoShareCommentDto>>
    */
   @GetMapping("/{infoPostId}/comments")
   public ResponseEntity<Page<InfoShareCommentResponse>> getInfoSharePostComments(
@@ -138,6 +138,7 @@ public class InfoSharePostController {
   }
 
   // 대댓글
+
   /**
    * 대댓글 생성
    *

@@ -2,6 +2,7 @@ package com.devonoff.util;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -34,9 +35,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
       FilterChain filterChain) throws ServletException, IOException {
-
+    Cookie[] cookies = request.getCookies();
     String token = this.resolveTokenFromRequest(request);
-
+    if (token == null && cookies != null) {
+      token = cookies[0].getValue();
+    }
     if (StringUtils.hasText(token) && jwtProvider.validateToken(token)) {
       Authentication auth = jwtProvider.getAuthentication(token);
       SecurityContextHolder.getContext().setAuthentication(auth);

@@ -43,13 +43,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthService {
 
-  @Value("${cloud.aws.s3.default-profile-image-url}")
-  private String defaultProfileImageUrl;
-
   private final UserRepository userRepository;
-
   private final AuthRedisRepository authRedisRepository;
-
   private final EmailProvider emailProvider;
   private final JwtProvider jwtProvider;
   private final PasswordEncoder passwordEncoder;
@@ -57,6 +52,8 @@ public class AuthService {
   private final StudentService studentService;
   private final StudySignupRepository studySignupRepository;
   private final StudyPostRepository studyPostRepository;
+  @Value("${cloud.aws.s3.default-profile-image-url}")
+  private String defaultProfileImageUrl;
 
   /**
    * 사용자 Nickname 중복 체크
@@ -264,7 +261,8 @@ public class AuthService {
         throw new CustomException(ErrorCode.PASSWORD_IS_NULL);
       }
 
-      boolean isMatch = passwordEncoder.matches(withdrawalRequest.getPassword(), user.getPassword());
+      boolean isMatch = passwordEncoder.matches(withdrawalRequest.getPassword(),
+          user.getPassword());
       if (!isMatch) {
         throw new CustomException(ErrorCode.INVALID_PASSWORD);
       }

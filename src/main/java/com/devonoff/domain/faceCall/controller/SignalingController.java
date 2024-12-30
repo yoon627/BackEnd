@@ -1,6 +1,6 @@
 package com.devonoff.domain.faceCall.controller;
 
-import com.devonoff.domain.faceCall.util.UserIdSessionManager;
+import com.devonoff.domain.faceCall.util.NicknameSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -14,34 +14,31 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class SignalingController {
 
-  private final UserIdSessionManager userIdSessionManager;
+  private final NicknameSessionManager nicknameSessionManager;
 
-  @MessageMapping("/peer/offer/{camKey}/{roomId}")
-  @SendTo("/topic/peer/offer/{camKey}/{roomId}")
+  @MessageMapping("/peer/offer/{nickname}/{studyId}")
+  @SendTo("/topic/peer/offer/{nickname}/{studyId}")
   public String PeerHandleOffer(@Payload String offer,
-      @DestinationVariable(value = "roomId") String roomId,
-      @DestinationVariable(value = "camKey") String camKey) {
-    log.info("[OFFER] {} {} : {}", roomId, camKey, offer);
+      @DestinationVariable(value = "studyId") String studyId,
+      @DestinationVariable(value = "nickname") String nickname) {
     return offer;
   }
 
   //iceCandidate 정보를 주고 받기 위한 webSocket
-  //camKey : 각 요청하는 캠의 key , roomId : 룸 아이디
-  @MessageMapping("/peer/iceCandidate/{camKey}/{roomId}")
-  @SendTo("/topic/peer/iceCandidate/{camKey}/{roomId}")
+  //nickname : 각 요청하는 캠의 key , studyId : 룸 아이디
+  @MessageMapping("/peer/iceCandidate/{nickname}/{studyId}")
+  @SendTo("/topic/peer/iceCandidate/{nickname}/{studyId}")
   public String PeerHandleIceCandidate(@Payload String candidate,
-      @DestinationVariable(value = "roomId") String roomId,
-      @DestinationVariable(value = "camKey") String camKey) {
-    log.info("[ICECANDIDATE] {} {} : {}", roomId, camKey, candidate);
+      @DestinationVariable(value = "studyId") String studyId,
+      @DestinationVariable(value = "nickname") String nickname) {
     return candidate;
   }
 
-  @MessageMapping("/peer/answer/{camKey}/{roomId}")
-  @SendTo("/topic/peer/answer/{camKey}/{roomId}")
+  @MessageMapping("/peer/answer/{nickname}/{studyId}")
+  @SendTo("/topic/peer/answer/{nickname}/{studyId}")
   public String PeerHandleAnswer(@Payload String answer,
-      @DestinationVariable(value = "roomId") String roomId,
-      @DestinationVariable(value = "camKey") String camKey) {
-    log.info("[ANSWER] {} {} : {}", roomId, camKey, answer);
+      @DestinationVariable(value = "studyId") String studyId,
+      @DestinationVariable(value = "nickname") String nickname) {
     return answer;
   }
 
@@ -49,7 +46,6 @@ public class SignalingController {
   @MessageMapping("/call/key")
   @SendTo("/topic/call/key")
   public String callKey(@Payload String message) {
-    log.info("[Key] : {}", message);
     return message;
   }
 
@@ -60,12 +56,11 @@ public class SignalingController {
     return message;
   }
 
-  @MessageMapping("/send/end/{roomId}/{camKey}")
-  @SendTo("/topic/send/end/{roomId}/{camKey}")
+  @MessageMapping("/send/end/{studyId}/{nickname}")
+  @SendTo("/topic/send/end/{studyId}/{nickname}")
   public String endCallSignal(@Payload String message,
-      @DestinationVariable(value = "roomId") String roomId,
-      @DestinationVariable(value = "camKey") String camKey) {
-    log.info("[END CALL] {} {} : {}", roomId, camKey, message);
+      @DestinationVariable(value = "studyId") String studyId,
+      @DestinationVariable(value = "nickname") String nickname) {
     return message;
   }
 }

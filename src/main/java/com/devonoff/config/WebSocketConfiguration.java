@@ -18,11 +18,19 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
 
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
-    registry.addEndpoint("/signaling").setAllowedOriginPatterns("*")
+    registry.addEndpoint("/signaling")
+//        .setAllowedOriginPatterns("*")
+        .setAllowedOrigins("https://devonoff-develop-test.vercel.app",
+            "https://devonoff-test.vercel.app", "https://devonoff-topaz.vercel.app")
+//        .setAllowedOrigins("*")
         .withSockJS();
 
     registry.addEndpoint("/ws")
-        .setAllowedOriginPatterns("http://localhost:3000")
+//        .setAllowedOrigins("https://devonoff-develop-test.vercel.app", "https://doanything.shop")
+//        .setAllowedOrigins("*")
+        .setAllowedOrigins("https://devonoff-develop-test.vercel.app",
+            "https://devonoff-test.vercel.app", "https://devonoff-topaz.vercel.app")
         .withSockJS();
   }
+
 }

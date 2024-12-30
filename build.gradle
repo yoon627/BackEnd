@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com'
-version = '0.0.1-SNAPSHOT'
+version = '1.0.0-SNAPSHOT'
 
 java {
     toolchain {
@@ -36,7 +36,7 @@ dependencies {
     implementation 'org.springframework.batch:spring-batch-core'
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
-    
+
     annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
 
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"

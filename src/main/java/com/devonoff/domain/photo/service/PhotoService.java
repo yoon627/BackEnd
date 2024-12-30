@@ -2,13 +2,11 @@ package com.devonoff.domain.photo.service;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.devonoff.domain.user.service.AuthService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -32,6 +30,8 @@ public class PhotoService {
   @Value("${cloud.aws.s3.default-profile-image-url}")
   private String defaultProfileImageUrl;
 
+  private AuthService authService;
+
   @PostConstruct
   public void init() {
     urlPrefix = "https://" + bucket + ".s3." + region + ".amazonaws.com/";
@@ -39,10 +39,7 @@ public class PhotoService {
 
   public String save(MultipartFile file) {
 
-    //TODO UserService에서 로그인된 유저 ID를 주도록 추가 고려
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-    Long userId = Long.parseLong(userDetails.getUsername());
+    Long userId = authService.getLoginUserId();
     try {
       String fileName = file.getOriginalFilename();
       ObjectMetadata metadata = new ObjectMetadata();
