@@ -3,6 +3,7 @@ package com.devonoff.domain.studyPost.entity;
 
 import com.devonoff.common.entity.BaseTimeEntity;
 import com.devonoff.domain.user.entity.User;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -31,7 +32,7 @@ public class StudyComment extends BaseTimeEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "post_id", nullable = false)
   private StudyPost studyPost;
 
@@ -41,10 +42,10 @@ public class StudyComment extends BaseTimeEntity {
   @Column(nullable = false)
   private String content;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
   private User user;
 
-  @OneToMany(mappedBy = "comment", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "comment", cascade = CascadeType.REMOVE, orphanRemoval = true)
   private List<StudyReply> replies;
 }

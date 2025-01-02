@@ -79,7 +79,7 @@ public class Study extends BaseTimeEntity {
   @Column(nullable = false)
   private Integer totalParticipants; // 스터디 총 인원 (스터디장 포함)
 
-  @OneToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "study_post_id", nullable = false)
   private StudyPost studyPost; // 스터디 모집글
 
