@@ -16,21 +16,16 @@ import org.springframework.web.server.ResponseStatusException;
 public class PhotoService {
 
   private final AmazonS3Client amazonS3Client;
-
+  private final AuthService authService;
   @Value("${cloud.aws.s3.bucket}")
   private String bucket;
   @Value("${cloud.aws.region.static}")
   private String region;
-
   private String urlPrefix;
-
   @Value("${cloud.aws.s3.default-thumbnail-image-url}")
   private String defaultThumbnailImageUrl;
-
   @Value("${cloud.aws.s3.default-profile-image-url}")
   private String defaultProfileImageUrl;
-
-  private AuthService authService;
 
   @PostConstruct
   public void init() {
