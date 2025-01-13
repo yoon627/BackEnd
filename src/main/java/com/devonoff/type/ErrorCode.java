@@ -10,7 +10,7 @@ public enum ErrorCode {
   // 회원가입 및 로그인
   EMAIL_ALREADY_REGISTERED(HttpStatus.BAD_REQUEST.value(), "이미 사용 중인 이메일입니다."), // 400
   NICKNAME_ALREADY_REGISTERED(HttpStatus.BAD_REQUEST.value(), "이미 사용 중인 닉네임입니다."), // 400
-  INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED.value(), "이메일 또는 비밀번호가 잘못되었습니다."), // 401
+  INVALID_CREDENTIALS(HttpStatus.BAD_REQUEST.value(), "이메일 또는 비밀번호가 잘못되었습니다."), // 400
   INVALID_PASSWORD(HttpStatus.BAD_REQUEST.value(), "비밀번호가 잘못되었습니다."), // 400
   PASSWORD_IS_NULL(HttpStatus.BAD_REQUEST.value(), "비밀번호를 입력해주세요."), // 400
   SAME_PASSWORD(HttpStatus.BAD_REQUEST.value(), "기존 비밀번호와 동일합니다."), // 400
@@ -29,6 +29,8 @@ public enum ErrorCode {
   PROFILE_IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR.value(),
       "프로필 이미지를 업로드하는 데 실패했습니다."), // 500
   UNAUTHORIZED_USER(HttpStatus.UNAUTHORIZED.value(), "로그인 된 사용자와 일치하지 않습니다."),
+  // 파일 업로드 관련
+  EXCEED_FILE_SIZE(HttpStatus.BAD_REQUEST.value(), "파일 크기가 제한을 초과했습니다. 최대 5MB까지 업로드 가능합니다."),
   // 스터디 관련
   STUDY_POST_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 모집글을 찾을 수 없습니다."), // 404
   STUDY_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디를 찾을 수 없습니다."), // 404
