@@ -162,7 +162,10 @@ public class StudyPostService {
     List<StudyPost> expiredPosts = studyPostRepository.findAllByRecruitmentPeriodBeforeAndStatus(
         currentDate, StudyPostStatus.RECRUITING);
 
-    expiredPosts.forEach(StudyPost::cancelRecruitment);
+    expiredPosts.forEach(post -> {
+      post.cancelRecruitment();
+    });
+
     studyPostRepository.saveAll(expiredPosts);
   }
 

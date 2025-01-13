@@ -25,6 +25,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -118,6 +119,7 @@ public class StudyPost extends BaseTimeEntity {
 
   public void cancelRecruitment() {
     this.status = StudyPostStatus.CANCELED;
+    this.setUpdatedAt(LocalDateTime.now()); // 수동으로 updatedAt 갱신
   }
 
   public void closeRecruitment() {
