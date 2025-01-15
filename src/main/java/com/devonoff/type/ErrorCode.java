@@ -31,14 +31,15 @@ public enum ErrorCode {
   UNAUTHORIZED_USER(HttpStatus.UNAUTHORIZED.value(), "로그인 된 사용자와 일치하지 않습니다."),
   // 스터디 관련
   STUDY_POST_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 모집글을 찾을 수 없습니다."), // 404
-  STUDY_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디를 찾을 수 없습니다."), // 404
+  STUDY_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디를  찾을 수 없습니다."), // 404
   PARTICIPANT_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 참여자를 찾을 수 없습니다."), // 404
   DUPLICATE_APPLICATION(HttpStatus.BAD_REQUEST.value(), "이미 해당 스터디에 신청했습니다."), // 400
   SIGNUP_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "스터디 신청 내역을 찾을 수 없습니다."), // 404
   SIGNUP_STATUS_ALREADY_FINALIZED(HttpStatus.BAD_REQUEST.value(), "이미 확정된 신청 상태입니다."), // 400
   NO_APPROVED_SIGNUPS(HttpStatus.BAD_REQUEST.value(), "승인된 신청자가 없습니다."), // 400
   STUDY_POST_FULL(HttpStatus.BAD_REQUEST.value(), "스터디 모집 인원이 가득 찼습니다."), // 400
-  INVALID_MAX_PARTICIPANTS(HttpStatus.BAD_REQUEST.value(), "모집 인원은 최소 2명, 최대 10명까지 설정할 수 있습니다."), // 400
+  INVALID_MAX_PARTICIPANTS(HttpStatus.BAD_REQUEST.value(),
+      "모집 인원은 최소 2명, 최대 10명까지 설정할 수 있습니다."), // 400
   APPLICATION_PERIOD_CLOSED(HttpStatus.BAD_REQUEST.value(), "스터디 신청 기간이 종료되었습니다."), // 400
   STUDY_EXTENSION_FAILED(HttpStatus.BAD_REQUEST.value(), "스터디 모집 기한 연장은 최대 1개월입니다."), // 400
   INVALID_STUDY_STATUS(HttpStatus.BAD_REQUEST.value(), "잘못된 스터디 상태값입니다."), // 400
@@ -87,7 +88,11 @@ public enum ErrorCode {
   EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED.value(), "토큰이 만료되었습니다."), // 401
   TOKEN_NOT_PROVIDED(HttpStatus.UNAUTHORIZED.value(), "토큰이 제공되지 않았습니다."), // 401
   REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED.value(), "리프레시 토큰이 만료되었습니다."), // 401
-  INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED.value(), "유효하지 않은 리프레시 토큰입니다."); // 401
+  INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED.value(), "유효하지 않은 리프레시 토큰입니다."), // 401
+  //알람 관련 예외
+  NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "존재하지 않는 알림입니다."),
+  NOTIFICATION_ALREADY_READ(HttpStatus.BAD_REQUEST.value(), "이미 읽은 알림입니다");
+
   private final int status;
   private final String description;
 }

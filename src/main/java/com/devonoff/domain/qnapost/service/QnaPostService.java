@@ -3,26 +3,31 @@ package com.devonoff.domain.qnapost.service;
 import static com.devonoff.type.ErrorCode.UNAUTHORIZED_ACCESS;
 import static com.devonoff.type.ErrorCode.USER_NOT_FOUND;
 
+import com.devonoff.domain.notification.dto.NotificationDto;
+import com.devonoff.domain.notification.service.NotificationService;
 import com.devonoff.domain.photo.service.PhotoService;
 import com.devonoff.domain.qnapost.dto.QnaCommentDto;
 import com.devonoff.domain.qnapost.dto.QnaCommentRequest;
 import com.devonoff.domain.qnapost.dto.QnaCommentResponse;
 import com.devonoff.domain.qnapost.dto.QnaPostDto;
-import com.devonoff.domain.qnapost.dto.QnaReplyDto;
-import com.devonoff.domain.qnapost.dto.QnaReplyRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostRequest;
 import com.devonoff.domain.qnapost.dto.QnaPostUpdateDto;
+import com.devonoff.domain.qnapost.dto.QnaReplyDto;
+import com.devonoff.domain.qnapost.dto.QnaReplyRequest;
 import com.devonoff.domain.qnapost.entity.QnaComment;
 import com.devonoff.domain.qnapost.entity.QnaPost;
 import com.devonoff.domain.qnapost.entity.QnaReply;
 import com.devonoff.domain.qnapost.repository.QnaCommentRepository;
-import com.devonoff.domain.qnapost.repository.QnaReplyRepository;
 import com.devonoff.domain.qnapost.repository.QnaPostRepository;
+import com.devonoff.domain.qnapost.repository.QnaReplyRepository;
+import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
+import com.devonoff.type.NotificationType;
+import com.devonoff.type.PostType;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -50,6 +55,7 @@ public class QnaPostService {
   private final QnaReplyRepository qnaReplyRepository;
   private final PhotoService photoService;
   private final AuthService authService;
+  private final NotificationService notificationService;
   @Value("${cloud.aws.s3.default-thumbnail-image-url}")
   private String defaultThumbnailImageUrl;
 
@@ -87,8 +93,8 @@ public class QnaPostService {
   /**
    * 질의 응답 게시글 전체 목록 조회 (최신순) 토큰 X
    *
-   * @param pageable   조회할 페이지 번호 (1부터 시작)
-   * @param search 검색 키워드 (optional)
+   * @param pageable 조회할 페이지 번호 (1부터 시작)
+   * @param search   검색 키워드 (optional)
    * @return Page<QnaPostDto>
    */
   public Page<QnaPostDto> getQnaPostList(Pageable pageable, String search) {
@@ -225,6 +231,8 @@ public class QnaPostService {
   }
 
   // 댓글
+
+
   /**
    * 댓글 작성
    *
@@ -245,7 +253,19 @@ public class QnaPostService {
     QnaComment savedQnaComment = qnaCommentRepository.save(
         QnaCommentRequest.toEntity(user, qnaPost, qnaCommentRequest)
     );
-
+    notificationService.sendNotificationToUser(qnaPost.getUser().getId(),
+        NotificationDto.builder()
+            .type(NotificationType.COMMENT_ADDED)
+            .userId(qnaPost.getUser().getId())
+            .sender(UserDto.fromEntity(user))
+            .postType(PostType.QNA)
+            .postTitle(qnaPost.getTitle())
+            .postContent(qnaPost.getContent())
+            .commentContent(savedQnaComment.getContent())
+            .targetId(qnaPost.getId())
+            .isRead(false)
+            .build()
+    );
     return QnaCommentDto.fromEntity(savedQnaComment);
   }
 
@@ -311,6 +331,7 @@ public class QnaPostService {
   }
 
   // 대댓글
+
   /**
    * 대댓글 작성
    *
@@ -331,7 +352,18 @@ public class QnaPostService {
     QnaReply savedQnaReply = qnaReplyRepository.save(
         QnaReplyRequest.toEntity(user, qnaComment, qnaReplyRequest)
     );
-
+    notificationService.sendNotificationToUser(qnaComment.getUser().getId(),
+        NotificationDto.builder()
+            .type(NotificationType.REPLY_ADDED)
+            .userId(qnaComment.getUser().getId())
+            .sender(UserDto.fromEntity(user))
+            .postType(PostType.QNA)
+            .postTitle(qnaComment.getQnaPost().getTitle())
+            .commentContent(qnaComment.getContent())
+            .replyContent(qnaReplyRequest.getContent())
+            .targetId(qnaComment.getQnaPost().getId())
+            .isRead(false)
+            .build());
     return QnaReplyDto.fromEntity(savedQnaReply);
   }
 

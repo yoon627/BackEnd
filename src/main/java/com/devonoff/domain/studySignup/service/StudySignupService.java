@@ -1,16 +1,21 @@
 package com.devonoff.domain.studySignup.service;
 
+import com.devonoff.domain.notification.dto.NotificationDto;
+import com.devonoff.domain.notification.service.NotificationService;
 import com.devonoff.domain.studyPost.entity.StudyPost;
 import com.devonoff.domain.studyPost.repository.StudyPostRepository;
 import com.devonoff.domain.studySignup.dto.StudySignupCreateRequest;
 import com.devonoff.domain.studySignup.dto.StudySignupDto;
 import com.devonoff.domain.studySignup.entity.StudySignup;
 import com.devonoff.domain.studySignup.repository.StudySignupRepository;
+import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
+import com.devonoff.type.NotificationType;
+import com.devonoff.type.PostType;
 import com.devonoff.type.StudyPostStatus;
 import com.devonoff.type.StudySignupStatus;
 import java.util.List;
@@ -26,6 +31,7 @@ public class StudySignupService {
   private final StudyPostRepository studyPostRepository;
   private final UserRepository userRepository;
   private final AuthService authService;
+  private final NotificationService notificationService;
 
   // 스터디 신청
   public StudySignupDto createStudySignup(StudySignupCreateRequest request) {
@@ -44,7 +50,18 @@ public class StudySignupService {
         .build();
 
     studySignupRepository.save(studySignup);
-
+    notificationService.sendNotificationToUser(studyPost.getUser().getId(),
+        NotificationDto.builder()
+            .type(NotificationType.STUDY_SIGNUP_ADDED)
+            .userId(studyPost.getUser().getId())
+            .sender(UserDto.fromEntity(user))
+            .postType(PostType.STUDY)
+            .postTitle(studyPost.getTitle())
+            .postContent(studyPost.getDescription())
+            .studyName(studyPost.getStudyName())
+            .targetId(studyPost.getId())
+            .isRead(false)
+            .build());
     return StudySignupDto.fromEntity(studySignup);
   }
 
@@ -57,7 +74,18 @@ public class StudySignupService {
     validateRecruitingStatus(studyPost);
 
     processSignupStatusChange(studySignup, studyPost, newStatus);
-
+    notificationService.sendNotificationToUser(studySignup.getUser().getId(),
+        NotificationDto.builder()
+            .type(newStatus == StudySignupStatus.APPROVED ? NotificationType.STUDY_SIGNUP_APPROVED
+                : NotificationType.STUDY_SIGNUP_REJECTED)
+            .userId(studySignup.getUser().getId())
+            .sender(UserDto.fromEntity(studySignup.getStudyPost().getUser()))
+            .postType(PostType.STUDY)
+            .postTitle(studyPost.getTitle())
+            .postContent(studyPost.getDescription())
+            .studyName(studyPost.getStudyName())
+            .targetId(studyPost.getId())
+            .build());
     studySignupRepository.save(studySignup);
     studyPostRepository.save(studyPost);
   }

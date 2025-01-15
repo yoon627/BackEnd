@@ -10,12 +10,14 @@ import com.devonoff.domain.infosharepost.dto.InfoShareCommentResponse;
 import com.devonoff.domain.infosharepost.dto.InfoSharePostDto;
 import com.devonoff.domain.infosharepost.dto.InfoShareReplyDto;
 import com.devonoff.domain.infosharepost.dto.InfoShareReplyRequest;
-import com.devonoff.domain.infosharepost.entity.InfoSharePost;
 import com.devonoff.domain.infosharepost.entity.InfoShareComment;
+import com.devonoff.domain.infosharepost.entity.InfoSharePost;
 import com.devonoff.domain.infosharepost.entity.InfoShareReply;
 import com.devonoff.domain.infosharepost.repository.InfoShareCommentRepository;
-import com.devonoff.domain.infosharepost.repository.InfoShareReplyRepository;
 import com.devonoff.domain.infosharepost.repository.InfoSharePostRepository;
+import com.devonoff.domain.infosharepost.repository.InfoShareReplyRepository;
+import com.devonoff.domain.notification.dto.NotificationDto;
+import com.devonoff.domain.notification.service.NotificationService;
 import com.devonoff.domain.photo.service.PhotoService;
 import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.entity.User;
@@ -23,6 +25,8 @@ import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
+import com.devonoff.type.NotificationType;
+import com.devonoff.type.PostType;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +51,7 @@ public class InfoSharePostService {
   private final InfoShareReplyRepository infoShareReplyRepository;
   private final PhotoService photoService;
   private final AuthService authService;
+  private final NotificationService notificationService;
 
   @Value("${spring.data.web.pageable.default-page-size}")
   private Integer defaultPageSize;
@@ -112,7 +117,7 @@ public class InfoSharePostService {
     }
 
     infoSharePost.setTitle(infoSharePostDto.getTitle());
-    infoSharePost.setDescription(infoSharePostDto.getDescription());
+    infoSharePost.setContent(infoSharePostDto.getContent());
     return InfoSharePostDto.fromEntity(this.infoSharePostRepository.save(infoSharePost));
   }
 
@@ -136,6 +141,7 @@ public class InfoSharePostService {
   }
 
   // 댓글
+
   /**
    * 댓글 생성
    *
@@ -156,7 +162,18 @@ public class InfoSharePostService {
     InfoShareComment savedPostComment = infoShareCommentRepository.save(
         InfoShareCommentRequest.toEntity(user, infoSharePost, infoShareCommentRequest)
     );
-
+    notificationService.sendNotificationToUser(infoSharePost.getUser().getId(),
+        NotificationDto.builder()
+            .type(NotificationType.COMMENT_ADDED)
+            .userId(infoSharePost.getUser().getId())
+            .sender(UserDto.fromEntity(user))
+            .postType(PostType.INFO)
+            .postTitle(infoSharePost.getTitle())
+            .postContent(infoSharePost.getContent())
+            .commentContent(infoShareCommentRequest.getContent())
+            .targetId(infoSharePost.getId())
+            .isRead(false)
+            .build());
     return InfoShareCommentDto.fromEntity(savedPostComment);
   }
 
@@ -223,6 +240,7 @@ public class InfoSharePostService {
   }
 
   // 대댓글
+
   /**
    * 대댓글 작성
    *
@@ -245,7 +263,18 @@ public class InfoSharePostService {
             user, infoShareComment, infoShareReplyRequest
         )
     );
-
+    notificationService.sendNotificationToUser(infoShareComment.getUser().getId(),
+        NotificationDto.builder()
+            .type(NotificationType.REPLY_ADDED)
+            .userId(infoShareComment.getUser().getId())
+            .sender(UserDto.fromEntity(user))
+            .postType(PostType.INFO)
+            .postTitle(infoShareComment.getInfoSharePost().getTitle())
+            .commentContent(infoShareComment.getContent())
+            .replyContent(infoShareReply.getContent())
+            .targetId(infoShareComment.getInfoSharePost().getId())
+            .isRead(false)
+            .build());
     return InfoShareReplyDto.fromEntity(infoShareReply);
   }
 

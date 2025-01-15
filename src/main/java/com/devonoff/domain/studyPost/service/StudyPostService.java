@@ -3,6 +3,8 @@ package com.devonoff.domain.studyPost.service;
 import static com.devonoff.type.ErrorCode.UNAUTHORIZED_ACCESS;
 import static com.devonoff.type.ErrorCode.USER_NOT_FOUND;
 
+import com.devonoff.domain.notification.dto.NotificationDto;
+import com.devonoff.domain.notification.service.NotificationService;
 import com.devonoff.domain.photo.service.PhotoService;
 import com.devonoff.domain.student.entity.Student;
 import com.devonoff.domain.student.repository.StudentRepository;
@@ -24,11 +26,14 @@ import com.devonoff.domain.studyPost.repository.StudyPostRepository;
 import com.devonoff.domain.studyPost.repository.StudyReplyRepository;
 import com.devonoff.domain.studySignup.entity.StudySignup;
 import com.devonoff.domain.studySignup.repository.StudySignupRepository;
+import com.devonoff.domain.user.dto.UserDto;
 import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.repository.UserRepository;
 import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
+import com.devonoff.type.NotificationType;
+import com.devonoff.type.PostType;
 import com.devonoff.type.StudyDifficulty;
 import com.devonoff.type.StudyMeetingType;
 import com.devonoff.type.StudyPostStatus;
@@ -62,6 +67,7 @@ public class StudyPostService {
   private final PhotoService photoService;
   private final StudyCommentRepository studyCommentRepository;
   private final StudyReplyRepository studyReplyRepository;
+  private final NotificationService notificationService;
 
   @Value("${cloud.aws.s3.default-thumbnail-image-url}")
   private String defaultThumbnailImageUrl;
@@ -89,7 +95,8 @@ public class StudyPostService {
   // 상세 조회(userId)
   public Page<StudyPostDto> getStudyPostsByUserId(Long userId, Pageable pageable) {
     validateOwnership(userId);
-    Page<StudyPost> studyPosts = studyPostRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+    Page<StudyPost> studyPosts = studyPostRepository.findByUserIdOrderByCreatedAtDesc(userId,
+        pageable);
 
     return studyPosts.map(StudyPostDto::fromEntity);
   }
@@ -139,6 +146,20 @@ public class StudyPostService {
 
     Study study = studyService.createStudyFromClosedPost(studyPostId);
     studentRepository.saveAll(buildStudents(approvedSignups, study, studyPost.getUser()));
+    for (StudySignup studySignup : approvedSignups) {
+      notificationService.sendNotificationToUser(studySignup.getUser().getId(),
+          NotificationDto.builder()
+              .type(NotificationType.STUDY_CREATED)
+              .userId(studySignup.getUser().getId())
+              .sender(UserDto.fromEntity(studyPost.getUser()))
+              .postType(PostType.STUDY)
+              .postTitle(studyPost.getTitle())
+              .postContent(studyPost.getDescription())
+              .studyName(studyPost.getStudyName())
+              .targetId(studyPost.getId())
+              .isRead(false)
+              .build());
+    }
   }
 
   // 모집 취소 -> 사용자가 직접 취소
@@ -208,7 +229,18 @@ public class StudyPostService {
     StudyComment savedStudyComment = studyCommentRepository.save(
         StudyCommentRequest.toEntity(user, studyPost, studyCommentRequest)
     );
-
+    notificationService.sendNotificationToUser(studyPost.getUser().getId(),
+        NotificationDto.builder()
+            .type(NotificationType.COMMENT_ADDED)
+            .userId(studyPost.getUser().getId())
+            .sender(UserDto.fromEntity(user))
+            .postType(PostType.STUDY)
+            .postTitle(studyPost.getTitle())
+            .postContent(studyPost.getDescription())
+            .commentContent(studyCommentRequest.getContent())
+            .targetId(studyPost.getId())
+            .isRead(false)
+            .build());
     return StudyCommentDto.fromEntity(savedStudyComment);
   }
 
@@ -294,7 +326,18 @@ public class StudyPostService {
     StudyReply savedStudyReply = studyReplyRepository.save(
         StudyReplyRequest.toEntity(user, studyComment, studyReplyRequest)
     );
-
+    notificationService.sendNotificationToUser(studyComment.getUser().getId(),
+        NotificationDto.builder()
+            .type(NotificationType.REPLY_ADDED)
+            .userId(studyComment.getUser().getId())
+            .sender(UserDto.fromEntity(user))
+            .postType(PostType.STUDY)
+            .postTitle(studyComment.getStudyPost().getTitle())
+            .commentContent(studyComment.getContent())
+            .replyContent(studyReplyRequest.getContent())
+            .targetId(studyComment.getStudyPost().getId())
+            .isRead(false)
+            .build());
     return StudyReplyDto.fromEntity(savedStudyReply);
   }
 
