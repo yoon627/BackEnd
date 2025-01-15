@@ -38,7 +38,7 @@ public class QnaComment extends BaseTimeEntity {
   @Column(nullable = false)
   private Boolean isSecret;
 
-  @Column(nullable = false)
+  @Column(columnDefinition = "TEXT", nullable = false)
   private String content;
 
   @ManyToOne

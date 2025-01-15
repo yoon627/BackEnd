@@ -21,7 +21,9 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
     registry.addEndpoint("/signaling")
 //        .setAllowedOriginPatterns("*")
         .setAllowedOrigins("https://devonoff-develop-test.vercel.app",
-            "https://devonoff-test.vercel.app", "https://devonoff-topaz.vercel.app")
+            "https://devonoff-test.vercel.app", "https://devonoff-topaz.vercel.app",
+            "http://localhost:3000", "http://localhost:8080", "http://localhost:80",
+            "http://localhost:8000")
 //        .setAllowedOrigins("*")
         .withSockJS();
 
@@ -29,7 +31,9 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
 //        .setAllowedOrigins("https://devonoff-develop-test.vercel.app", "https://doanything.shop")
 //        .setAllowedOrigins("*")
         .setAllowedOrigins("https://devonoff-develop-test.vercel.app",
-            "https://devonoff-test.vercel.app", "https://devonoff-topaz.vercel.app")
+            "https://devonoff-test.vercel.app", "https://devonoff-topaz.vercel.app",
+            "http://localhost:3000", "http://localhost:8080", "http://localhost:80",
+            "http://localhost:8000")
         .withSockJS();
   }
 
