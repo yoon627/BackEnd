@@ -117,7 +117,7 @@ public class InfoSharePostService {
     }
 
     infoSharePost.setTitle(infoSharePostDto.getTitle());
-    infoSharePost.setContent(infoSharePostDto.getContent());
+    infoSharePost.setDescription(infoSharePostDto.getDescription());
     return InfoSharePostDto.fromEntity(this.infoSharePostRepository.save(infoSharePost));
   }
 
@@ -169,7 +169,7 @@ public class InfoSharePostService {
             .sender(UserDto.fromEntity(user))
             .postType(PostType.INFO)
             .postTitle(infoSharePost.getTitle())
-            .postContent(infoSharePost.getContent())
+            .postContent(infoSharePost.getDescription())
             .commentContent(infoShareCommentRequest.getContent())
             .targetId(infoSharePost.getId())
             .isRead(false)

@@ -35,7 +35,6 @@ public class InfoSharePost extends BaseTimeEntity {
   private String thumbnailImgUrl;
   private String title;
   @Column(columnDefinition = "TEXT")
-  private String content;
-
+  private String description;
 
 }

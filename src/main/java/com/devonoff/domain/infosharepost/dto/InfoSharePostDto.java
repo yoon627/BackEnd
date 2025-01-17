@@ -22,7 +22,7 @@ public class InfoSharePostDto {
   private UserDto user;
   private String thumbnailImgUrl;
   private String title;
-  private String content;
+  private String description;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
   private Long userId;
@@ -35,7 +35,7 @@ public class InfoSharePostDto {
         .user(UserDto.fromEntity(post.getUser()))
         .thumbnailImgUrl(post.getThumbnailImgUrl())
         .title(post.getTitle())
-        .content(post.getContent())
+        .description(post.getDescription())
         .createdAt(post.getCreatedAt())
         .updatedAt(post.getUpdatedAt())
         .userId(post.getUser().getId())
@@ -47,7 +47,7 @@ public class InfoSharePostDto {
         .user(UserDto.toEntity(infoSharePostDto.getUser()))
         .thumbnailImgUrl(infoSharePostDto.getThumbnailImgUrl())
         .title(infoSharePostDto.getTitle())
-        .content(infoSharePostDto.getContent())
+        .description(infoSharePostDto.getDescription())
         .build();
   }
 
