@@ -6,6 +6,7 @@ import com.devonoff.domain.notification.repository.NotificationRepository;
 import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -33,14 +34,17 @@ public class NotificationService {
     }
     Notification notification = notificationRepository.save(
         NotificationDto.toEntity(notificationDto));
+    notificationDto.setId(notification.getId());
     notificationDto.setCreatedAt(notification.getCreatedAt());
     messagingTemplate.convertAndSend("/topic/notifications/" + userId, notificationDto);
   }
 
   public Page<NotificationDto> getNotificationsByUserId(int pageNumber) {
     Long userId = authService.getLoginUserId();
+    LocalDateTime fourteenDaysAgo = LocalDateTime.now().minusDays(14);
     Pageable pageable = PageRequest.of(pageNumber, 20, Sort.by("createdAt").descending());
-    return notificationRepository.findAllByUserId(userId, pageable).map(NotificationDto::toDto);
+    return notificationRepository.findAllByUserIdAndCreatedAtAfter(userId, fourteenDaysAgo,
+        pageable).map(NotificationDto::toDto);
   }
 
   public NotificationDto readNotification(Long notificationId) {
