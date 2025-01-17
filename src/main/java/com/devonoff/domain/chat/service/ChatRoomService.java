@@ -51,6 +51,6 @@ public class ChatRoomService {
                 .build())
         );
 
-    return ChatRoomDto.fromEntity(chatRoom);
+    return ChatRoomDto.fromEntity(chatRoom, study.getStudyLeader().getId());
   }
 }

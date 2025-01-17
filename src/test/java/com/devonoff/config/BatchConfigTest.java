@@ -69,16 +69,6 @@ class BatchConfigTest {
         eq(StudyPostStatus.CANCELED), eq(oneWeekAgo))
     ).thenReturn(Collections.singletonList(studyPost));
 
-    doNothing().when(studyPostRepository).deleteByStatusAndUpdatedAtBefore(
-        eq(StudyPostStatus.CANCELED), eq(oneWeekAgo)
-    );
-
-    StudyComment studyComment = new StudyComment();
-    when(studyCommentRepository.findAllByStudyPost(any(StudyPost.class)))
-        .thenReturn(Collections.singletonList(studyComment));
-
-    doNothing().when(studyReplyRepository).deleteAllByComment(any(StudyComment.class));
-    doNothing().when(studyCommentRepository).deleteAllByStudyPost(any(StudyPost.class));
     doNothing().when(studyPostRepository).deleteAll(any());
 
     // When
@@ -89,9 +79,6 @@ class BatchConfigTest {
     verify(studyPostService, times(1)).cancelStudyPostIfExpired();
     verify(studyPostRepository, times(1))
         .findAllByStatusAndUpdatedAtBefore(eq(StudyPostStatus.CANCELED), eq(oneWeekAgo));
-    verify(studyCommentRepository, times(1)).findAllByStudyPost(any(StudyPost.class));
-    verify(studyReplyRepository, times(1)).deleteAllByComment(any(StudyComment.class));
-    verify(studyCommentRepository, times(1)).deleteAllByStudyPost(any(StudyPost.class));
     verify(studyPostRepository, times(1)).deleteAll(any());
     assert status == RepeatStatus.FINISHED;
   }
@@ -113,12 +100,6 @@ class BatchConfigTest {
         eq(StudyPostStatus.CANCELED), eq(oneWeekAgo))
     ).thenReturn(List.of(studyPost));
 
-    StudyComment studyComment = new StudyComment();
-    when(studyCommentRepository.findAllByStudyPost(any(StudyPost.class)))
-        .thenReturn(List.of(studyComment));
-    doNothing().when(studyReplyRepository).deleteAllByComment(any(StudyComment.class));
-    doNothing().when(studyCommentRepository).deleteAllByStudyPost(any(StudyPost.class));
-
     doNothing().when(studyPostRepository).deleteAll(any());
 
     // When
@@ -126,12 +107,8 @@ class BatchConfigTest {
 
     // Then
     verify(timeProvider, times(1)).now();
-
     verify(studyPostRepository, times(1))
         .findAllByStatusAndUpdatedAtBefore(eq(StudyPostStatus.CANCELED), eq(oneWeekAgo));
-    verify(studyCommentRepository, times(1)).findAllByStudyPost(any(StudyPost.class));
-    verify(studyReplyRepository, times(1)).deleteAllByComment(any(StudyComment.class));
-    verify(studyCommentRepository, times(1)).deleteAllByStudyPost(any(StudyPost.class));
     verify(studyPostRepository, times(1)).deleteAll(any());
     assert status == RepeatStatus.FINISHED;
   }

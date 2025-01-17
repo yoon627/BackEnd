@@ -14,6 +14,7 @@ import com.devonoff.domain.chat.repository.ChatRoomRepository;
 import com.devonoff.domain.student.repository.StudentRepository;
 import com.devonoff.domain.study.entity.Study;
 import com.devonoff.domain.study.repository.StudyRepository;
+import com.devonoff.domain.user.entity.User;
 import com.devonoff.domain.user.service.AuthService;
 import com.devonoff.exception.CustomException;
 import com.devonoff.type.ErrorCode;
@@ -49,7 +50,8 @@ class ChatRoomServiceTest {
     // given
     Long studyId = 1L;
     Long userId = 1L;
-    Study study = Study.builder().id(1L).studyName("Test Study").build();
+    User user = User.builder().id(2L).build();
+    Study study = Study.builder().id(1L).studyName("Test Study").studyLeader(user).build();
     ChatRoom chatRoom = ChatRoom.builder().id(1L).studyName("Test Study").study(study).build();
 
     given(authService.getLoginUserId()).willReturn(1L);
@@ -72,6 +74,7 @@ class ChatRoomServiceTest {
     assertThat(chatRoomDto.getChatRoomId()).isEqualTo(1L);
     assertThat(chatRoomDto.getStudyId()).isEqualTo(1L);
     assertThat(chatRoomDto.getStudyName()).isEqualTo("Test Study");
+    assertThat(chatRoomDto.getLeaderId()).isEqualTo(2L);
   }
 
   @Test
@@ -80,7 +83,8 @@ class ChatRoomServiceTest {
     // given
     Long studyId = 1L;
     Long userId = 1L;
-    Study study = Study.builder().id(1L).studyName("Test Study").build();
+    User user = User.builder().id(2L).build();
+    Study study = Study.builder().id(1L).studyName("Test Study").studyLeader(user).build();
     ChatRoom chatRoom = ChatRoom.builder().id(1L).studyName("Test Study").study(study).build();
 
     given(authService.getLoginUserId()).willReturn(1L);
@@ -101,6 +105,7 @@ class ChatRoomServiceTest {
     assertThat(chatRoomDto.getChatRoomId()).isEqualTo(1L);
     assertThat(chatRoomDto.getStudyId()).isEqualTo(1L);
     assertThat(chatRoomDto.getStudyName()).isEqualTo("Test Study");
+    assertThat(chatRoomDto.getLeaderId()).isEqualTo(2L);
   }
 
   @Test
