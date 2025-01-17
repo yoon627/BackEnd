@@ -15,12 +15,14 @@ public class ChatRoomDto {
   private Long chatRoomId;
   private Long studyId;
   private String studyName;
+  private Long leaderId;
 
-  public static ChatRoomDto fromEntity(ChatRoom chatRoom) {
+  public static ChatRoomDto fromEntity(ChatRoom chatRoom, Long leaderId) {
     return ChatRoomDto.builder()
         .chatRoomId(chatRoom.getId())
         .studyId(chatRoom.getStudy().getId())
         .studyName(chatRoom.getStudyName())
+        .leaderId(leaderId)
         .build();
   }
 
